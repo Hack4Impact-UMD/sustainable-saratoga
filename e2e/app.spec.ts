@@ -27,5 +27,5 @@ test("signs in, then navigates to a protected route", async ({ page }) => {
   await expect(page.getByTestId("notes")).toContainText("first note");
 
   await page.getByTestId("sign-out").click();
-  await expect(page.getByTestId("notes-signed-out")).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
 });

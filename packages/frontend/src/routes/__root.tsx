@@ -3,6 +3,7 @@ import {
   createRootRouteWithContext,
   Link,
   Outlet,
+  useRouter,
 } from "@tanstack/react-router";
 import type { LinkProps } from "@tanstack/react-router";
 import { auth } from "@frontend/lib/firebase.ts";
@@ -19,11 +20,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   const { isAuthed } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const signOut = useMutation({
     mutationFn: () => auth.signOut(),
-    onSuccess: () => queryClient.resetQueries(),
+    onSuccess: async () => {
+      await queryClient.resetQueries();
+      await router.invalidate();
+    },
   });
 
   return (
