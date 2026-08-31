@@ -1,0 +1,36 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Vitest / Playwright
+coverage
+playwright-report
+test-results
+
+# Turborepo
+.turbo
+
+# Firebase
+.firebase
+*-debug.log
+firebase-export-*
+ui-debug.log
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.sw?
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
