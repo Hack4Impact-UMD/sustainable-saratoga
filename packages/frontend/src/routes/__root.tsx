@@ -1,18 +1,34 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  Link,
+  Outlet,
+  useRouter,
+} from "@tanstack/react-router";
 import type { LinkProps } from "@tanstack/react-router";
 import { auth } from "@frontend/lib/firebase.ts";
-import { useAuthUser } from "@frontend/lib/useAuthUser.ts";
+import { useAuth } from "@frontend/lib/useAuth";
+import type { AuthState } from "@frontend/lib/useAuth";
 
-export const Route = createRootRoute({ component: RootLayout });
+interface RouterContext {
+  auth: AuthState;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: RootLayout,
+});
 
 function RootLayout() {
-  const user = useAuthUser();
+  const { isAuthed } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const signOut = useMutation({
     mutationFn: () => auth.signOut(),
-    onSuccess: () => queryClient.resetQueries(),
+    onSuccess: async () => {
+      await queryClient.resetQueries();
+      await router.invalidate();
+    },
   });
 
   return (
@@ -23,9 +39,9 @@ function RootLayout() {
         </h1>
         <nav className="flex gap-4 text-sm">
           <NavLink to="/">Home</NavLink>
-          <NavLink to="/notes">Notes</NavLink>
+          {isAuthed && <NavLink to="/notes">Notes</NavLink>}
         </nav>
-        {user ? (
+        {isAuthed ? (
           <button
             type="button"
             data-testid="sign-out"

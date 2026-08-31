@@ -9,8 +9,38 @@ env:
   GOOGLE_APPLICATION_CREDENTIALS: /tmp/credentials.json
 
 jobs:
+  check-config:
+    name: Check deploy secrets/vars
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required secrets and vars are set
+        id: check
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ] && \
+             [ -n "$VITE_FIREBASE_API_KEY" ] && \
+             [ -n "$VITE_FIREBASE_AUTH_DOMAIN" ] && \
+             [ -n "$VITE_FIREBASE_PROJECT_ID" ] && \
+             [ -n "$VITE_FIREBASE_APP_ID" ] && \
+             [ -n "$FIREBASE_PROJECT_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping deploy: one or more required secrets/vars are not set (FIREBASE_SERVICE_ACCOUNT, VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID, FIREBASE_PROJECT_ID)"
+          fi
+
   deploy:
     name: Deploy to Firebase
+    needs: check-config
+    if: needs.check-config.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
