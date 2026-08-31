@@ -2,14 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "@frontend/components/Section.tsx";
-import { useAuthUser } from "@frontend/lib/useAuthUser.ts";
+import { useAuth } from "@frontend/lib/useAuth";
 import { trpc } from "@frontend/lib/trpc.ts";
 
-export const Route = createFileRoute("/notes")({ component: Notes });
+export const Route = createFileRoute("/_authenticated/notes")({
+  component: Notes,
+});
 
 /** Protected procedures backed by Firestore, scoped to the signed-in user. */
 function Notes() {
-  const user = useAuthUser();
+  const { user } = useAuth();
   const [text, setText] = useState("");
   const queryClient = useQueryClient();
 

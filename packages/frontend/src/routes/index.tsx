@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { SignInForm } from "@frontend/components/SignInForm.tsx";
 import { Section } from "@frontend/components/Section.tsx";
-import { useAuthUser } from "@frontend/lib/useAuthUser.ts";
+import { useAuth } from "@frontend/lib/useAuth";
 import { trpc } from "@frontend/lib/trpc.ts";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const user = useAuthUser();
+  const { user } = useAuth();
 
   // Public: works with or without a token.
   const hello = useQuery(trpc.hello.queryOptions({ name: "world" }));

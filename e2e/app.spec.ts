@@ -10,11 +10,6 @@ test("signs in, then navigates to a protected route", async ({ page }) => {
   // Protected procedure: the auth middleware rejects an anonymous caller.
   await expect(page.getByTestId("me-error")).toContainText("UNAUTHORIZED");
 
-  // The notes route is reachable while signed out, but shows no data.
-  await page.getByRole("link", { name: "Notes" }).click();
-  await expect(page).toHaveURL(/\/notes$/);
-  await expect(page.getByTestId("notes-signed-out")).toBeVisible();
-
   await page.getByRole("link", { name: "Home" }).click();
   await expect(page).toHaveURL(/\/$/);
 

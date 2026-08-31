@@ -1,6 +1,6 @@
 # Vite + tRPC + Firebase template
 
-A minimal monorepo for a full-stack TypeScript application.
+A minimal monorepo for a full-stack TypeScript application. 
 
 - **Frontend** - React and Vite with TanStack Router and Tailwind CSS, in
   `packages/frontend`.
