@@ -2,10 +2,12 @@
 
 A minimal monorepo for a full-stack TypeScript application.
 
-- **Frontend** - React and Vite with TanStack Router and Tailwind CSS, in
+- **Frontend** - React and Vite with [TanStack Router](https://tanstack.com/router) and Tailwind CSS, in
   `packages/frontend`.
-- **Backend** - tRPC on Express, on Firebase Cloud Functions, in `packages/backend`.
+- **Backend** - [tRPC](https://trpc.io) on Express, on Firebase Cloud Functions, in `packages/backend`.
 - **Shared code** - types and arktype schemas, in `packages/common`.
+
+Monorepo tooling is provided by [Turborepo](https://turborepo.dev).
 
 ## Before you start
 
@@ -38,15 +40,6 @@ This command starts three processes:
 - The esbuild watcher, which bundles the backend after each change.
 - The Firebase emulators. The Emulator UI is on <http://127.0.0.1:4000>.
 
-Open <http://127.0.0.1:5173>. The demo has two pages:
-
-- **Home** shows a public procedure, a protected procedure, and a sign-in
-  form. The form makes the account if the account does not exist.
-- **Notes** shows notes from Firestore. Each note belongs to one user.
-
-The emulators show a warning about Node.js 22 and Node.js 24. This is safe.
-Cloud Functions runs Node.js 22. Your computer can run a later version.
-
 ## Check the code
 
 ```sh
@@ -66,6 +59,60 @@ pnpm test
 
 `pnpm test:e2e` starts the development environment if it is not running.
 
+## Why use this stack?
+
+### TanStack Query
+
+[TanStack Query](https://tanstack.com/query/latest) is the standard library for fetching data from your frontend
+and managing related state. It provides query and mutation hooks that simplify
+the data fetching lifecycle by handling caching and loading + error states for
+you.
+
+Instead of fetching in a `useEffect`, always use query and mutation hooks to 
+manage state between your frontend and backend.
+
+### TanStack Router
+
+[TanStack Router](https://tanstack.com/router/latest) is a typesafe page router. It uses file based routing, meaning
+the route map of your app is defined by the directory structure of your 
+pages.
+
+TanStack Router also provides powerful validation, data loading, context management,
+and type checking features that ensure your routing is more robust. For example,
+linking to a non-existent page in your app becomes a type error that you can catch at
+build time.
+
+### tRPC
+
+[tRPC](https://trpc.io) is a typesafe remote procedure call framework. It allows you to define
+procedures on your backend (think of these as functions) and call them
+from your frontend. 
+
+tRPC differentiates itself from other frameworks by ensuring that you can only
+call your backend with input that adheres to the expected schema. Likewise, tRPC
+makes your frontend aware of the exact schema that each procedure will return.
+
+Combined, this provides a better developer experience (your editor will show you
+the types each procedure accepts and returns) and rules out an entire class of bugs
+at build time (you can no longer give your backend bad data!).
+
+tRPC is tightly integrated with TanStack Query, allowing you to easily turn your
+procedures into queries and mutations. You'll see examples of this in the template.
+
+### ArkType
+
+[ArkType](https://arktype.io/) is a schema validator that prioritizes performance
+and similarity to TypeScript syntax. It is used at the boundary between the frontend
+and backend to ensure data is the correct shape and structure as it's passed
+across the wire.
+
+It is highly recommended that you define all your data models as schemas first, then
+infer their associated type with `.infer`. This reduces duplication and eliminates drift
+between the schema and its associated TypeScript type.
+
+ArkType adheres to the standard schema spec. Thus, you can drop in any equivalent schema
+validator if you prefer, like Zod.
+
 ## How a request finds the API
 
 The frontend always calls the relative path `/api/trpc`.
@@ -79,31 +126,17 @@ examine the environment.
 ## Add a page
 
 TanStack Router reads the files in `packages/frontend/src/routes`. The name of
-the file gives the URL.
+the file and its path gives the URL.
 
+1. Ensure the dev environment is running
 1. Make a file, for example `src/routes/about.tsx`.
-2. Export a route from it:
+2. Vite will autogenerate the route scaffold in the file for you.
 
-   ```tsx
-   export const Route = createFileRoute("/about")({ component: About });
-   ```
-
-The Vite plugin writes `src/routeTree.gen.ts` again after each change. Keep
-that file in Git, because `pnpm typecheck` reads it but does not make it.
-Do not change it by hand.
-
-`<Link to="...">` accepts only a known route. An unknown route is an error at
-compile time.
-
-## Add a style
-
-Tailwind CSS v4 needs no configuration file. `src/index.css` has one line,
-`@import "tailwindcss"`. Put your utility classes directly in the JSX. To make
-a theme value, use the `@theme` block in `src/index.css`.
+The Vite plugin writes `src/routeTree.gen.ts` again after each change. 
 
 ## Import paths
 
-Do not use a relative path. Use one of these aliases:
+Lint rules ban relative import path s. Use one of these aliases instead:
 
 | Alias         | Points to                 |
 | ------------- | ------------------------- |
@@ -116,16 +149,6 @@ Do not use a relative path. Use one of these aliases:
 import { auth } from "@frontend/lib/firebase.ts"; // good
 import { auth } from "../lib/firebase.ts"; // error
 ```
-
-For a different package, use the package name, for example `@repo/common`.
-
-`pnpm lint` gives an error for each relative path. The aliases are in
-`tsconfig.base.json`. Two other files copy them: `vite.config.ts` and
-`vitest.config.ts`. Change all three files together.
-
-Each package has its own alias, because one alias cannot point to three
-different directories. TypeScript reads the source of the other packages, so
-the names must be different.
 
 ## Add a procedure
 
@@ -197,13 +220,6 @@ gh api -X POST repos/:owner/:repo/rulesets \
   -f 'rules[][parameters][required_status_checks][][context]=E2E Tests' \
   -f 'rules[][parameters][required_status_checks][][context]=Full Build'
 ```
-
-## Keep `firebase-functions` in the root
-
-The root `package.json` has `firebase-functions` in `devDependencies`. Do not
-remove it. The Functions emulator looks for the `firebase-functions` program
-in the root `node_modules/.bin`. Without it, the emulator cannot load the
-function.
 
 ## Layout
 
