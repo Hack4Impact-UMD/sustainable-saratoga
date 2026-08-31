@@ -2,6 +2,7 @@ packages:
   - packages/*
 
 allowBuilds:
+  re2: true
   "@firebase/util": true
   esbuild: true
   protobufjs: true
