@@ -68,13 +68,13 @@ and managing related state. It provides query and mutation hooks that simplify
 the data fetching lifecycle by handling caching and loading + error states for
 you.
 
-Instead of fetching in a `useEffect`, always use query and mutation hooks to 
+Instead of fetching in a `useEffect`, always use query and mutation hooks to
 manage state between your frontend and backend.
 
 ### TanStack Router
 
 [TanStack Router](https://tanstack.com/router/latest) is a typesafe page router. It uses file based routing, meaning
-the route map of your app is defined by the directory structure of your 
+the route map of your app is defined by the directory structure of your
 pages.
 
 TanStack Router also provides powerful validation, data loading, context management,
@@ -86,7 +86,7 @@ build time.
 
 [tRPC](https://trpc.io) is a typesafe remote procedure call framework. It allows you to define
 procedures on your backend (think of these as functions) and call them
-from your frontend. 
+from your frontend.
 
 tRPC differentiates itself from other frameworks by ensuring that you can only
 call your backend with input that adheres to the expected schema. Likewise, tRPC
@@ -130,9 +130,9 @@ the file and its path gives the URL.
 
 1. Ensure the dev environment is running
 1. Make a file, for example `src/routes/about.tsx`.
-2. Vite will autogenerate the route scaffold in the file for you.
+1. Vite will autogenerate the route scaffold in the file for you.
 
-The Vite plugin writes `src/routeTree.gen.ts` again after each change. 
+The Vite plugin writes `src/routeTree.gen.ts` again after each change.
 
 ## Import paths
 

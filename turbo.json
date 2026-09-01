@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
+  "globalDependencies": ["tsconfig.base.json", ".oxlintrc.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
