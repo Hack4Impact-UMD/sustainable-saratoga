@@ -113,6 +113,12 @@ between the schema and its associated TypeScript type.
 ArkType adheres to the standard schema spec. Thus, you can drop in any equivalent schema
 validator if you prefer, like Zod.
 
+### oxc
+
+[oxc](https://oxc.rs/) provides a collection of fast tooling for JavaScript and TypeScript. 
+This template uses  `oxlint` for linting and `oxfmt` for formatting. `oxlint` is mostly 
+compatible with `eslint`  and `oxfmt` is fully compatible with `prettier`.
+
 ## How a request finds the API
 
 The frontend always calls the relative path `/api/trpc`.
