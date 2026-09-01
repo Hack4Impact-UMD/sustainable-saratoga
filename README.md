@@ -16,6 +16,7 @@ Monorepo tooling is provided by [Turborepo](https://turborepo.dev).
 - Minimal login/logout flow
 - Authentication state provided through the router context
 - Demo procedures, queries, and mutations
+- Sample unit and E2E tests
 
 ## Before you start
 
