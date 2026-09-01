@@ -9,6 +9,14 @@ A minimal monorepo for a full-stack TypeScript application.
 
 Monorepo tooling is provided by [Turborepo](https://turborepo.dev).
 
+## What's included?
+
+- Basic routing setup with some example pages and protected routes
+- Basic database setup with Firestore
+- Minimal login/logout flow
+- Authentication state provided through the router context
+- Demo procedures, queries, and mutations
+
 ## Before you start
 
 Install these tools first:
@@ -115,9 +123,9 @@ validator if you prefer, like Zod.
 
 ### oxc
 
-[oxc](https://oxc.rs/) provides a collection of fast tooling for JavaScript and TypeScript. 
-This template uses  `oxlint` for linting and `oxfmt` for formatting. `oxlint` is mostly 
-compatible with `eslint`  and `oxfmt` is fully compatible with `prettier`.
+[oxc](https://oxc.rs/) provides a collection of fast tooling for JavaScript and TypeScript.
+This template uses `oxlint` for linting and `oxfmt` for formatting. `oxlint` is mostly
+compatible with `eslint` and `oxfmt` is fully compatible with `prettier`.
 
 ## How a request finds the API
 
