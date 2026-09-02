@@ -28,7 +28,10 @@ export async function waitForEmulator(url: string, timeoutMs = 180_000) {
 export async function warmFunction(timeoutMs = 180_000) {
   const url = `${FUNCTIONS_HOST}/${PROJECT_ID}/${REGION}/api/api/health`;
   await poll(
-    async () => (await fetch(url)).ok,
+    async () => {
+      const response = await fetch(url);
+      return response.ok;
+    },
     timeoutMs,
     `Function at ${url} did not become ready`,
   );

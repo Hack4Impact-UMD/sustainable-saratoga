@@ -3,10 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { onIdTokenChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { auth } from "@frontend/lib/firebase.ts";
-import { AuthContext, DefaultAuthState } from "@frontend/lib/useAuth";
-import type { AuthState } from "@frontend/lib/useAuth";
+import { AuthContext, DefaultAuthState } from "@frontend/lib/useAuth.ts";
+import type { AuthState } from "@frontend/lib/useAuth.ts";
 
-export default function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(DefaultAuthState);
   const queryClient = useQueryClient();
 

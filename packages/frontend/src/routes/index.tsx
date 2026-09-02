@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { SignInForm } from "@frontend/components/SignInForm.tsx";
 import { Section } from "@frontend/components/Section.tsx";
-import { useAuth } from "@frontend/lib/useAuth";
+import { useAuth } from "@frontend/lib/useAuth.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 
 export const Route = createFileRoute("/")({ component: Home });

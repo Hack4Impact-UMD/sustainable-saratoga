@@ -1,6 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "@frontend/routeTree.gen.ts";
-import { DefaultAuthState } from "@frontend/lib/useAuth";
+import { DefaultAuthState } from "@frontend/lib/useAuth.ts";
 
 export const router = createRouter({
   routeTree,

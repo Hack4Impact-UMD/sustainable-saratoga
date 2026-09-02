@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "@frontend/components/Section.tsx";
-import { useAuth } from "@frontend/lib/useAuth";
+import { useAuth } from "@frontend/lib/useAuth.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 
 export const Route = createFileRoute("/_authenticated/notes")({
