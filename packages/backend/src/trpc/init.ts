@@ -2,7 +2,9 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { Context } from "@backend/trpc/context.ts";
 
 const t = initTRPC.context<Context>().create({
-  isDev: process.env.FUNCTIONS_EMULATOR === "true",
+  isDev:
+    process.env.FUNCTIONS_EMULATOR === "true" ||
+    process.env.NODE_ENV !== "production",
 });
 
 export const router = t.router;
