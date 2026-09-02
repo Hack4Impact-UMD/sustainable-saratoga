@@ -1,7 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { Context } from "@backend/trpc/context.ts";
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  isDev: process.env.FUNCTIONS_EMULATOR === "true",
+});
 
 export const router = t.router;
 export const middleware = t.middleware;
