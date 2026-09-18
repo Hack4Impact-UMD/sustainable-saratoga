@@ -131,6 +131,7 @@ const child = spawn("pnpm", ["dev"], {
   // Its own process group, so a stray signal to this wrapper's group cannot
   // take the tree down half-way behind our back.
   detached: !isWindows,
+  shell: isWindows,
 });
 
 writeFileSync(pidFile, String(child.pid));
