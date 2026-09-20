@@ -30,6 +30,8 @@ Install these tools first:
 
 You do not need a Firebase account to start. The template uses the project ID
 `demo-vtf-template`. Firebase treats a `demo-` project as an offline project.
+Before deploying, make sure to replace all instances of `demo-vtf-template`
+with your actual Firebase project ID.
 
 ## Install
 
@@ -211,6 +213,7 @@ pnpm workspace.
 `.github/workflows/deploy.yaml` does the same steps after each push to `main`.
 Add these values to the repository first:
 
+- Replace all instances of `demo-vtf-template` with your real project ID.
 - Secret `FIREBASE_SERVICE_ACCOUNT` - a service account key, in JSON.
 - Secret `VITE_FIREBASE_API_KEY`.
 - Variables `FIREBASE_PROJECT_ID`, `VITE_FIREBASE_AUTH_DOMAIN`,
@@ -222,18 +225,33 @@ Add these values to the repository first:
 not block a merge until you make the jobs necessary. Do this one time:
 
 ```sh
-gh api -X POST repos/:owner/:repo/rulesets \
-  -f name='main' -f target='branch' -f enforcement='active' \
-  -F 'conditions[ref_name][include][]=~DEFAULT_BRANCH' \
-  -f 'rules[][type]=pull_request' \
-  -f 'rules[][type]=required_status_checks' \
-  -F 'rules[][parameters][strict_required_status_checks_policy]=true' \
-  -f 'rules[][parameters][required_status_checks][][context]=Typecheck' \
-  -f 'rules[][parameters][required_status_checks][][context]=Lint' \
-  -f 'rules[][parameters][required_status_checks][][context]=Format' \
-  -f 'rules[][parameters][required_status_checks][][context]=Unit Tests' \
-  -f 'rules[][parameters][required_status_checks][][context]=E2E Tests' \
-  -f 'rules[][parameters][required_status_checks][][context]=Full Build'
+gh api -X POST repos/:owner/:repo/rulesets --input - <<'EOF'
+{
+  "name": "main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] }
+  },
+  "rules": [
+    { "type": "pull_request" },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "Typecheck" },
+          { "context": "Lint" },
+          { "context": "Format" },
+          { "context": "Unit Tests" },
+          { "context": "E2E Tests" },
+          { "context": "Full Build" }
+        ]
+      }
+    }
+  ]
+}
+EOF
 ```
 
 ## Layout
