@@ -1,0 +1,111 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": [
+    "typescript",
+    "import",
+    "oxc",
+    "unicorn",
+    "promise",
+    "node",
+    "vitest",
+    "react",
+    "jsx-a11y"
+  ],
+  "env": {
+    "browser": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+
+    "react/button-has-type": "error",
+    "react/hook-use-state": "error",
+    "react/jsx-boolean-value": "error",
+    "react/jsx-curly-brace-presence": "error",
+    "react/jsx-key": "error",
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-target-blank": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/no-array-index-key": "error",
+    "react/no-children-prop": "error",
+    "react/no-danger": "error",
+    "react/no-unescaped-entities": "error",
+    "react/self-closing-comp": "error",
+    "react/void-dom-elements-no-children": "error",
+
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-has-content": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+    "jsx-a11y/aria-props": "error",
+    "jsx-a11y/aria-role": "error",
+    "jsx-a11y/click-events-have-key-events": "error",
+    "jsx-a11y/heading-has-content": "error",
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/no-autofocus": "error",
+    "jsx-a11y/no-noninteractive-tabindex": "error",
+    "jsx-a11y/role-has-required-aria-props": "error",
+
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@repo/backend",
+            "message": "Import types only (`import type { AppRouter }`). A value import pulls firebase-admin and the server into the browser bundle.",
+            "allowTypeImports": true
+          }
+        ],
+        "patterns": [
+          {
+            "regex": "^[.][.]?/",
+            "message": "Use a path alias, not a relative path: \"@frontend/*\". Cross-package imports use the package name (\"@repo/common\"). The aliases are defined in tsconfig.base.json."
+          },
+          {
+            "regex": "^@(common|backend|frontend|e2e)/[^.]*$",
+            "message": "Alias imports must carry the file extension, e.g. \"@frontend/lib/useAuth.ts\". `allowImportingTsExtensions` is on, so the extension is always written out."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/**"],
+      "rules": {
+        "import/no-nodejs-modules": "error"
+      }
+    },
+    {
+      "files": ["src/routes/**"],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    },
+    {
+      "files": ["**/*.config.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "vitest/expect-expect": "error",
+        "vitest/no-conditional-expect": "error",
+        "vitest/no-disabled-tests": "error",
+        "vitest/no-focused-tests": "error",
+        "vitest/no-identical-title": "error",
+        "vitest/prefer-to-be": "error",
+        "vitest/valid-expect": "error"
+      }
+    }
+  ]
+}
