@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": [
+    "typescript",
+    "import",
+    "oxc",
+    "unicorn",
+    "promise",
+    "node",
+    "vitest"
+  ],
+  "rules": {
+    "import/no-nodejs-modules": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "regex": "^[.][.]?/",
+            "message": "Use a path alias, not a relative path: \"@common/*\". The aliases are defined in tsconfig.base.json."
+          },
+          {
+            "regex": "^@(common|backend|frontend|e2e)/[^.]*$",
+            "message": "Alias imports must carry the file extension, e.g. \"@common/schemas.ts\". `allowImportingTsExtensions` is on, so the extension is always written out."
+          },
+          {
+            "regex": "^(@(backend|frontend|e2e)/|@repo/(backend|frontend)$)",
+            "message": "`common` is consumed by both the browser and the server, so it must not depend on backend or frontend. Dependencies flow inward only."
+          }
+        ]
+      }
+    ]
+  }
+}
