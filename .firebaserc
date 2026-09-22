@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "demo-vtf-template"
-  }
+    "default": "sustainable-saratoga"
+  },
+  "targets": {},
+  "etags": {}
 }
