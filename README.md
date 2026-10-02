@@ -90,6 +90,13 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/🛠️_technical_lead-FF5733?style=flat-square"/>
       </a>
     </td>
+    <td align="center" width="160">
+      <a href="https://github.com/om-arya" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/om-arya.jpeg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Om Arya</b><br/>
+        <img src="https://img.shields.io/badge/🛠️_technical_lead-FF5733?style=flat-square"/>
+      </a>
+    </td>
   </tr>
 </table>
 
@@ -131,6 +138,7 @@ sustainable-saratoga/
 
 ## Points of Contact
 
-| Name     | Role      | Email             |
-| -------- | --------- | ----------------- |
-| Ori Marx | Tech Lead | orimarx@gmail.com |
+| Name     | Role      | Email                 |
+| -------- | --------- | -----------------     |
+| Ori Marx | Tech Lead | orimarx@gmail.com     |
+| Om Arya  | Tech Lead | om.arya0577@gmail.com |
