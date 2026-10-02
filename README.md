@@ -105,9 +105,11 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/designer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Designer Name</b><br/>
-      <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/christine-t-niu" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/christine_niu.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Christine Niu</b><br/>
+        <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      </a>
     </td>
   </tr>
 </table>
