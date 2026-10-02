@@ -84,7 +84,7 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <a href="https://github.com/orimcoding" target="_blank" rel="noreferrer noopener">
+      <a href="https://www.linkedin.com/in/orimarx/" target="_blank" rel="noreferrer noopener">
         <img src="assets/team/ori-marx.png" style="height:110px; border-radius:10%;"/><br/>
         <b>Ori Marx</b><br/>
         <img src="https://img.shields.io/badge/🛠️_technical_lead-FF5733?style=flat-square"/>
