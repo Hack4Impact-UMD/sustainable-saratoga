@@ -110,7 +110,7 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <a href="www.linkedin.com/in/dennis-huynh-08138336a" target="_blank" rel="noreferrer noopener">
+      <a href="https://www.linkedin.com/in/dennis-huynh-08138336a" target="_blank" rel="noreferrer noopener">
         <img src="assets/team/huynh_dennis.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Dennis Huynh</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
