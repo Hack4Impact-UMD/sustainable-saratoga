@@ -78,6 +78,13 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
       </a>
     </td>
+    <td align="center" width="160">
+      <a href="https://www.linkedin.com/in/anunithaa/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/anunithaa-rajakumaresan.png" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <b>Anunithaa Rajakumaresan</b><br/>
+        <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
+      </a>
+    </td>
   </tr>
 </table>
 
