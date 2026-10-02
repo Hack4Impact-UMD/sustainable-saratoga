@@ -131,6 +131,6 @@ sustainable-saratoga/
 
 ## Points of Contact
 
-| Name     | Role      | Email                |
-| -------- | --------- | -------------------- |
-| Ori Marx | Tech Lead | orimarx@gmail.com    |
+| Name     | Role      | Email             |
+| -------- | --------- | ----------------- |
+| Ori Marx | Tech Lead | orimarx@gmail.com |
