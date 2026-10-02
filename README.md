@@ -111,6 +111,13 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
       </a>
     </td>
+    <td align="center" width="160">
+      <a href="https://www.linkedin.com/in/pari-gill/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/pari-gill.jpeg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Pari Gill</b><br/>
+        <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      </a>
+    </td>
   </tr>
 </table>
 
