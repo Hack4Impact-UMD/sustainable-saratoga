@@ -65,7 +65,7 @@ sustainable-saratoga/
 ## Meet the Team
 
 > [!NOTE]
-> **Onboarding task:** add yourself to this section. Place your photo in `assets/team/` (e.g. `firstname-lastname.jpg`), copy an existing entry for your role, and update the name, image path, and optional GitHub/LinkedIn link. Then add yourself to the Points of Contact table if you're a lead.
+> **Onboarding task:** add yourself to this section. After creating a (`[name]-readme`) branch, place your photo in `assets/team/` (e.g. `firstname-lastname.jpg`), copy an existing entry for your role, and update the name, image path, and optional GitHub/LinkedIn link. Then add yourself to the Points of Contact table if you're a lead. Lastly, create a PR with your changes! :)
 
 ### 🧭 Product Managers
 
