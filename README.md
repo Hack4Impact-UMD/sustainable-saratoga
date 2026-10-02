@@ -115,18 +115,14 @@ sustainable-saratoga/
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
-      <a href="https://www.linkedin.com/in/your-profile/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/engineer-2.jpg" style="height:110px; border-radius:10%;"/><br/>
-        <b>Engineer Name</b><br/>
-        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
-      </a>
+      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
+      <b>Engineer Name</b><br/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
-      <a href="https://github.com/your-username" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/engineer-3.jpg" style="height:110px; border-radius:10%;"/><br/>
-        <b>Engineer Name</b><br/>
-        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
-      </a>
+      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
+      <b>Engineer Name</b><br/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
   </tr>
 </table>
