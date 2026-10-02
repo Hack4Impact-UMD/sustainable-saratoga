@@ -124,6 +124,13 @@ sustainable-saratoga/
       <b>Engineer Name</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
+    <td align="center" width="160">
+    <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
+      <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
+      <b>Charu Mehta</b><br/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
+    </td>
   </tr>
 </table>
 
