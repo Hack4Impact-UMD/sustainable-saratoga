@@ -25,8 +25,8 @@ export default defineConfig({
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
-    // current pwa support is minimal: just precaches the app shell and static assets, registers a 
-    // service worker, and caches firebase-hosted images after first load (storage configuration to be implemented). 
+    // current pwa support is minimal: just precaches the app shell and static assets, registers a
+    // service worker, and caches firebase-hosted images after first load (storage configuration to be implemented).
     // offline record data and map tiles (general functionality) are not handled yet. */
     VitePWA({
       registerType: "autoUpdate",
@@ -37,7 +37,8 @@ export default defineConfig({
       manifest: {
         name: "Sustainable Saratoga Tree Tracker",
         short_name: "Tree Tracker",
-        description: "Mobile-friendly tree tracking for Sustainable Saratoga fieldwork.",
+        description:
+          "Mobile-friendly tree tracking for Sustainable Saratoga fieldwork.",
         theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
