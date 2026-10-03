@@ -72,9 +72,18 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/pm-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>PM Name</b><br/>
-      <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/arik-hasan/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/arik-hasan.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Arik Hasan</b><br/>
+        <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
+      </a>
+    </td>
+    <td align="center" width="160">
+      <a href="https://www.linkedin.com/in/anunithaa/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/anunithaa-rajakumaresan.png" style="height:110px; border-radius:10%;"/><br/>
+        <b>Anunithaa Rajakumaresan</b><br/>
+        <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
+      </a>
     </td>
   </tr>
 </table>
@@ -105,9 +114,18 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/designer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Designer Name</b><br/>
-      <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/christine-t-niu" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/christine_niu.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Christine Niu</b><br/>
+        <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      </a>
+    </td>
+    <td align="center" width="160">
+      <a href="https://www.linkedin.com/in/pari-gill/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/pari-gill.jpeg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Pari Gill</b><br/>
+        <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
+      </a>
     </td>
   </tr>
 </table>
@@ -119,10 +137,12 @@ sustainable-saratoga/
     <td align="center" width="160">
       <img src="assets/team/shakiraAliImage.jpg" style="height:110px; border-radius:10%;"/><br/>
       <b>Shakira Ali</b><br/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
+      <img src="https://github.com/l3mxny.png" style="height:110px; border-radius:10%;"/><br/>
       <b>Victoria Xiao</b><br/>
-      <img src="https://github.com/l3mxny"/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/dennis-huynh-08138336a" target="_blank" rel="noreferrer noopener">
@@ -131,6 +151,8 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
+  </tr>
+  <tr>
     <td align="center" width="160">
       <img src="assets/team/shreyas.png" style="height:110px; border-radius:10%;"/><br/>
       <b>Shreyas Thirumale</b><br/>
@@ -145,6 +167,13 @@ sustainable-saratoga/
       <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
       <b>Engineer Name</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+    </td>
+    <td align="center" width="160">
+    <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
+      <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
+      <b>Charu Mehta</b><br/>
+      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
     </td>
   </tr>
 </table>
