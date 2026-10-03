@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const projectId = process.env.VITE_FIREBASE_PROJECT_ID ?? "demo-vtf-template";
 const region = process.env.VITE_FUNCTIONS_REGION ?? "us-central1";
@@ -24,6 +25,49 @@ export default defineConfig({
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    // current pwa support is minimal: just precaches the app shell and static assets, registers a 
+    // service worker, and caches firebase-hosted images after first load (storage configuration to be implemented). 
+    // offline record data and map tiles (general functionality) are not handled yet. */
+    VitePWA({
+      registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+      },
+      includeAssets: ["favicon.svg"],
+      manifest: {
+        name: "Sustainable Saratoga Tree Tracker",
+        short_name: "Tree Tracker",
+        description: "Mobile-friendly tree tracking for Sustainable Saratoga fieldwork.",
+        theme_color: "#ffffff",
+        background_color: "#ffffff",
+        display: "standalone",
+        start_url: "/",
+        icons: [
+          {
+            src: "/favicon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "firebase-storage-images",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
+            },
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     // Mirrors the `paths` map in tsconfig.base.json, which is what the
