@@ -171,6 +171,24 @@ importers:
       vite-plugin-pwa:
         specifier: ^1.3.0
         version: 1.3.0(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
+      workbox-background-sync:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-core:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-expiration:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-precaching:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-routing:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-strategies:
+        specifier: ^7.4.1
+        version: 7.4.1
       workbox-window:
         specifier: ^7.4.1
         version: 7.4.1

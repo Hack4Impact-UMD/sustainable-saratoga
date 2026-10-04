@@ -53,7 +53,7 @@ export default defineConfig({
           name: "frontend",
           root: "packages/frontend",
           environment: "jsdom",
-          include: ["src/**/*.test.tsx"],
+          include: ["src/**/*.test.{ts,tsx}"],
           setupFiles: ["./src/test-setup.ts"],
         },
       },

@@ -6,6 +6,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import type { LinkProps } from "@tanstack/react-router";
+import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
 import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
@@ -53,6 +54,7 @@ function RootLayout() {
         ) : null}
       </header>
 
+      <SyncStatus />
       <Outlet />
     </div>
   );
