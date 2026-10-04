@@ -72,7 +72,7 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/pm-1.jpg" style="height:110px; border-radius:10%;"/><br/>
+      <img src="assets/team/VX.JPG" style="height:110px; border-radius:10%;"/><br/>
       <b>PM Name</b><br/>
       <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
     </td>
