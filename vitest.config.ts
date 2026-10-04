@@ -36,7 +36,19 @@ export default defineConfig({
         },
       },
       {
-        resolve: { alias },
+        resolve: {
+          alias: {
+            ...alias,
+            // Virtual module from vite-plugin-pwa, which only exists inside the
+            // Vite build. Tests mock it with `vi.mock`.
+            "virtual:pwa-register/react": fileURLToPath(
+              new URL(
+                "./packages/frontend/src/test/pwa-register-stub.ts",
+                import.meta.url,
+              ),
+            ),
+          },
+        },
         test: {
           name: "frontend",
           root: "packages/frontend",

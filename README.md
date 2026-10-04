@@ -62,6 +62,8 @@ sustainable-saratoga/
 
    This launches the Firebase emulators and the frontend dev server. See `firebase.json` for the emulator ports.
 
+   The service worker is disabled in development so the dev server never serves stale pages. To test PWA behavior locally, run `PWA_DEV=true pnpm dev`.
+
 ## Meet the Team
 
 > [!NOTE]

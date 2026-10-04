@@ -29,9 +29,13 @@ export default defineConfig({
     // service worker, and caches firebase-hosted images after first load (storage configuration to be implemented).
     // offline record data and map tiles (general functionality) are not handled yet. */
     VitePWA({
-      registerType: "autoUpdate",
+      // A new version waits until the user accepts the prompt in UpdatePrompt,
+      // so a deploy never reloads the page while a volunteer is mid-form.
+      registerType: "prompt",
       devOptions: {
-        enabled: true,
+        // Off by default so the dev server never serves stale pages. Run
+        // `PWA_DEV=true pnpm dev` to test service worker behavior locally.
+        enabled: process.env.PWA_DEV === "true",
       },
       includeAssets: ["favicon.svg"],
       manifest: {
