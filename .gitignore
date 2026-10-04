@@ -29,6 +29,7 @@ ui-debug.log
 .idea
 .DS_Store
 *.sw?
+*.code-workspace
 
 # Logs
 logs
