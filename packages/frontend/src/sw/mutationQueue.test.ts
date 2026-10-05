@@ -4,6 +4,7 @@ import { createTRPCClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
 import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
 import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type { RejectedSyncItem } from "@frontend/lib/offlineSync.ts";
 import {
   createReplayer,
   handleMutation,
@@ -92,22 +93,28 @@ function trpcError(status: number, message: string) {
 function setup(overrides: Partial<ReplayDeps> = {}) {
   const queue = new FakeQueue();
   const messages: SyncMessage[] = [];
+  const rejected: RejectedSyncItem[] = [];
   const deps: ReplayDeps = {
     fetch: vi.fn<(request: Request) => Promise<Response>>(offline),
     notify: (message) => {
       messages.push(message);
       return Promise.resolve();
     },
+    rememberRejected: (item) => {
+      rejected.push(item);
+      return Promise.resolve();
+    },
     currentUser: () => Promise.resolve(user("alice")),
     ...overrides,
   };
-  return { queue, messages, deps };
+  return { queue, messages, rejected, deps };
 }
 
 async function enqueue(queue: FakeQueue, request: Request) {
   await handleMutation(request, queue, {
     fetch: offline,
     notify: () => Promise.resolve(),
+    rememberRejected: () => Promise.resolve(),
   });
 }
 
@@ -260,7 +267,7 @@ describe("replayQueue", () => {
   });
 
   it("drops a write the server refuses and moves on", async () => {
-    const { queue, messages, deps } = setup({
+    const { queue, messages, rejected, deps } = setup({
       fetch: async (request) => {
         const body = (await request.json()) as { text: string };
         return body.text === "bad"
@@ -274,8 +281,20 @@ describe("replayQueue", () => {
     await replayQueue(queue, deps);
 
     expect(queue.entries).toHaveLength(0);
+    expect(rejected).toEqual([
+      expect.objectContaining({
+        path: "notes.add",
+        message: "Text is too long",
+      }),
+    ]);
     expect(messages).toEqual([
-      { type: "sync-rejected", path: "notes.add", message: "Text is too long" },
+      {
+        type: "sync-rejected",
+        item: expect.objectContaining({
+          path: "notes.add",
+          message: "Text is too long",
+        }),
+      },
       { type: "sync-replayed", count: 1 },
       { type: "sync-status", pending: 0 },
     ]);
