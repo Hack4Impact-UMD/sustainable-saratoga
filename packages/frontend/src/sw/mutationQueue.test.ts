@@ -3,8 +3,10 @@ import type { AppRouter } from "@repo/backend";
 import { createTRPCClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
 import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
-import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
-import type { RejectedSyncItem } from "@frontend/lib/offlineSync.ts";
+import type {
+  RejectedSyncItem,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
 import {
   createReplayer,
   handleMutation,
@@ -62,10 +64,12 @@ function mutation(path: string, input: unknown, uid?: string) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      ...(uid ? {
-        authorization: `Bearer ${idToken(uid)}`,
-        "x-queue-owner": uid,
-      } : {}),
+      ...(uid
+        ? {
+            authorization: `Bearer ${idToken(uid)}`,
+            "x-queue-owner": uid,
+          }
+        : {}),
     },
     body: JSON.stringify(input),
   });
@@ -393,7 +397,7 @@ describe("createReplayer", () => {
   it("re-reads auth between queued writes in one run", async () => {
     let signedIn: QueueUser | null = user("alice");
     const { queue, deps } = setup({
-      fetch: vi.fn<(request: Request) => Promise<Response>>(async () => {
+      fetch: vi.fn<(request: Request) => Promise<Response>>(() => {
         signedIn = null;
         return succeed();
       }),

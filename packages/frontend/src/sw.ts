@@ -88,11 +88,12 @@ const queue = new Queue(MUTATION_QUEUE_NAME, {
 
 registerRoute(
   ({ url, request }) => isMutationRequest(url, request, self.location.origin),
-  ({ request }) => handleMutation(request, queue, {
-    fetch: send,
-    notify,
-    rememberRejected,
-  }),
+  ({ request }) =>
+    handleMutation(request, queue, {
+      fetch: send,
+      notify,
+      rememberRejected,
+    }),
   "POST",
 );
 
@@ -125,15 +126,21 @@ async function replayFromPage() {
 
 async function rememberRejected(item: RejectedSyncItem) {
   const db = await openRejectedDb();
-  await requestToPromise(db.transaction(REJECTED_STORE, "readwrite")
-    .objectStore(REJECTED_STORE)
-    .put(item));
+  await requestToPromise(
+    db
+      .transaction(REJECTED_STORE, "readwrite")
+      .objectStore(REJECTED_STORE)
+      .put(item),
+  );
 }
 
 async function listRejected(): Promise<RejectedSyncItem[]> {
   const db = await openRejectedDb();
   const items = await requestToPromise(
-    db.transaction(REJECTED_STORE, "readonly").objectStore(REJECTED_STORE).getAll(),
+    db
+      .transaction(REJECTED_STORE, "readonly")
+      .objectStore(REJECTED_STORE)
+      .getAll(),
   );
   return [...items].sort((a, b) => a.createdAt - b.createdAt);
 }
@@ -141,7 +148,10 @@ async function listRejected(): Promise<RejectedSyncItem[]> {
 async function dismissRejected(id: string) {
   const db = await openRejectedDb();
   await requestToPromise(
-    db.transaction(REJECTED_STORE, "readwrite").objectStore(REJECTED_STORE).delete(id),
+    db
+      .transaction(REJECTED_STORE, "readwrite")
+      .objectStore(REJECTED_STORE)
+      .delete(id),
   );
 }
 
@@ -166,7 +176,9 @@ function requestToPromise<T>(request: IDBRequest<T>) {
   });
 }
 
-async function sendRejectedHistory(source: Client | ServiceWorker | MessagePort | null) {
+async function sendRejectedHistory(
+  source: Client | ServiceWorker | MessagePort | null,
+) {
   if (!(source instanceof Client)) return;
   source.postMessage({
     type: "sync-rejected-history",

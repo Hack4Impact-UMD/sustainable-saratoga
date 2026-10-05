@@ -162,11 +162,12 @@ describe("SyncStatus", () => {
       ],
     });
 
-    expect(screen.getAllByTestId("sync-rejected").map((item) => item.textContent))
-      .toEqual([
-        expect.stringContaining("First"),
-        expect.stringContaining("Second"),
-      ]);
+    expect(
+      screen.getAllByTestId("sync-rejected").map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining("First"),
+      expect.stringContaining("Second"),
+    ]);
   });
 
   it("asks for a replay when someone signs in", () => {
