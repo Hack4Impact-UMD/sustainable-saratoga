@@ -101,24 +101,27 @@ export async function handleMutation(
 /**
  * Wraps `replayQueue` so overlapping triggers (a sync event, a page coming
  * back online, service worker startup) share one run instead of racing.
- * Each run reads who is signed in afresh, the first time it needs to.
+ * Each user lookup opens a fresh auth session, so sign-out or account changes
+ * during a long replay are seen before the next queued write is sent.
  */
 export function createReplayer({ openSession, ...deps }: ReplayerDeps) {
   let running: Promise<void> | null = null;
 
   async function run(queue: MutationQueue) {
-    let session: Promise<AuthSession> | null = null;
     try {
       await replayQueue(queue, {
         ...deps,
         currentUser: async () => {
-          const { user } = await (session ??= openSession());
-          return user;
+          const session = await openSession();
+          try {
+            return session.user;
+          } finally {
+            await session.close();
+          }
         },
       });
     } finally {
       running = null;
-      if (session) await closeSession(session);
     }
   }
 
@@ -250,15 +253,6 @@ export function uidFromAuthorization(header: string | null): string | null {
       : null;
   } catch {
     return null;
-  }
-}
-
-async function closeSession(session: Promise<AuthSession>) {
-  try {
-    const { close } = await session;
-    await close();
-  } catch {
-    // Opening it failed, and replayQueue already rethrew that.
   }
 }
 

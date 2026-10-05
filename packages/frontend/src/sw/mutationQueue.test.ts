@@ -361,6 +361,7 @@ describe("createReplayer", () => {
 
     expect(deps.fetch).toHaveBeenCalledOnce();
     expect(opened).toHaveLength(1);
+    expect(opened[0]?.closed).toBe(true);
   });
 
   it("reads who is signed in afresh on every run", async () => {
@@ -381,6 +382,26 @@ describe("createReplayer", () => {
     await replay(queue);
     expect(deps.fetch).toHaveBeenCalledOnce();
 
+    expect(opened).toHaveLength(2);
+    expect(opened.every((session) => session.closed)).toBe(true);
+  });
+
+  it("re-reads auth between queued writes in one run", async () => {
+    let signedIn: QueueUser | null = user("alice");
+    const { queue, deps } = setup({
+      fetch: vi.fn<(request: Request) => Promise<Response>>(async () => {
+        signedIn = null;
+        return succeed();
+      }),
+    });
+    const { opened, openSession } = sessions(() => signedIn);
+    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("notes.add", { text: "two" }, "alice"));
+
+    await createReplayer({ ...deps, openSession })(queue);
+
+    expect(deps.fetch).toHaveBeenCalledOnce();
+    expect(queue.entries).toHaveLength(1);
     expect(opened).toHaveLength(2);
     expect(opened.every((session) => session.closed)).toBe(true);
   });
