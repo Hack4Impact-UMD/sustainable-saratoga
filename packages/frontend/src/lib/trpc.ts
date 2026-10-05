@@ -27,8 +27,12 @@ export const queryClient = new QueryClient({
 const url = "/api/trpc";
 
 async function headers() {
-  const token = await auth.currentUser?.getIdToken();
-  return token ? { authorization: `Bearer ${token}` } : {};
+  const user = auth.currentUser;
+  const token = await user?.getIdToken();
+  return {
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
+    ...(user?.uid ? { "x-queue-owner": user.uid } : {}),
+  };
 }
 
 const client = createTRPCClient<AppRouter>({

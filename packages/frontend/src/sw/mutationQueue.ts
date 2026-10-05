@@ -4,6 +4,9 @@ import type {
   SyncMessage,
 } from "@frontend/lib/offlineSync.ts";
 
+const TRPC_PREFIX = "/api/trpc/";
+const QUEUE_OWNER_HEADER = "x-queue-owner";
+
 /**
  * Queues tRPC mutations that fail because the device is offline, then sends
  * them again once it is back online.
@@ -17,8 +20,6 @@ import type {
  *
  * Service worker APIs are passed in, so this module runs under Vitest.
  */
-
-const TRPC_PREFIX = "/api/trpc/";
 
 export type MutationQueue = Pick<
   Queue,
@@ -86,11 +87,12 @@ export async function handleMutation(
   } catch {
     const url = new URL(request.url);
     const metadata: EntryMetadata = {
-      uid: uidFromAuthorization(backup.headers.get("authorization")),
+      uid: ownerFromHeader(backup.headers.get(QUEUE_OWNER_HEADER)),
       path: procedurePath(url),
     };
     const stored = new Request(backup);
     stored.headers.delete("authorization");
+    stored.headers.delete(QUEUE_OWNER_HEADER);
 
     await queue.pushRequest({ request: stored, metadata: { ...metadata } });
     await deps.notify({ type: "sync-status", pending: await queue.size() });
@@ -160,6 +162,7 @@ export async function replayQueue(
       let response: Response;
       try {
         const request = new Request(entry.request.clone());
+        request.headers.delete(QUEUE_OWNER_HEADER);
         if (user) {
           request.headers.set(
             "authorization",
@@ -231,29 +234,12 @@ export function queuedResponse(url: URL): Response {
 }
 
 /**
- * Reads the uid from a Firebase ID token without verifying it. That is fine
- * here: it only decides whose session a queued write waits for, and the server
- * verifies the fresh token sent with the replay.
+ * Reads the queued-write owner from a page-provided header. This is only local
+ * routing metadata for replay; the backend still verifies the fresh token sent
+ * with the replayed request.
  */
-export function uidFromAuthorization(header: string | null): string | null {
-  const payload = header?.startsWith("Bearer ")
-    ? header.slice("Bearer ".length).split(".")[1]
-    : undefined;
-  if (!payload) return null;
-
-  try {
-    const claims: unknown = JSON.parse(
-      atob(payload.replaceAll("-", "+").replaceAll("_", "/")),
-    );
-    return typeof claims === "object" &&
-      claims !== null &&
-      "sub" in claims &&
-      typeof claims.sub === "string"
-      ? claims.sub
-      : null;
-  } catch {
-    return null;
-  }
+export function ownerFromHeader(header: string | null): string | null {
+  return typeof header === "string" && header.length > 0 ? header : null;
 }
 
 /** Offline, rate limited, or a server/auth hiccup: worth trying again. */

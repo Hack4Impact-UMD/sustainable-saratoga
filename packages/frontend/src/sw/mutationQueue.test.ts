@@ -9,9 +9,9 @@ import {
   createReplayer,
   handleMutation,
   isMutationRequest,
+  ownerFromHeader,
   queuedResponse,
   replayQueue,
-  uidFromAuthorization,
 } from "@frontend/sw/mutationQueue.ts";
 import type {
   MutationQueue,
@@ -62,7 +62,10 @@ function mutation(path: string, input: unknown, uid?: string) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      ...(uid ? { authorization: `Bearer ${idToken(uid)}` } : {}),
+      ...(uid ? {
+        authorization: `Bearer ${idToken(uid)}`,
+        "x-queue-owner": uid,
+      } : {}),
     },
     body: JSON.stringify(input),
   });
@@ -160,6 +163,7 @@ describe("handleMutation", () => {
     const [entry] = queue.entries;
     expect(entry?.metadata).toEqual({ uid: "alice", path: "notes.add" });
     expect(entry?.request.headers.has("authorization")).toBe(false);
+    expect(entry?.request.headers.has("x-queue-owner")).toBe(false);
     expect(await entry?.request.json()).toEqual({ text: "hi" });
     expect(messages).toEqual([{ type: "sync-status", pending: 1 }]);
   });
@@ -428,15 +432,13 @@ describe("createReplayer", () => {
   });
 });
 
-describe("uidFromAuthorization", () => {
-  it("reads the subject of a bearer token", () => {
-    expect(uidFromAuthorization(`Bearer ${idToken("alice")}`)).toBe("alice");
+describe("ownerFromHeader", () => {
+  it("reads the queued owner from a header", () => {
+    expect(ownerFromHeader("alice")).toBe("alice");
   });
 
-  it("returns null for anything else", () => {
-    expect(uidFromAuthorization(null)).toBeNull();
-    expect(uidFromAuthorization("Basic abc")).toBeNull();
-    expect(uidFromAuthorization("Bearer not-a-jwt")).toBeNull();
-    expect(uidFromAuthorization("Bearer a.%%%.c")).toBeNull();
+  it("returns null for missing or empty values", () => {
+    expect(ownerFromHeader(null)).toBeNull();
+    expect(ownerFromHeader("")).toBeNull();
   });
 });
