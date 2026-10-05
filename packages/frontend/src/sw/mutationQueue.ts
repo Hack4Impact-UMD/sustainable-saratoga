@@ -1,5 +1,8 @@
 import type { Queue } from "workbox-background-sync";
-import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type {
+  RejectedSyncItem,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
 
 /**
  * Queues tRPC mutations that fail because the device is offline, then sends
@@ -34,6 +37,7 @@ export interface QueueUser {
 export interface MutationQueueDeps {
   fetch: (request: Request) => Promise<Response>;
   notify: (message: SyncMessage) => Promise<void>;
+  rememberRejected: (item: RejectedSyncItem) => Promise<void>;
 }
 
 export interface ReplayDeps extends MutationQueueDeps {
@@ -173,10 +177,16 @@ export async function replayQueue(
           `Replaying ${path} failed with HTTP ${response.status}. Retrying later.`,
         );
       } else {
-        await deps.notify({
-          type: "sync-rejected",
+        const item: RejectedSyncItem = {
+          id: crypto.randomUUID(),
           path,
           message: await errorMessage(response),
+          createdAt: Date.now(),
+        };
+        await deps.rememberRejected(item);
+        await deps.notify({
+          type: "sync-rejected",
+          item,
         });
       }
     }

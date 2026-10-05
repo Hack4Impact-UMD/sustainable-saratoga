@@ -1,6 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import type { SyncCommand, SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type { Dispatch, SetStateAction } from "react";
+import type {
+  RejectedSyncItem,
+  SyncCommand,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 
 /**
@@ -14,9 +19,7 @@ export function SyncStatus() {
   const queryClient = useQueryClient();
   const uid = useAuth().user?.uid;
   const [pending, setPending] = useState(0);
-  const [rejected, setRejected] = useState<
-    { id: number; path: string; message: string }[]
-  >([]);
+  const [rejected, setRejected] = useState<RejectedSyncItem[]>([]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -33,16 +36,17 @@ export function SyncStatus() {
           void queryClient.invalidateQueries();
           break;
         case "sync-rejected":
-          setRejected((current) => [
-            ...current,
-            { id: Date.now(), path: message.path, message: message.message },
-          ]);
+          setRejected((current) => appendRejected(current, message.item));
+          break;
+        case "sync-rejected-history":
+          setRejected((current) => mergeRejected(current, message.items));
           break;
       }
     };
 
     container.addEventListener("message", onMessage);
     container.startMessages();
+    requestRejectedHistory();
     window.addEventListener("online", requestReplay);
 
     return () => {
@@ -81,9 +85,7 @@ export function SyncStatus() {
           </p>
           <button
             type="button"
-            onClick={() =>
-              setRejected((current) => current.filter((r) => r !== item))
-            }
+            onClick={() => dismissRejected(item.id, setRejected)}
             className="shrink-0 underline"
           >
             Dismiss
@@ -100,4 +102,33 @@ function requestReplay() {
   navigator.serviceWorker.controller?.postMessage({
     type: "replay-queue",
   } satisfies SyncCommand);
+}
+
+function requestRejectedHistory() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.controller?.postMessage({
+    type: "get-rejected-history",
+  } satisfies SyncCommand);
+}
+
+function dismissRejected(
+  id: string,
+  setRejected: Dispatch<SetStateAction<RejectedSyncItem[]>>,
+) {
+  setRejected((current) => current.filter((item) => item.id !== id));
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.controller?.postMessage({
+    type: "dismiss-rejected",
+    id,
+  } satisfies SyncCommand);
+}
+
+function appendRejected(current: RejectedSyncItem[], item: RejectedSyncItem) {
+  return current.some((existing) => existing.id === item.id)
+    ? current
+    : [...current, item];
+}
+
+function mergeRejected(current: RejectedSyncItem[], items: RejectedSyncItem[]) {
+  return items.reduce(appendRejected, current);
 }
