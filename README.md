@@ -9,7 +9,7 @@ The Tree Tracker replaces Fulcrum, the committee's current (and no longer mainta
 - **Tree records:** species, cultivar, condition, measurements, pruning history, planting date, photos, homeowner contact info, location type (public vs. private), and assignment to committee members
 - **Planting workflow:** track requests through an approval pipeline (requested → approved → planted / not planted), including city approval and utility clearance
 - **Mapping:** pin exact planting locations and filter the map by status, year, species, and activity type
-- **Field use:** add and update records from a mobile device (offline support is being explored)
+- **Field use:** add and update records from a mobile device, with offline write queueing for supported mutations; offline reads and map tiles are not yet supported
 - **Filtering:** filter by any data field, with saved filter presets and default views based on volunteer role (planting vs. pruning)
 - **Export:** export tree lists and maps for city reporting and pre-event planning
 - **Admin tools:** configure fields, manage pick lists, and manage user accounts

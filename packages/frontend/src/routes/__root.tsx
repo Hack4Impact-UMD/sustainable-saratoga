@@ -36,7 +36,7 @@ function RootLayout() {
     <div className="mx-auto max-w-2xl px-6 py-12">
       <header className="mb-8 flex flex-wrap items-center gap-4">
         <h1 className="mr-auto text-lg font-semibold">
-          Vite + tRPC + Firebase
+          Sustainable Saratoga Tree Tracker
         </h1>
         <nav className="flex gap-4 text-sm">
           <NavLink to="/">Home</NavLink>

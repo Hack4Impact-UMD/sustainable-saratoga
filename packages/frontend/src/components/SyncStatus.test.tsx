@@ -141,6 +141,34 @@ describe("SyncStatus", () => {
     );
   });
 
+  it("shows remembered refused writes in creation order", () => {
+    renderStatus();
+
+    container.send({
+      type: "sync-rejected-history",
+      items: [
+        {
+          id: "r2",
+          path: "notes.add",
+          message: "Second",
+          createdAt: 2,
+        },
+        {
+          id: "r1",
+          path: "notes.add",
+          message: "First",
+          createdAt: 1,
+        },
+      ],
+    });
+
+    expect(screen.getAllByTestId("sync-rejected").map((item) => item.textContent))
+      .toEqual([
+        expect.stringContaining("First"),
+        expect.stringContaining("Second"),
+      ]);
+  });
+
   it("asks for a replay when someone signs in", () => {
     const { rerender } = renderStatus();
     container.controller.postMessage.mockClear();

@@ -124,11 +124,14 @@ function dismissRejected(
 }
 
 function appendRejected(current: RejectedSyncItem[], item: RejectedSyncItem) {
-  return current.some((existing) => existing.id === item.id)
-    ? current
-    : [...current, item];
+  if (current.some((existing) => existing.id === item.id)) return current;
+  return sortRejected([...current, item]);
 }
 
 function mergeRejected(current: RejectedSyncItem[], items: RejectedSyncItem[]) {
-  return items.reduce(appendRejected, current);
+  return sortRejected(items.reduce(appendRejected, current));
+}
+
+function sortRejected(items: RejectedSyncItem[]) {
+  return [...items].sort((left, right) => left.createdAt - right.createdAt);
 }
