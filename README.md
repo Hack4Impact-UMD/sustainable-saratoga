@@ -78,14 +78,14 @@ sustainable-saratoga/
   <tr>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/arik-hasan/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/arik-hasan.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/arik-hasan.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Arik Hasan</b><br/>
         <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/anunithaa/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/anunithaa-rajakumaresan.png" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/anunithaa-rajakumaresan.png" style="height:110px; border-radius:10%;"/><br/>
         <b>Anunithaa Rajakumaresan</b><br/>
         <img src="https://img.shields.io/badge/👩‍💼_product_manager-007ACC?style=flat-square"/>
       </a>
@@ -99,14 +99,14 @@ sustainable-saratoga/
   <tr>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/orimarx/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/ori-marx.png" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/ori-marx.png" style="height:110px; border-radius:10%;"/><br/>
         <b>Ori Marx</b><br/>
         <img src="https://img.shields.io/badge/🛠️_technical_lead-FF5733?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
       <a href="https://github.com/om-arya" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/om-arya.jpeg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/om-arya.jpeg" style="height:110px; border-radius:10%;"/><br/>
         <b>Om Arya</b><br/>
         <img src="https://img.shields.io/badge/🛠️_technical_lead-FF5733?style=flat-square"/>
       </a>
@@ -120,14 +120,14 @@ sustainable-saratoga/
   <tr>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/christine-t-niu" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/christine_niu.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/christine_niu.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Christine Niu</b><br/>
         <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/pari-gill/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/pari-gill.jpeg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/pari-gill.jpeg" style="height:110px; border-radius:10%;"/><br/>
         <b>Pari Gill</b><br/>
         <img src="https://img.shields.io/badge/🎨_designer-9B59B6?style=flat-square"/>
       </a>
@@ -140,26 +140,26 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/shakiraAliImage.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+      <img src="assets/team/shakiraAliImage.jpg" style="height:110px; border-radius:10%;"/><br/>
       <b>Shakira Ali</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/victoria-xiao-449844270/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/Victoria.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/Victoria.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Victoria Xiao</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/dennis-huynh-08138336a" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/huynh_dennis.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/huynh_dennis.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Dennis Huynh</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
-      <img src="assets/team/shreyas.png" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+      <img src="assets/team/shreyas.png" style="height:110px; border-radius:10%;"/><br/>
       <b>Shreyas Thirumale</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
@@ -167,18 +167,18 @@ sustainable-saratoga/
   <tr>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
-        <img src="assets/team/charu-mehta.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+        <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Charu Mehta</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
     <td align="center" width="160">
-      <img src="assets/team/engineer-1.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
       <b>Engineer Name</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
-      <img src="assets/team/engineer-1.jpg" style="width:110px; height:110px; object-fit:cover; border-radius:10%;"/><br/>
+      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
       <b>Engineer Name</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
