@@ -25,13 +25,22 @@ export default defineConfig({
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
-    // current pwa support is minimal: just precaches the app shell and static assets, registers a
-    // service worker, and caches firebase-hosted images after first load (storage configuration to be implemented).
-    // offline record data and map tiles (general functionality) are not handled yet. */
+    // The service worker is our own src/sw.ts: it precaches the app shell,
+    // caches Storage images, and queues writes made offline with Workbox
+    // Background Sync. Offline reads and map tiles are not handled yet.
     VitePWA({
-      registerType: "autoUpdate",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
+      // A new version waits until the user accepts the prompt in UpdatePrompt,
+      // so a deploy never reloads the page while a volunteer is mid-form.
+      registerType: "prompt",
       devOptions: {
-        enabled: true,
+        // Off by default so the dev server never serves stale pages. Run
+        // `PWA_DEV=true pnpm dev` to test service worker behavior locally.
+        enabled: process.env.PWA_DEV === "true",
+        // Vite serves src/sw.ts unbundled in dev, as an ES module.
+        type: "module",
       },
       includeAssets: ["favicon.svg"],
       manifest: {
@@ -52,21 +61,8 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "firebase-storage-images",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-            },
-          },
-        ],
       },
     }),
   ],

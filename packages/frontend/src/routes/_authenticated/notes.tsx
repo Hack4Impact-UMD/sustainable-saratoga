@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "@frontend/components/Section.tsx";
+import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 
@@ -27,6 +28,11 @@ function Notes() {
         await queryClient.invalidateQueries({
           queryKey: trpc.notes.list.queryKey(),
         });
+      },
+      onError: (error) => {
+        // The service worker kept it and will send it later (SyncStatus
+        // shows it as pending), so clear the form as if it were saved.
+        if (isQueuedOffline(error)) setText("");
       },
     }),
   );
