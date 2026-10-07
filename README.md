@@ -158,13 +158,13 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
+  </tr>
+  <tr>
     <td align="center" width="160">
       <img src="assets/team/shreyas.png" style="height:110px; border-radius:10%;"/><br/>
       <b>Shreyas Thirumale</b><br/>
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
-  </tr>
-  <tr>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
         <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
@@ -178,11 +178,6 @@ sustainable-saratoga/
         <b>Neel Mokaria</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
-    </td>
-    <td align="center" width="160">
-      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Engineer Name</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
   </tr>
 </table>
