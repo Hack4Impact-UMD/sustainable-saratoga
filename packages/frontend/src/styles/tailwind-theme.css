@@ -1,0 +1,132 @@
+/* =============================================================================
+   Tree Tracker — Tailwind v4 theme mapping
+   -----------------------------------------------------------------------------
+   Turns the tokens in tokens.css into Tailwind utilities (bg-surface,
+   text-muted, rounded-pill, shadow-1 …). It holds NO values of its own —
+   every entry points at a token, so tokens.css stays the only place to change
+   a value.
+
+   `reference` = generate utilities only; don't write these variables into the
+   page. That avoids name clashes where a token already uses Tailwind's naming
+   (e.g. --color-primary, --radius-sm).
+
+   Tailwind's default colour palette, font sizes, radii and shadows are
+   switched off (`initial`), so off-system classes such as bg-red-500, text-sm
+   or rounded-xl don't compile. Spacing and breakpoints keep Tailwind's
+   defaults: p-1…p-8 already equal --space-1…--space-8.
+   ========================================================================== */
+
+@theme reference {
+  /* ---------------------------------------------------------------- Colours */
+  --color-*: initial;
+
+  /* brand            → bg-primary, text-primary, border-primary … */
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-pressed: var(--color-primary-pressed);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+
+  /* text             → text-heading, text-body, text-muted, text-disabled, text-on-primary */
+  --color-heading: var(--color-heading);
+  --color-body: var(--color-text);
+  --color-muted: var(--color-text-muted);
+  --color-disabled: var(--color-text-disabled);
+  --color-on-primary: var(--color-text-on-primary);
+
+  /* icons            → text-icon-primary, text-icon-secondary */
+  --color-icon-primary: var(--color-icon-primary);
+  --color-icon-secondary: var(--color-icon-secondary);
+
+  /* backgrounds      → bg-page, bg-surface, bg-hover, bg-pressed, bg-selected, bg-attention,
+                        bg-info-tint, bg-error-tint, bg-disabled-fill */
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-hover: var(--bg-hover);
+  --color-pressed: var(--bg-pressed);
+  --color-selected: var(--bg-selected);
+  --color-attention: var(--bg-attention);
+  --color-info-tint: var(--bg-info);
+  --color-error-tint: var(--bg-error);
+  --color-disabled-fill: var(--bg-disabled);
+
+  /* lines            → border-line, border-line-strong, border-line-subtle, border-divider,
+                        border-focus, border-line-info / -warning / -success / -error */
+  --color-line: var(--color-border);
+  --color-line-strong: var(--color-border-strong);
+  --color-line-subtle: var(--color-border-subtle);
+  --color-divider: var(--color-divider);
+  --color-focus: var(--color-focus);
+  --color-line-info: var(--color-border-info);
+  --color-line-warning: var(--color-border-warning);
+  --color-line-success: var(--color-border-success);
+  --color-line-error: var(--color-border-error);
+
+  /* feedback text    → text-success, text-warning, text-error, text-info */
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+
+  /* status           → bg-status-requested-tint, text-status-requested-text, border-status-requested … */
+  --color-status-requested: var(--status-requested);
+  --color-status-requested-tint: var(--status-requested-tint);
+  --color-status-requested-text: var(--status-requested-text);
+  --color-status-possible: var(--status-possible);
+  --color-status-possible-tint: var(--status-possible-tint);
+  --color-status-possible-text: var(--status-possible-text);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-tint: var(--status-approved-tint);
+  --color-status-approved-text: var(--status-approved-text);
+  --color-status-approved-ring: var(--status-approved-ring);
+  --color-status-approved-glyph: var(--status-approved-glyph);
+  --color-status-planted: var(--status-planted);
+  --color-status-planted-tint: var(--status-planted-tint);
+  --color-status-planted-text: var(--status-planted-text);
+
+  /* map basemap      → bg-map-land, fill-map-park … (only if we style our own map) */
+  --color-map-land: var(--map-land);
+  --color-map-park: var(--map-park);
+  --color-map-water: var(--map-water);
+  --color-map-road: var(--map-road);
+  --color-map-casing: var(--map-casing);
+  --color-map-major: var(--map-major);
+  --color-map-major-casing: var(--map-major-casing);
+  --color-map-block: var(--map-block);
+  --color-map-label: var(--map-label);
+  --color-map-park-label: var(--map-park-label);
+
+  /* ------------------------------------------------------------ Font family
+     Font size/weight/colour come from the .type-* classes in global.css,
+     so Tailwind's text-* sizes are switched off.                          */
+  --font-*: initial;
+  --text-*: initial;
+  --font-display: var(--font-display);   /* font-display */
+  --font-sans: var(--font-sans);         /* font-sans */
+
+  /* ----------------------------------------------------------------- Radius */
+  --radius-*: initial;
+  --radius-sm: var(--radius-sm);         /* rounded-sm      6px */
+  --radius-input: var(--radius-input);   /* rounded-input   8px */
+  --radius-md: var(--radius-md);         /* rounded-md     12px */
+  --radius-lg: var(--radius-lg);         /* rounded-t-lg   20px (sheet) */
+  --radius-pill: var(--radius-pill);     /* rounded-pill */
+
+  /* ---------------------------------------------------------------- Shadows */
+  --shadow-*: initial;
+  --shadow-1: var(--shadow-1);                       /* shadow-1 */
+  --shadow-2: var(--shadow-2);                       /* shadow-2 */
+  --shadow-sheet: var(--shadow-sheet);               /* shadow-sheet */
+  --shadow-focus: var(--focus-ring);                 /* focus-visible:shadow-focus */
+  --shadow-pin: var(--shadow-pin);                   /* shadow-pin (map pin, cluster) */
+  --shadow-pin-selected: var(--pin-selected-glow);   /* shadow-pin-selected */
+  --shadow-field-focus: var(--field-focus-halo);     /* focus:shadow-field-focus */
+  --shadow-row-focus: var(--row-focus-ring);         /* focus-visible:shadow-row-focus */
+  --shadow-row-selected: var(--row-selected-bar);    /* shadow-row-selected */
+
+  /* ------------------------------------------------- Named sizes (spacing)
+     Numeric spacing stays Tailwind's 4px scale (= --space-*).              */
+  --spacing-touch: var(--touch-min);       /* min-h-touch, size-touch  44px */
+  --spacing-control: var(--control-h);     /* h-control                48px */
+  --spacing-margin: var(--layout-margin);  /* px-margin                16px */
+}

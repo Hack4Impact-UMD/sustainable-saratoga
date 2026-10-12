@@ -1,0 +1,80 @@
+/* =============================================================================
+   Tree Tracker — global defaults + typography
+   -----------------------------------------------------------------------------
+   Kept deliberately small. Tailwind's Preflight already handles the CSS reset,
+   so this file only adds what Preflight doesn't: app-wide defaults, a visible
+   focus style, reduced motion, and the typography classes.
+
+   Everything is inside cascade layers, so any component style or Tailwind
+   utility overrides it without !important or specificity fights.
+   ========================================================================== */
+
+@layer base {
+  html {
+    color-scheme: light;               /* only a light theme is defined */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg-page);
+    color: var(--color-text);
+    font: var(--type-body);            /* 16px — form fields inherit it, so iOS won't zoom on focus */
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Visible keyboard focus everywhere by default. Uses outline (not box-shadow)
+     so it survives Windows high-contrast mode and never clobbers a component's
+     own shadow. Components that need the exact Figma ring (2px white + 2px blue)
+     can switch to box-shadow: var(--focus-ring) — see COMPONENT_SPECS.md. */
+  :focus-visible {
+    outline: var(--border-width-focus) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Typography — one class per Figma text style. Each class sets font AND colour
+   together, as the style guide requires: use the class, don't set size, weight
+   or colour by hand. Override colour with a utility only for a documented state
+   (e.g. disabled, or error text on a tint).
+
+   Figma "Type/h1" → .type-h1, "Type/btn-primary" → .type-btn-primary, etc.
+   The type- prefix keeps these from colliding with component class names.
+   -------------------------------------------------------------------------- */
+@layer components {
+  .type-h1            { font: var(--type-h1);            color: var(--color-heading); }
+  .type-h2            { font: var(--type-h2);            color: var(--color-heading); }
+  .type-h3            { font: var(--type-h3);            color: var(--color-heading); }
+  .type-h4            { font: var(--type-h4);            color: var(--color-heading); }
+  .type-body          { font: var(--type-body);          color: var(--color-text); }
+  .type-body-sm       { font: var(--type-body-sm);       color: var(--color-text); }
+  .type-body-strong   { font: var(--type-body-strong);   color: var(--color-text); }
+  .type-supporting    { font: var(--type-supporting);    color: var(--color-text-muted); }
+  .type-btn-primary   { font: var(--type-btn-primary);   color: var(--color-text-on-primary); }
+  .type-btn-secondary { font: var(--type-btn-secondary); color: var(--color-primary); }
+  .type-control       { font: var(--type-control);       color: var(--color-primary); }
+  .type-chip          { font: var(--type-chip);          color: var(--color-text); }
+  .type-caption       { font: var(--type-caption);       color: var(--color-text-muted); }
+  .type-link          { font: var(--type-link);          color: var(--color-primary); text-decoration: underline; }
+  .type-error         { font: var(--type-error);         color: var(--color-error); }
+
+  /* Colour comes from the status (or context), so these set the font only:
+     badge → --status-*-text (count badge: --color-primary);
+     marker letters → the status glyph colour (see COMPONENT_SPECS.md). */
+  .type-badge         { font: var(--type-badge); }
+  .type-marker-20     { font: var(--type-marker-20); }
+  .type-marker-24     { font: var(--type-marker-24); }
+  .type-marker-32     { font: var(--type-marker-32); }
+  .type-marker-44     { font: var(--type-marker-44); }
+}

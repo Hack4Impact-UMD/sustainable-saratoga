@@ -1,0 +1,252 @@
+/* =============================================================================
+   Tree Tracker — design tokens
+   -----------------------------------------------------------------------------
+   Single source of truth for shared design values. Plain CSS custom properties,
+   so they work in Tailwind, CSS Modules, inline styles and plain CSS alike.
+
+   Source: Figma file "Tree Tracker", variable collection "Tree Tracker tokens"
+   (mode: Light), text styles "Type/*" and effect styles "Shadow/*", "State/*".
+   Every name below is the variable's Figma code-syntax name, so Figma Dev Mode
+   and this file always show the same name. Figma path is noted per group.
+
+   Aliases: some tokens are set to var(--other-token). Same value, separate
+   name for the role (e.g. --status-planted = --color-primary). They mirror
+   the variable aliases in Figma; change the source token, never the alias.
+
+   Rules
+   - Do not edit values here without updating Figma (and vice versa).
+   - Owned by design + one frontend maintainer. Propose additions in a PR.
+   - Not in a cascade layer on purpose: these must win over Tailwind's
+     built-in theme values that share a name (e.g. --radius-sm).
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------- Brand
+     Figma: color/*                                                         */
+  --color-primary: #186233;          /* actions, active, selected accent */
+  --color-primary-hover: #134f29;
+  --color-primary-pressed: #0e3d20;
+  --color-secondary: #8daa58;        /* moss — approved / park accents */
+  --color-accent: #9fbf71;           /* leaf — decorative only, never text */
+
+  /* ---------------------------------------------------------- Text + icons
+     Figma: text/*, icon/*                                                  */
+  --color-heading: var(--color-text);          /* 14.4:1 on white */
+  --color-text: #282a2b;
+  --color-text-muted: #474e4a;       /* 8.5:1 on white */
+  --color-text-disabled: #8a918b;    /* disabled controls only (exempt from contrast) */
+  --color-text-on-primary: var(--bg-surface);
+  --color-icon-primary: var(--color-text-muted);     /* menu, search, filter, close, eye */
+  --color-icon-secondary: #9ca3af;   /* row chevrons only — decorative, 2.5:1 */
+
+  /* ----------------------------------------------------- Backgrounds + states
+     Figma: bg/*                                                            */
+  --bg-page: #f7f7f5;                /* sign-in and other full-page screens */
+  --bg-surface: #ffffff;             /* sheet, rows, menus, fields, buttons, floating controls */
+  --bg-hover: #f1f5ee;               /* desktop hover: secondary button, row */
+  --bg-pressed: #f3f4f1;             /* pressed row, open dropdown, clear (×) button, checklist well */
+  --bg-selected: #e6f0e3;            /* selected row / menu item, pressed secondary, success banner */
+  --bg-attention: #fff4e0;           /* requested pin + badge fill, warning banners */
+  --bg-info: #e3eef8;                /* info banners, possible badge */
+  --bg-error: #fbe9e7;               /* error banners */
+  --bg-disabled: var(--color-divider);            /* disabled primary button fill */
+
+  /* ---------------------------------------------------------------- Lines
+     Figma: line/*                                                          */
+  --color-border: #c9cfc6;           /* small on-map buttons only (decorative outline) */
+  --color-border-strong: #8c948d;    /* text fields, dropdowns, checkbox, sheet handle (3.1:1) */
+  --color-border-subtle: rgb(40 42 43 / 0.1); /* hairline on floating controls, menus */
+  --color-divider: #e3e6e0;          /* row separators */
+  --color-focus: #1f5c99;            /* focus ring */
+  --color-border-info: #b6cde6;      /* banner borders, paired with --bg-* */
+  --color-border-warning: #e6cf9e;
+  --color-border-success: #b9d1b5;
+  --color-border-error: #e9b8b3;
+
+  /* -------------------------------------------------------- Feedback text
+     Figma: feedback/* — always on its matching --bg-* tint                 */
+  --color-success: var(--color-primary);          /* on --bg-selected */
+  --color-warning: #6b4000;          /* on --bg-attention */
+  --color-error: #941b15;            /* on --bg-error; also error borders */
+  --color-info: #174c80;             /* on --bg-info */
+
+  /* ---------------------------------------------------------------- Status
+     Figma: status/* — every status = shape + letter/icon + word.
+     <status>       marker stroke (or fill for approved/planted)
+     <status>-tint  badge background / marker fill
+     <status>-text  badge word                                              */
+  --status-requested: #764300;
+  --status-requested-tint: var(--bg-attention);
+  --status-requested-text: var(--status-requested);
+  --status-possible: var(--color-focus);
+  --status-possible-tint: var(--bg-info);
+  --status-possible-text: #174a7c;
+  --status-approved: #d9eeb5;
+  --status-approved-tint: #eef3e4;
+  --status-approved-text: #3a5216;
+  --status-approved-ring: #4e6b1f;   /* approved marker stroke */
+  --status-approved-glyph: #0e1704;  /* letter "A" on approved marker */
+  --status-planted: var(--color-primary);
+  --status-planted-tint: var(--bg-selected);
+  --status-planted-text: #0f4a25;
+
+  /* ------------------------------------------------------------------ Map
+     Figma: map/* — only needed if we style our own basemap               */
+  --map-land: #f2efe9;
+  --map-park: #cdebb0;
+  --map-water: #aad3df;
+  --map-road: var(--bg-surface);
+  --map-casing: #d4cdc2;
+  --map-major: #fcd6a4;
+  --map-major-casing: #e3a86f;
+  --map-block: #d9d0c9;
+  --map-label: #3f4642;
+  --map-park-label: #254a21;
+
+  /* ----------------------------------------------------------- Typography
+     Figma: text styles Type/*, bound to variables font/*, font-weight/*,
+     type/<style>/size and type/<style>/line-height (same names here).
+     Sizes are rem so they follow the user's browser font size
+     (1rem = 16px default, identical to the Figma px values).
+     Use via the .type-* classes in global.css, not one property at a time. */
+  --font-display: "Lora", Georgia, serif;                           /* h1, h2 only */
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif; /* everything else */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* h1: 24/32 700 — page heading */
+  --type-h1-size: 1.5rem;
+  --type-h1-line-height: 2rem;
+  --type-h1: var(--font-weight-bold) var(--type-h1-size)/var(--type-h1-line-height) var(--font-display);
+  /* h2: 20/28 700 — section heading */
+  --type-h2-size: 1.25rem;
+  --type-h2-line-height: 1.75rem;
+  --type-h2: var(--font-weight-bold) var(--type-h2-size)/var(--type-h2-line-height) var(--font-display);
+  /* h3: 17/24 500 — item title */
+  --type-h3-size: 1.0625rem;
+  --type-h3-line-height: 1.5rem;
+  --type-h3: var(--font-weight-medium) var(--type-h3-size)/var(--type-h3-line-height) var(--font-sans);
+  /* h4: 15/20 700 — group / field label */
+  --type-h4-size: 0.9375rem;
+  --type-h4-line-height: 1.25rem;
+  --type-h4: var(--font-weight-bold) var(--type-h4-size)/var(--type-h4-line-height) var(--font-sans);
+  /* body: 16/24 400 — body */
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.5rem;
+  --type-body: var(--font-weight-regular) var(--type-body-size)/var(--type-body-line-height) var(--font-sans);
+  /* body-sm: 15/20 400 — banners, checklist, help line */
+  --type-body-sm-size: 0.9375rem;
+  --type-body-sm-line-height: 1.25rem;
+  --type-body-sm: var(--font-weight-regular) var(--type-body-sm-size)/var(--type-body-sm-line-height) var(--font-sans);
+  /* body-strong: 16/24 700 — banner titles, legend title, inline email */
+  --type-body-strong-size: 1rem;
+  --type-body-strong-line-height: 1.5rem;
+  --type-body-strong: var(--font-weight-bold) var(--type-body-strong-size)/var(--type-body-strong-line-height) var(--font-sans);
+  /* supporting: 16/22 400 — row subtitle, legend */
+  --type-supporting-size: 1rem;
+  --type-supporting-line-height: 1.375rem;
+  --type-supporting: var(--font-weight-regular) var(--type-supporting-size)/var(--type-supporting-line-height) var(--font-sans);
+  /* btn-primary: 16/24 700 — primary button */
+  --type-btn-primary-size: 1rem;
+  --type-btn-primary-line-height: 1.5rem;
+  --type-btn-primary: var(--font-weight-bold) var(--type-btn-primary-size)/var(--type-btn-primary-line-height) var(--font-sans);
+  /* btn-secondary: 16/24 500 — secondary button */
+  --type-btn-secondary-size: 1rem;
+  --type-btn-secondary-line-height: 1.5rem;
+  --type-btn-secondary: var(--font-weight-medium) var(--type-btn-secondary-size)/var(--type-btn-secondary-line-height) var(--font-sans);
+  /* control: 14/20 500 — small control */
+  --type-control-size: 0.875rem;
+  --type-control-line-height: 1.25rem;
+  --type-control: var(--font-weight-medium) var(--type-control-size)/var(--type-control-line-height) var(--font-sans);
+  /* chip: 14/20 500 — filter chip, pin label */
+  --type-chip-size: 0.875rem;
+  --type-chip-line-height: 1.25rem;
+  --type-chip: var(--font-weight-medium) var(--type-chip-size)/var(--type-chip-line-height) var(--font-sans);
+  /* caption: 14/20 400 — caption, record count */
+  --type-caption-size: 0.875rem;
+  --type-caption-line-height: 1.25rem;
+  --type-caption: var(--font-weight-regular) var(--type-caption-size)/var(--type-caption-line-height) var(--font-sans);
+  /* link: 14/20 400 — text link, underlined */
+  --type-link-size: 0.875rem;
+  --type-link-line-height: 1.25rem;
+  --type-link: var(--font-weight-regular) var(--type-link-size)/var(--type-link-line-height) var(--font-sans);
+  /* badge: 14/20 700 — status badge word, count badge */
+  --type-badge-size: 0.875rem;
+  --type-badge-line-height: 1.25rem;
+  --type-badge: var(--font-weight-bold) var(--type-badge-size)/var(--type-badge-line-height) var(--font-sans);
+  /* error: 15/20 500 — field error message */
+  --type-error-size: 0.9375rem;
+  --type-error-line-height: 1.25rem;
+  --type-error: var(--font-weight-medium) var(--type-error-size)/var(--type-error-line-height) var(--font-sans);
+  /* marker-20: 11/11 700 — status letter, 20px marker */
+  --type-marker-20-size: 0.6875rem;
+  --type-marker-20-line-height: 0.6875rem;
+  --type-marker-20: var(--font-weight-bold) var(--type-marker-20-size)/var(--type-marker-20-line-height) var(--font-sans);
+  /* marker-24: 12/12 700 — status letter, 24px marker */
+  --type-marker-24-size: 0.75rem;
+  --type-marker-24-line-height: 0.75rem;
+  --type-marker-24: var(--font-weight-bold) var(--type-marker-24-size)/var(--type-marker-24-line-height) var(--font-sans);
+  /* marker-32: 16/16 700 — status letter, 32px marker */
+  --type-marker-32-size: 1rem;
+  --type-marker-32-line-height: 1rem;
+  --type-marker-32: var(--font-weight-bold) var(--type-marker-32-size)/var(--type-marker-32-line-height) var(--font-sans);
+  /* marker-44: 22/22 700 — status letter, 44px marker */
+  --type-marker-44-size: 1.375rem;
+  --type-marker-44-line-height: 1.375rem;
+  --type-marker-44: var(--font-weight-bold) var(--type-marker-44-size)/var(--type-marker-44-line-height) var(--font-sans);
+
+  /* -------------------------------------------------------------- Spacing
+     Figma: space/* — 4px grid. Matches Tailwind's default scale 1:1
+     (p-1 = 4px … p-8 = 32px). There is no space-5, -7 or above -8.       */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* --------------------------------------------------------------- Radius
+     Figma: radius/*                                                        */
+  --radius-sm: 6px;      /* status badge, checkbox */
+  --radius-input: 8px;   /* text field, dropdown, pin name tag */
+  --radius-md: 12px;     /* menus, banners, legend card */
+  --radius-lg: 20px;     /* sheet — top corners only */
+  --radius-pill: 999px;  /* buttons, search, chips, round controls */
+
+  /* --------------------------------------------------------- Border widths
+     Figma: border/*                                                        */
+  --border-width: 1px;
+  --border-width-error: 1.5px;
+  --border-width-focus: 2px;
+
+  /* -------------------------------------------------------------- Shadows
+     Figma effect styles. Only floating map controls, menus and the sheet
+     get shadows; list rows never do.                                       */
+  --shadow-1: 0 1px 2px rgb(24 40 28 / 0.14), 0 2px 6px rgb(24 40 28 / 0.12);  /* floating controls */
+  --shadow-2: 0 8px 24px rgb(24 40 28 / 0.2), 0 2px 6px rgb(24 40 28 / 0.1);   /* menus, labels */
+  --shadow-sheet: 0 -4px 18px rgb(24 40 28 / 0.14);
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-focus);    /* State/focus ring */
+  --pin-selected-glow:                                                          /* State/pin selected glow */
+    0 0 0 3px var(--bg-surface),
+    0 0 0 6px var(--color-primary),
+    0 0 0 11px rgb(46 158 87 / 0.3),
+    0 0 24px 10px rgb(46 158 87 / 0.5),
+    0 4px 10px rgb(24 40 28 / 0.35);
+  --shadow-pin: 0 0 0 2px var(--bg-surface), 0 2px 5px rgb(24 40 28 / 0.35);   /* Shadow/pin: map pin, cluster */
+  --field-focus-halo: 0 0 0 4px rgb(24 98 51 / 0.16);                          /* State/field focus: text + search fields */
+  --row-focus-ring: inset 0 0 0 2px var(--color-focus);                        /* State/row focus */
+  --row-selected-bar: inset 4px 0 0 var(--color-primary);                      /* State/row selected */
+
+  /* ------------------------------------------------------ Size + layout
+     Figma: size/*, layout/* — mobile layout (the only one approved so far). */
+  --touch-min: 44px;        /* minimum hit area */
+  --control-h: 48px;        /* default control height */
+  --layout-columns: 4;
+  --layout-margin: 16px;    /* screen side margin */
+  --layout-gutter: 16px;
+  --float-inset: 16px;      /* floating map controls from screen edges */
+  --page-top: 60px;         /* page-screen content start (device mock: 16px below safe area) */
+  --safe-top: 44px;         /* device mock only — in the app use env(safe-area-inset-top) */
+  --safe-bottom: 34px;      /* device mock only — in the app use env(safe-area-inset-bottom) */
+}
