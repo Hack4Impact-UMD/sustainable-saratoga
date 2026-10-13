@@ -32,7 +32,7 @@ sustainable-saratoga/
 ├── packages/
 │   ├── frontend/   # React + Vite web application (TanStack Router, Tailwind CSS)
 │   ├── backend/    # tRPC API on Express, deployed as Firebase Cloud Functions
-│   └── common/     # Shared TypeScript types and ArkType schemas
+│   └── common/     # Shared TypeScript types
 ├── firebase.json   # Firebase project and emulator configuration
 └── package.json    # Root package.json with workspace-level scripts
 ```
