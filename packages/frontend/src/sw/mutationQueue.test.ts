@@ -1,6 +1,5 @@
 // @vitest-environment node
-import type { AppRouter } from "@repo/backend";
-import { createTRPCClient, httpLink } from "@trpc/client";
+import { createTRPCUntypedClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
 import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
 import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
@@ -159,7 +158,8 @@ describe("handleMutation", () => {
 
   it("surfaces as a TRPCClientError that isQueuedOffline recognizes", async () => {
     const { queue, deps } = setup();
-    const client = createTRPCClient<AppRouter>({
+    // Untyped: the queue does not care which procedure it is.
+    const client = createTRPCUntypedClient({
       links: [
         httpLink({
           url: `${ORIGIN}/api/trpc`,
@@ -169,8 +169,8 @@ describe("handleMutation", () => {
       ],
     });
 
-    const error: unknown = await client.notes.add
-      .mutate({ text: "hi" })
+    const error: unknown = await client
+      .mutation("notes.add", { text: "hi" })
       .catch((error: unknown) => error);
 
     expect(isQueuedOffline(error)).toBe(true);

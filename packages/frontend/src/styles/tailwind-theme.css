@@ -101,32 +101,33 @@
      so Tailwind's text-* sizes are switched off.                          */
   --font-*: initial;
   --text-*: initial;
-  --font-display: var(--font-display);   /* font-display */
-  --font-sans: var(--font-sans);         /* font-sans */
+  --font-display: var(--font-display); /* font-display */
+  --font-sans: var(--font-sans); /* font-sans */
 
   /* ----------------------------------------------------------------- Radius */
   --radius-*: initial;
-  --radius-sm: var(--radius-sm);         /* rounded-sm      6px */
-  --radius-input: var(--radius-input);   /* rounded-input   8px */
-  --radius-md: var(--radius-md);         /* rounded-md     12px */
-  --radius-lg: var(--radius-lg);         /* rounded-t-lg   20px (sheet) */
-  --radius-pill: var(--radius-pill);     /* rounded-pill */
+  --radius-sm: var(--radius-sm); /* rounded-sm      6px */
+  --radius-input: var(--radius-input); /* rounded-input   8px */
+  --radius-md: var(--radius-md); /* rounded-md     12px */
+  --radius-lg: var(--radius-lg); /* rounded-t-lg   20px (sheet) */
+  --radius-pill: var(--radius-pill); /* rounded-pill */
 
   /* ---------------------------------------------------------------- Shadows */
   --shadow-*: initial;
-  --shadow-1: var(--shadow-1);                       /* shadow-1 */
-  --shadow-2: var(--shadow-2);                       /* shadow-2 */
-  --shadow-sheet: var(--shadow-sheet);               /* shadow-sheet */
-  --shadow-focus: var(--focus-ring);                 /* focus-visible:shadow-focus */
-  --shadow-pin: var(--shadow-pin);                   /* shadow-pin (map pin, cluster) */
-  --shadow-pin-selected: var(--pin-selected-glow);   /* shadow-pin-selected */
-  --shadow-field-focus: var(--field-focus-halo);     /* focus:shadow-field-focus */
-  --shadow-row-focus: var(--row-focus-ring);         /* focus-visible:shadow-row-focus */
-  --shadow-row-selected: var(--row-selected-bar);    /* shadow-row-selected */
+  --shadow-1: var(--shadow-1); /* shadow-1 */
+  --shadow-2: var(--shadow-2); /* shadow-2 */
+  --shadow-sheet: var(--shadow-sheet); /* shadow-sheet */
+  --shadow-focus: var(--focus-ring); /* focus-visible:shadow-focus */
+  --shadow-pin: var(--shadow-pin); /* shadow-pin (map pin, cluster) */
+  --shadow-pin-selected: var(--pin-selected-glow); /* shadow-pin-selected */
+  --shadow-field-focus: var(--field-focus-halo); /* focus:shadow-field-focus */
+  /* focus-visible:shadow-row-focus */
+  --shadow-row-focus: var(--row-focus-ring);
+  --shadow-row-selected: var(--row-selected-bar); /* shadow-row-selected */
 
   /* ------------------------------------------------- Named sizes (spacing)
      Numeric spacing stays Tailwind's 4px scale (= --space-*).              */
-  --spacing-touch: var(--touch-min);       /* min-h-touch, size-touch  44px */
-  --spacing-control: var(--control-h);     /* h-control                48px */
-  --spacing-margin: var(--layout-margin);  /* px-margin                16px */
+  --spacing-touch: var(--touch-min); /* min-h-touch, size-touch  44px */
+  --spacing-control: var(--control-h); /* h-control                48px */
+  --spacing-margin: var(--layout-margin); /* px-margin                16px */
 }

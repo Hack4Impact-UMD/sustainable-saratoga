@@ -11,14 +11,15 @@
 
 @layer base {
   html {
-    color-scheme: light;               /* only a light theme is defined */
+    color-scheme: light; /* only a light theme is defined */
     -webkit-text-size-adjust: 100%;
   }
 
   body {
     background: var(--bg-page);
     color: var(--color-text);
-    font: var(--type-body);            /* 16px — form fields inherit it, so iOS won't zoom on focus */
+    /* 16px — form fields inherit it, so iOS won't zoom on focus */
+    font: var(--type-body);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -53,28 +54,84 @@
    The type- prefix keeps these from colliding with component class names.
    -------------------------------------------------------------------------- */
 @layer components {
-  .type-h1            { font: var(--type-h1);            color: var(--color-heading); }
-  .type-h2            { font: var(--type-h2);            color: var(--color-heading); }
-  .type-h3            { font: var(--type-h3);            color: var(--color-heading); }
-  .type-h4            { font: var(--type-h4);            color: var(--color-heading); }
-  .type-body          { font: var(--type-body);          color: var(--color-text); }
-  .type-body-sm       { font: var(--type-body-sm);       color: var(--color-text); }
-  .type-body-strong   { font: var(--type-body-strong);   color: var(--color-text); }
-  .type-supporting    { font: var(--type-supporting);    color: var(--color-text-muted); }
-  .type-btn-primary   { font: var(--type-btn-primary);   color: var(--color-text-on-primary); }
-  .type-btn-secondary { font: var(--type-btn-secondary); color: var(--color-primary); }
-  .type-control       { font: var(--type-control);       color: var(--color-primary); }
-  .type-chip          { font: var(--type-chip);          color: var(--color-text); }
-  .type-caption       { font: var(--type-caption);       color: var(--color-text-muted); }
-  .type-link          { font: var(--type-link);          color: var(--color-primary); text-decoration: underline; }
-  .type-error         { font: var(--type-error);         color: var(--color-error); }
+  .type-h1 {
+    font: var(--type-h1);
+    color: var(--color-heading);
+  }
+  .type-h2 {
+    font: var(--type-h2);
+    color: var(--color-heading);
+  }
+  .type-h3 {
+    font: var(--type-h3);
+    color: var(--color-heading);
+  }
+  .type-h4 {
+    font: var(--type-h4);
+    color: var(--color-heading);
+  }
+  .type-body {
+    font: var(--type-body);
+    color: var(--color-text);
+  }
+  .type-body-sm {
+    font: var(--type-body-sm);
+    color: var(--color-text);
+  }
+  .type-body-strong {
+    font: var(--type-body-strong);
+    color: var(--color-text);
+  }
+  .type-supporting {
+    font: var(--type-supporting);
+    color: var(--color-text-muted);
+  }
+  .type-btn-primary {
+    font: var(--type-btn-primary);
+    color: var(--color-text-on-primary);
+  }
+  .type-btn-secondary {
+    font: var(--type-btn-secondary);
+    color: var(--color-primary);
+  }
+  .type-control {
+    font: var(--type-control);
+    color: var(--color-primary);
+  }
+  .type-chip {
+    font: var(--type-chip);
+    color: var(--color-text);
+  }
+  .type-caption {
+    font: var(--type-caption);
+    color: var(--color-text-muted);
+  }
+  .type-link {
+    font: var(--type-link);
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+  .type-error {
+    font: var(--type-error);
+    color: var(--color-error);
+  }
 
   /* Colour comes from the status (or context), so these set the font only:
      badge → --status-*-text (count badge: --color-primary);
      marker letters → the status glyph colour (see COMPONENT_SPECS.md). */
-  .type-badge         { font: var(--type-badge); }
-  .type-marker-20     { font: var(--type-marker-20); }
-  .type-marker-24     { font: var(--type-marker-24); }
-  .type-marker-32     { font: var(--type-marker-32); }
-  .type-marker-44     { font: var(--type-marker-44); }
+  .type-badge {
+    font: var(--type-badge);
+  }
+  .type-marker-20 {
+    font: var(--type-marker-20);
+  }
+  .type-marker-24 {
+    font: var(--type-marker-24);
+  }
+  .type-marker-32 {
+    font: var(--type-marker-32);
+  }
+  .type-marker-44 {
+    font: var(--type-marker-44);
+  }
 }
