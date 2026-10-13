@@ -63,11 +63,11 @@ export function SyncStatus() {
   if (pending === 0 && rejected.length === 0) return null;
 
   return (
-    <div className="mb-6 space-y-2 text-sm" aria-live="polite">
+    <div className="type-body-sm mb-6 space-y-2" aria-live="polite">
       {pending > 0 && (
         <p
           data-testid="sync-pending"
-          className="rounded-md border border-slate-200 px-3 py-2 text-slate-600 dark:border-slate-800 dark:text-slate-300"
+          className="rounded-md border border-line-info bg-info-tint px-3 py-2 text-info"
         >
           {pending === 1 ? "1 change" : `${pending} changes`} saved offline.
           They will be sent when you&apos;re back online.
@@ -77,7 +77,7 @@ export function SyncStatus() {
         <div
           key={item.id}
           data-testid="sync-rejected"
-          className="flex items-start gap-3 rounded-md border border-red-300 px-3 py-2 text-red-700 dark:border-red-900 dark:text-red-300"
+          className="flex items-start gap-3 rounded-md border border-line-error bg-error-tint px-3 py-2 text-error"
         >
           <p className="mr-auto">
             A change saved offline could not be applied ({item.path}):{" "}

@@ -1,6 +1,5 @@
 // @vitest-environment node
-import type { AppRouter } from "@repo/backend";
-import { createTRPCClient, httpLink } from "@trpc/client";
+import { createTRPCUntypedClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
 import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
 import type {
@@ -130,8 +129,8 @@ describe("isMutationRequest", () => {
     isMutationRequest(new URL(url), new Request(url, { method }), ORIGIN);
 
   it("matches same-origin tRPC POSTs only", () => {
-    expect(check(`${ORIGIN}/api/trpc/notes.add`, "POST")).toBe(true);
-    expect(check(`${ORIGIN}/api/trpc/notes.list`, "GET")).toBe(false);
+    expect(check(`${ORIGIN}/api/trpc/trees.create`, "POST")).toBe(true);
+    expect(check(`${ORIGIN}/api/trpc/trees.list`, "GET")).toBe(false);
     expect(check(`${ORIGIN}/api/health`, "POST")).toBe(false);
     expect(check("https://elsewhere.example/api/trpc/x", "POST")).toBe(false);
   });
@@ -144,7 +143,7 @@ describe("handleMutation", () => {
     });
 
     const response = await handleMutation(
-      mutation("notes.add", { text: "hi" }, "alice"),
+      mutation("trees.create", { text: "hi" }, "alice"),
       queue,
       deps,
     );
@@ -157,7 +156,7 @@ describe("handleMutation", () => {
     const { queue, messages, deps } = setup();
 
     const response = await handleMutation(
-      mutation("notes.add", { text: "hi" }, "alice"),
+      mutation("trees.create", { text: "hi" }, "alice"),
       queue,
       deps,
     );
@@ -165,7 +164,7 @@ describe("handleMutation", () => {
     expect(response.status).toBe(202);
     expect(queue.entries).toHaveLength(1);
     const [entry] = queue.entries;
-    expect(entry?.metadata).toEqual({ uid: "alice", path: "notes.add" });
+    expect(entry?.metadata).toEqual({ uid: "alice", path: "trees.create" });
     expect(entry?.request.headers.has("authorization")).toBe(false);
     expect(entry?.request.headers.has("x-queue-owner")).toBe(false);
     expect(await entry?.request.json()).toEqual({ text: "hi" });
@@ -174,7 +173,8 @@ describe("handleMutation", () => {
 
   it("surfaces as a TRPCClientError that isQueuedOffline recognizes", async () => {
     const { queue, deps } = setup();
-    const client = createTRPCClient<AppRouter>({
+    // Untyped: the queue does not care which procedure it is.
+    const client = createTRPCUntypedClient({
       links: [
         httpLink({
           url: `${ORIGIN}/api/trpc`,
@@ -184,8 +184,8 @@ describe("handleMutation", () => {
       ],
     });
 
-    const error: unknown = await client.notes.add
-      .mutate({ text: "hi" })
+    const error: unknown = await client
+      .mutation("trees.create", { text: "hi" })
       .catch((error: unknown) => error);
 
     expect(isQueuedOffline(error)).toBe(true);
@@ -194,7 +194,7 @@ describe("handleMutation", () => {
 
   it("answers batched calls with one error per procedure", async () => {
     const response = queuedResponse(
-      new URL(`${ORIGIN}/api/trpc/notes.add,notes.add?batch=1`),
+      new URL(`${ORIGIN}/api/trpc/trees.create,trees.create?batch=1`),
     );
     const body: unknown = await response.json();
 
@@ -222,8 +222,8 @@ describe("replayQueue", () => {
         return Response.json({ result: { data: null } });
       },
     });
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
-    await enqueue(queue, mutation("notes.add", { text: "two" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "two" }, "alice"));
 
     await replayQueue(queue, deps);
 
@@ -240,8 +240,8 @@ describe("replayQueue", () => {
 
   it("keeps the write at the front and throws while still offline", async () => {
     const { queue, deps } = setup();
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
-    await enqueue(queue, mutation("notes.add", { text: "two" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "two" }, "alice"));
 
     await expect(replayQueue(queue, deps)).rejects.toThrow("Failed to fetch");
 
@@ -258,7 +258,7 @@ describe("replayQueue", () => {
             Promise.reject(new Error("auth/network-request-failed")),
         }),
     });
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
 
     await expect(replayQueue(queue, deps)).rejects.toThrow("auth/network");
     expect(queue.entries).toHaveLength(1);
@@ -268,7 +268,7 @@ describe("replayQueue", () => {
     const { queue, deps } = setup({
       fetch: () => Promise.resolve(trpcError(status, "nope")),
     });
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
 
     await expect(replayQueue(queue, deps)).rejects.toThrow(`HTTP ${status}`);
     expect(queue.entries).toHaveLength(1);
@@ -283,15 +283,15 @@ describe("replayQueue", () => {
           : succeed();
       },
     });
-    await enqueue(queue, mutation("notes.add", { text: "bad" }, "alice"));
-    await enqueue(queue, mutation("notes.add", { text: "good" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "bad" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "good" }, "alice"));
 
     await replayQueue(queue, deps);
 
     expect(queue.entries).toHaveLength(0);
     expect(rejected).toEqual([
       expect.objectContaining({
-        path: "notes.add",
+        path: "trees.create",
         message: "Text is too long",
       }),
     ]);
@@ -299,7 +299,7 @@ describe("replayQueue", () => {
       {
         type: "sync-rejected",
         item: expect.objectContaining({
-          path: "notes.add",
+          path: "trees.create",
           message: "Text is too long",
         }),
       },
@@ -315,7 +315,7 @@ describe("replayQueue", () => {
     const { queue, messages, deps } = setup({
       currentUser: () => Promise.resolve(signedIn),
     });
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
 
     await replayQueue(queue, deps);
 
@@ -329,7 +329,7 @@ describe("replayQueue", () => {
       currentUser: () => Promise.resolve(null),
       fetch: vi.fn<(request: Request) => Promise<Response>>(succeed),
     });
-    await enqueue(queue, mutation("hello.public", { name: "x" }));
+    await enqueue(queue, mutation("public.write", { name: "x" }));
 
     await replayQueue(queue, deps);
 
@@ -362,7 +362,7 @@ describe("createReplayer", () => {
       fetch: vi.fn<(request: Request) => Promise<Response>>(succeed),
     });
     const { opened, openSession } = sessions(() => user("alice"));
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
     const replay = createReplayer({ ...deps, openSession });
 
     await Promise.all([replay(queue), replay(queue), replay(queue)]);
@@ -381,7 +381,7 @@ describe("createReplayer", () => {
     const replay = createReplayer({ ...deps, openSession });
 
     // Alice signs out in a page after the worker last looked.
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
     signedIn = null;
     await replay(queue);
     expect(deps.fetch).not.toHaveBeenCalled();
@@ -403,8 +403,8 @@ describe("createReplayer", () => {
       }),
     });
     const { opened, openSession } = sessions(() => signedIn);
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
-    await enqueue(queue, mutation("notes.add", { text: "two" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "two" }, "alice"));
 
     await createReplayer({ ...deps, openSession })(queue);
 
@@ -426,7 +426,7 @@ describe("createReplayer", () => {
   it("closes the session when sending fails", async () => {
     const { queue, deps } = setup();
     const { opened, openSession } = sessions(() => user("alice"));
-    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("trees.create", { text: "one" }, "alice"));
 
     await expect(
       createReplayer({ ...deps, openSession })(queue),
