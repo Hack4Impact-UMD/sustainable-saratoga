@@ -17,7 +17,7 @@ export function UpdatePrompt() {
     <div
       aria-live="polite"
       data-testid="update-prompt"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-lg dark:border-slate-800 dark:bg-slate-900"
+      className="type-body-sm fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md flex-wrap items-center gap-3 rounded-lg border border-line-subtle bg-surface p-4 shadow-2"
     >
       <p className="mr-auto">
         A new version is available. Save your work, then reload.
@@ -25,7 +25,7 @@ export function UpdatePrompt() {
       <button
         type="button"
         onClick={() => setNeedRefresh(false)}
-        className="rounded-md px-3 py-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+        className="type-control rounded-md px-3 py-1.5 text-muted hover:bg-hover"
       >
         Later
       </button>
@@ -33,7 +33,7 @@ export function UpdatePrompt() {
         type="button"
         data-testid="update-reload"
         onClick={() => void updateServiceWorker()}
-        className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+        className="type-control rounded-md border border-line-strong px-3 py-1.5 hover:bg-hover"
       >
         Reload
       </button>
