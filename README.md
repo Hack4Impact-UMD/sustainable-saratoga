@@ -9,7 +9,7 @@ The Tree Tracker replaces Fulcrum, the committee's current (and no longer mainta
 - **Tree records:** species, cultivar, condition, measurements, pruning history, planting date, photos, homeowner contact info, location type (public vs. private), and assignment to committee members
 - **Planting workflow:** track requests through an approval pipeline (requested → approved → planted / not planted), including city approval and utility clearance
 - **Mapping:** pin exact planting locations and filter the map by status, year, species, and activity type
-- **Field use:** add and update records from a mobile device (offline support is being explored)
+- **Field use:** add and update records from a mobile device, with offline write queueing for supported mutations; offline reads and map tiles are not yet supported
 - **Filtering:** filter by any data field, with saved filter presets and default views based on volunteer role (planting vs. pruning)
 - **Export:** export tree lists and maps for city reporting and pre-event planning
 - **Admin tools:** configure fields, manage pick lists, and manage user accounts
@@ -63,6 +63,9 @@ sustainable-saratoga/
    This launches the Firebase emulators and the frontend dev server. See `firebase.json` for the emulator ports.
 
    The service worker is disabled in development so the dev server never serves stale pages. To test PWA behavior locally, run `PWA_DEV=true pnpm dev`.
+
+> [!TIP]
+> If you previously ran the app with `PWA_DEV=true` and later switch it off, your browser may still have the old service worker registered for `localhost`. If pages seem stale or offline behavior persists unexpectedly, open the browser's devtools, unregister the service worker for this app, and reload.
 
 ## Meet the Team
 
@@ -142,9 +145,11 @@ sustainable-saratoga/
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
-      <img src="https://github.com/l3mxny.png" style="height:110px; border-radius:10%;"/><br/>
-      <b>Victoria Xiao</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/victoria-xiao-449844270/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/Victoria.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Victoria Xiao</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/dennis-huynh-08138336a" target="_blank" rel="noreferrer noopener">
@@ -161,20 +166,26 @@ sustainable-saratoga/
       <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
     </td>
     <td align="center" width="160">
-      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Engineer Name</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Charu Mehta</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
     </td>
     <td align="center" width="160">
-      <img src="assets/team/engineer-1.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Engineer Name</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/neelmokaria/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/Neel-Mokaria.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Neel Mokaria</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
     </td>
+  </tr>
+  <tr>
     <td align="center" width="160">
-    <a href="https://www.linkedin.com/in/charu-mehta1/" target="_blank" rel="noreferrer noopener">
-      <img src="assets/team/charu-mehta.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Charu Mehta</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/esther-e-yu/" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/esther-yu.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Esther Yu</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
   </tr>

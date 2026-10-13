@@ -1,5 +1,11 @@
 import type { Queue } from "workbox-background-sync";
-import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type {
+  RejectedSyncItem,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
+
+const TRPC_PREFIX = "/api/trpc/";
+const QUEUE_OWNER_HEADER = "x-queue-owner";
 
 /**
  * Queues tRPC mutations that fail because the device is offline, then sends
@@ -14,8 +20,6 @@ import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
  *
  * Service worker APIs are passed in, so this module runs under Vitest.
  */
-
-const TRPC_PREFIX = "/api/trpc/";
 
 export type MutationQueue = Pick<
   Queue,
@@ -34,6 +38,7 @@ export interface QueueUser {
 export interface MutationQueueDeps {
   fetch: (request: Request) => Promise<Response>;
   notify: (message: SyncMessage) => Promise<void>;
+  rememberRejected: (item: RejectedSyncItem) => Promise<void>;
 }
 
 export interface ReplayDeps extends MutationQueueDeps {
@@ -82,11 +87,12 @@ export async function handleMutation(
   } catch {
     const url = new URL(request.url);
     const metadata: EntryMetadata = {
-      uid: uidFromAuthorization(backup.headers.get("authorization")),
+      uid: ownerFromHeader(backup.headers.get(QUEUE_OWNER_HEADER)),
       path: procedurePath(url),
     };
     const stored = new Request(backup);
     stored.headers.delete("authorization");
+    stored.headers.delete(QUEUE_OWNER_HEADER);
 
     await queue.pushRequest({ request: stored, metadata: { ...metadata } });
     await deps.notify({ type: "sync-status", pending: await queue.size() });
@@ -97,24 +103,27 @@ export async function handleMutation(
 /**
  * Wraps `replayQueue` so overlapping triggers (a sync event, a page coming
  * back online, service worker startup) share one run instead of racing.
- * Each run reads who is signed in afresh, the first time it needs to.
+ * Each user lookup opens a fresh auth session, so sign-out or account changes
+ * during a long replay are seen before the next queued write is sent.
  */
 export function createReplayer({ openSession, ...deps }: ReplayerDeps) {
   let running: Promise<void> | null = null;
 
   async function run(queue: MutationQueue) {
-    let session: Promise<AuthSession> | null = null;
     try {
       await replayQueue(queue, {
         ...deps,
         currentUser: async () => {
-          const { user } = await (session ??= openSession());
-          return user;
+          const session = await openSession();
+          try {
+            return session.user;
+          } finally {
+            await session.close();
+          }
         },
       });
     } finally {
       running = null;
-      if (session) await closeSession(session);
     }
   }
 
@@ -153,6 +162,7 @@ export async function replayQueue(
       let response: Response;
       try {
         const request = new Request(entry.request.clone());
+        request.headers.delete(QUEUE_OWNER_HEADER);
         if (user) {
           request.headers.set(
             "authorization",
@@ -173,10 +183,16 @@ export async function replayQueue(
           `Replaying ${path} failed with HTTP ${response.status}. Retrying later.`,
         );
       } else {
-        await deps.notify({
-          type: "sync-rejected",
+        const item: RejectedSyncItem = {
+          id: crypto.randomUUID(),
           path,
           message: await errorMessage(response),
+          createdAt: Date.now(),
+        };
+        await deps.rememberRejected(item);
+        await deps.notify({
+          type: "sync-rejected",
+          item,
         });
       }
     }
@@ -218,38 +234,12 @@ export function queuedResponse(url: URL): Response {
 }
 
 /**
- * Reads the uid from a Firebase ID token without verifying it. That is fine
- * here: it only decides whose session a queued write waits for, and the server
- * verifies the fresh token sent with the replay.
+ * Reads the queued-write owner from a page-provided header. This is only local
+ * routing metadata for replay; the backend still verifies the fresh token sent
+ * with the replayed request.
  */
-export function uidFromAuthorization(header: string | null): string | null {
-  const payload = header?.startsWith("Bearer ")
-    ? header.slice("Bearer ".length).split(".")[1]
-    : undefined;
-  if (!payload) return null;
-
-  try {
-    const claims: unknown = JSON.parse(
-      atob(payload.replaceAll("-", "+").replaceAll("_", "/")),
-    );
-    return typeof claims === "object" &&
-      claims !== null &&
-      "sub" in claims &&
-      typeof claims.sub === "string"
-      ? claims.sub
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-async function closeSession(session: Promise<AuthSession>) {
-  try {
-    const { close } = await session;
-    await close();
-  } catch {
-    // Opening it failed, and replayQueue already rethrew that.
-  }
+export function ownerFromHeader(header: string | null): string | null {
+  return typeof header === "string" && header.length > 0 ? header : null;
 }
 
 /** Offline, rate limited, or a server/auth hiccup: worth trying again. */

@@ -2,14 +2,17 @@
 import { createTRPCUntypedClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
 import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
-import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type {
+  RejectedSyncItem,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
 import {
   createReplayer,
   handleMutation,
   isMutationRequest,
+  ownerFromHeader,
   queuedResponse,
   replayQueue,
-  uidFromAuthorization,
 } from "@frontend/sw/mutationQueue.ts";
 import type {
   MutationQueue,
@@ -60,7 +63,12 @@ function mutation(path: string, input: unknown, uid?: string) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      ...(uid ? { authorization: `Bearer ${idToken(uid)}` } : {}),
+      ...(uid
+        ? {
+            authorization: `Bearer ${idToken(uid)}`,
+            "x-queue-owner": uid,
+          }
+        : {}),
     },
     body: JSON.stringify(input),
   });
@@ -91,22 +99,28 @@ function trpcError(status: number, message: string) {
 function setup(overrides: Partial<ReplayDeps> = {}) {
   const queue = new FakeQueue();
   const messages: SyncMessage[] = [];
+  const rejected: RejectedSyncItem[] = [];
   const deps: ReplayDeps = {
     fetch: vi.fn<(request: Request) => Promise<Response>>(offline),
     notify: (message) => {
       messages.push(message);
       return Promise.resolve();
     },
+    rememberRejected: (item) => {
+      rejected.push(item);
+      return Promise.resolve();
+    },
     currentUser: () => Promise.resolve(user("alice")),
     ...overrides,
   };
-  return { queue, messages, deps };
+  return { queue, messages, rejected, deps };
 }
 
 async function enqueue(queue: FakeQueue, request: Request) {
   await handleMutation(request, queue, {
     fetch: offline,
     notify: () => Promise.resolve(),
+    rememberRejected: () => Promise.resolve(),
   });
 }
 
@@ -152,6 +166,7 @@ describe("handleMutation", () => {
     const [entry] = queue.entries;
     expect(entry?.metadata).toEqual({ uid: "alice", path: "notes.add" });
     expect(entry?.request.headers.has("authorization")).toBe(false);
+    expect(entry?.request.headers.has("x-queue-owner")).toBe(false);
     expect(await entry?.request.json()).toEqual({ text: "hi" });
     expect(messages).toEqual([{ type: "sync-status", pending: 1 }]);
   });
@@ -260,7 +275,7 @@ describe("replayQueue", () => {
   });
 
   it("drops a write the server refuses and moves on", async () => {
-    const { queue, messages, deps } = setup({
+    const { queue, messages, rejected, deps } = setup({
       fetch: async (request) => {
         const body = (await request.json()) as { text: string };
         return body.text === "bad"
@@ -274,8 +289,20 @@ describe("replayQueue", () => {
     await replayQueue(queue, deps);
 
     expect(queue.entries).toHaveLength(0);
+    expect(rejected).toEqual([
+      expect.objectContaining({
+        path: "notes.add",
+        message: "Text is too long",
+      }),
+    ]);
     expect(messages).toEqual([
-      { type: "sync-rejected", path: "notes.add", message: "Text is too long" },
+      {
+        type: "sync-rejected",
+        item: expect.objectContaining({
+          path: "notes.add",
+          message: "Text is too long",
+        }),
+      },
       { type: "sync-replayed", count: 1 },
       { type: "sync-status", pending: 0 },
     ]);
@@ -342,6 +369,7 @@ describe("createReplayer", () => {
 
     expect(deps.fetch).toHaveBeenCalledOnce();
     expect(opened).toHaveLength(1);
+    expect(opened[0]?.closed).toBe(true);
   });
 
   it("reads who is signed in afresh on every run", async () => {
@@ -362,6 +390,26 @@ describe("createReplayer", () => {
     await replay(queue);
     expect(deps.fetch).toHaveBeenCalledOnce();
 
+    expect(opened).toHaveLength(2);
+    expect(opened.every((session) => session.closed)).toBe(true);
+  });
+
+  it("re-reads auth between queued writes in one run", async () => {
+    let signedIn: QueueUser | null = user("alice");
+    const { queue, deps } = setup({
+      fetch: vi.fn<(request: Request) => Promise<Response>>(() => {
+        signedIn = null;
+        return succeed();
+      }),
+    });
+    const { opened, openSession } = sessions(() => signedIn);
+    await enqueue(queue, mutation("notes.add", { text: "one" }, "alice"));
+    await enqueue(queue, mutation("notes.add", { text: "two" }, "alice"));
+
+    await createReplayer({ ...deps, openSession })(queue);
+
+    expect(deps.fetch).toHaveBeenCalledOnce();
+    expect(queue.entries).toHaveLength(1);
     expect(opened).toHaveLength(2);
     expect(opened.every((session) => session.closed)).toBe(true);
   });
@@ -388,15 +436,13 @@ describe("createReplayer", () => {
   });
 });
 
-describe("uidFromAuthorization", () => {
-  it("reads the subject of a bearer token", () => {
-    expect(uidFromAuthorization(`Bearer ${idToken("alice")}`)).toBe("alice");
+describe("ownerFromHeader", () => {
+  it("reads the queued owner from a header", () => {
+    expect(ownerFromHeader("alice")).toBe("alice");
   });
 
-  it("returns null for anything else", () => {
-    expect(uidFromAuthorization(null)).toBeNull();
-    expect(uidFromAuthorization("Basic abc")).toBeNull();
-    expect(uidFromAuthorization("Bearer not-a-jwt")).toBeNull();
-    expect(uidFromAuthorization("Bearer a.%%%.c")).toBeNull();
+  it("returns null for missing or empty values", () => {
+    expect(ownerFromHeader(null)).toBeNull();
+    expect(ownerFromHeader("")).toBeNull();
   });
 });

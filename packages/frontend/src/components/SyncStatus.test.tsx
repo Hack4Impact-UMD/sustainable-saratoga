@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
-import type { SyncMessage } from "@frontend/lib/offlineSync.ts";
+import type {
+  RejectedSyncItem,
+  SyncMessage,
+} from "@frontend/lib/offlineSync.ts";
 import { AuthContext, DefaultAuthState } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 
@@ -68,7 +71,10 @@ describe("SyncStatus", () => {
     renderStatus();
 
     expect(container.startMessages).toHaveBeenCalled();
-    expect(container.controller.postMessage).toHaveBeenCalledWith({
+    expect(container.controller.postMessage).toHaveBeenNthCalledWith(1, {
+      type: "get-rejected-history",
+    });
+    expect(container.controller.postMessage).toHaveBeenNthCalledWith(2, {
       type: "replay-queue",
     });
   });
@@ -96,17 +102,72 @@ describe("SyncStatus", () => {
   it("shows refused writes until dismissed", () => {
     renderStatus();
 
-    container.send({
-      type: "sync-rejected",
+    const item: RejectedSyncItem = {
+      id: "r1",
       path: "notes.add",
       message: "Text is too long",
-    });
+      createdAt: 1,
+    };
+    container.send({ type: "sync-rejected", item });
     expect(screen.getByTestId("sync-rejected")).toHaveTextContent(
       "Text is too long",
     );
 
     fireEvent.click(screen.getByText("Dismiss"));
+    expect(container.controller.postMessage).toHaveBeenCalledWith({
+      type: "dismiss-rejected",
+      id: "r1",
+    });
     expect(screen.queryByTestId("sync-rejected")).not.toBeInTheDocument();
+  });
+
+  it("loads remembered refused writes on mount", () => {
+    renderStatus();
+
+    container.send({
+      type: "sync-rejected-history",
+      items: [
+        {
+          id: "r1",
+          path: "notes.add",
+          message: "Text is too long",
+          createdAt: 1,
+        },
+      ],
+    });
+
+    expect(screen.getByTestId("sync-rejected")).toHaveTextContent(
+      "Text is too long",
+    );
+  });
+
+  it("shows remembered refused writes in creation order", () => {
+    renderStatus();
+
+    container.send({
+      type: "sync-rejected-history",
+      items: [
+        {
+          id: "r2",
+          path: "notes.add",
+          message: "Second",
+          createdAt: 2,
+        },
+        {
+          id: "r1",
+          path: "notes.add",
+          message: "First",
+          createdAt: 1,
+        },
+      ],
+    });
+
+    expect(
+      screen.getAllByTestId("sync-rejected").map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining("First"),
+      expect.stringContaining("Second"),
+    ]);
   });
 
   it("asks for a replay when someone signs in", () => {
