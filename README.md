@@ -48,10 +48,10 @@ sustainable-saratoga/
    pnpm install
    ```
 
-2. Build the shared `common` package (required before first run):
+2. Optionally validate the shared `common` package:
 
    ```sh
-   pnpm --filter common run build
+   pnpm --filter @repo/common run typecheck
    ```
 
 3. Start the development environment:
