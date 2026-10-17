@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.19.2",
     "firebase-functions": "^7.3.2",
     "firebase-tools": "^15.28.2",
     "jsdom": "^30.0.1",
@@ -38,5 +38,8 @@
   "dependencies": {
     "firebase": "^12.18.0",
     "leaflet": "^1.9.4"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.3": true
   }
 }
