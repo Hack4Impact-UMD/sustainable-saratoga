@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
+import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,32 +28,46 @@ const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const GuestSignupRoute = GuestSignupRouteImport.update({
+  id: '/_guest/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/signup': typeof GuestSignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/signup': typeof GuestSignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_guest/signup': typeof GuestSignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/notes'
+  fullPaths: '/' | '/notes' | '/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/notes'
-  id: '__root__' | '/' | '/_authenticated' | '/_authenticated/notes'
+  to: '/' | '/notes' | '/signup'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/_authenticated/notes'
+    | '/_guest/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  GuestSignupRoute: typeof GuestSignupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,6 +93,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_guest/signup': {
+      id: '/_guest/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof GuestSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -95,6 +117,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  GuestSignupRoute: GuestSignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
