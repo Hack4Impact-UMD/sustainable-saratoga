@@ -1,15 +1,13 @@
-import { type } from "arktype"
-import type { Type } from "arktype"
-
+import { type } from "arktype";
+import type { Type } from "arktype";
 
 export function validateForm<T extends object>(
   schema: Type<T>,
-  values: unknown
+  values: unknown,
 ):
   | { ok: true; data: T }
-  | { ok: false; errors: FieldErrors<T> } {
-
-  const result = schema(values)
+  | { ok: false; errors: FieldErrors<T>; formError?: string } {
+  const result = schema(values);
 
   // successful validation then returns the data
   if (!(result instanceof type.errors)) {
@@ -18,20 +16,20 @@ export function validateForm<T extends object>(
 
   // failed validation then collects the errors
   const errors: FieldErrors<T> = {};
+  let formError: string | undefined;
   for (const error of result) {
-    const field = error.path[0]
-    if (
-      typeof field === "string" &&
-      !errors[field as keyof T & string]
-    ) {
-      errors[field as keyof T & string] = error.message
+    const field = error.path[0];
+    if (typeof field !== "string") {
+      // no field to attach to (e.g. the input is null), so keep it as a form-level error
+      formError ??= error.message;
+    } else if (!errors[field as keyof T & string]) {
+      errors[field as keyof T & string] = error.message;
     }
   }
 
-  return { ok: false, errors }
+  return formError === undefined
+    ? { ok: false, errors }
+    : { ok: false, errors, formError };
 }
-
-
-
 
 export type FieldErrors<T> = Partial<Record<keyof T & string, string>>;

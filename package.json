@@ -38,8 +38,5 @@
   "dependencies": {
     "firebase": "^12.18.0",
     "leaflet": "^1.9.4"
-  },
-  "allowScripts": {
-    "@firebase/util@1.15.3": true
   }
 }
