@@ -34,7 +34,7 @@ export default defineConfig({
       filename: "sw.ts",
       // A new version waits until the user accepts the prompt in UpdatePrompt,
       // so a deploy never reloads the page while a volunteer is mid-form.
-      registerType: "prompt",
+      registerType: "autoUpdate",
       devOptions: {
         // Off by default so the dev server never serves stale pages. Run
         // `PWA_DEV=true pnpm dev` to test service worker behavior locally.
@@ -70,6 +70,7 @@ export default defineConfig({
     // Mirrors the `paths` map in tsconfig.base.json, which is what the
     // editor and oxlint follow. Keep the two in step.
     alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@frontend": fileURLToPath(new URL("./src", import.meta.url)),
       "@common": fileURLToPath(new URL("../common/src", import.meta.url)),
       "@backend": fileURLToPath(new URL("../backend/src", import.meta.url)),
