@@ -9,3 +9,45 @@
     @apply bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
   }
 }
+
+@theme {
+  /* Background States */
+  --color-bg-page: #F7F7F5;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-hover: #F1F5EE;
+  --color-bg-pressed: #F3F4F1;
+  --color-bg-selected: #E6F0E3;
+  --color-bg-attention: #FFF4E0;
+  --color-bg-info: #E3EEF8;
+  --color-bg-error: #FBE9E7;
+  --color-bg-disabled: #E3E6E0;
+
+  /* Primary & Accents */
+  --color-primary: #186233;
+  --color-primary-hover: #134F29;
+  --color-primary-pressed: #0E3D20;
+  --color-secondary: #8DAA58;
+  --color-accent: #9FBF71;
+
+  /* Text & Headings */
+  --color-heading: #282A2B;
+  --color-text-muted: #474E4A;
+
+  /* Borders & Dividers */
+  --color-border: #C9CFC6;
+  --color-border-strong: #8C948D;
+  --color-divider: #E3E6E0;
+
+  /* Focus Ring */
+  --color-focus: #1F5C99;
+
+  /* Icons */
+  --color-icon-primary: #474E4A;
+  --color-icon-secondary: #9CA3AF;
+
+  /* Feedback Text & States */
+  --color-success: #186233;
+  --color-warning: #6B4000;
+  --color-error: #941B15;
+  --color-info: #174C80;
+}
