@@ -70,6 +70,7 @@ export default defineConfig({
     // Mirrors the `paths` map in tsconfig.base.json, which is what the
     // editor and oxlint follow. Keep the two in step.
     alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@frontend": fileURLToPath(new URL("./src", import.meta.url)),
       "@common": fileURLToPath(new URL("../common/src", import.meta.url)),
       "@backend": fileURLToPath(new URL("../backend/src", import.meta.url)),
