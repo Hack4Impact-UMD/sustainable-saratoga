@@ -1,5 +1,5 @@
 /**
- * LoginForm — stub
+ * stub
  *
  * Props:
  * sessionExpired — when true, show "Your session ended" banner

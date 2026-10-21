@@ -1,5 +1,5 @@
 /**
- * ResetPasswordForm — stub for partner to implement.
+ * stub
  *
  * Props:
  * oobCode — Firebase out-of-band code from the reset link URL

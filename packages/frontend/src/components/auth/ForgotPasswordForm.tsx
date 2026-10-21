@@ -1,5 +1,5 @@
 /**
- * ForgotPasswordForm — stub for partner to implement.
+ * stub
  *
  * Props:
  * onSuccess — called with the submitted email after the reset link is sent and

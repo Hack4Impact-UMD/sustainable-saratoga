@@ -1,5 +1,5 @@
 /**
- * CheckMailScreen — stub for partner to implement.
+ * stub
  *
  * Props:
  * email — the address the reset link was sent to displayed as "If ___ has an account..."

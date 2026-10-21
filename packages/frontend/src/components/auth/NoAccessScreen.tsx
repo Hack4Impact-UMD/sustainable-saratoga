@@ -1,5 +1,5 @@
 /**
- * NoAccessScreen — stub for partner to implement.
+ * stub
  *
  * Props:
  * email — the address that was denied access; displayed as "___ isn't set up for the tree tracker."
