@@ -9,18 +9,17 @@ import type { Auth, User } from "firebase/auth";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
 import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 const firebase = vi.hoisted(() => ({
-  createUserWithEmailAndPassword: vi.fn<
-    (auth: Auth, email: string, password: string) => Promise<{ user: User }>
-  >(),
-  updateProfile: vi.fn<
-    (user: User, profile: { displayName?: string | null }) => Promise<void>
-  >(),
+  createUserWithEmailAndPassword:
+    vi.fn<
+      (auth: Auth, email: string, password: string) => Promise<{ user: User }>
+    >(),
+  updateProfile:
+    vi.fn<
+      (user: User, profile: { displayName?: string | null }) => Promise<void>
+    >(),
 }));
 
 vi.mock("firebase/auth", () => ({
@@ -36,10 +35,7 @@ function renderSignUpForm() {
   const onSuccess = vi.fn<() => void>();
   const onAccountExists = vi.fn<() => void>();
   render(
-    <SignUpForm
-      onSuccess={onSuccess}
-      onAccountExists={onAccountExists}
-    />,
+    <SignUpForm onSuccess={onSuccess} onAccountExists={onAccountExists} />,
   );
   return { onSuccess, onAccountExists };
 }
@@ -72,7 +68,9 @@ describe("SignUpForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     expect(
-      screen.getByText("Fix 2 things to create your account").closest('[role="alert"]'),
+      screen
+        .getByText("Fix 2 things to create your account")
+        .closest('[role="alert"]'),
     ).toBeInTheDocument();
     expect(screen.getByText("Enter your name.")).toBeInTheDocument();
     expect(screen.getByText(/Password needs:/)).toHaveTextContent(
@@ -89,7 +87,9 @@ describe("SignUpForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     expect(
-      screen.getByText("Fix 1 thing to create your account").closest('[role="alert"]'),
+      screen
+        .getByText("Fix 1 thing to create your account")
+        .closest('[role="alert"]'),
     ).toBeInTheDocument();
     expect(screen.queryByText("Enter your name.")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Create a Password")).toHaveFocus();
@@ -199,11 +199,7 @@ describe("SignUpForm", () => {
   ] as const)("renders the static %s result state", (state, title, action) => {
     render(<SignUpResult state={state} />);
 
-    expect(
-      screen.getByRole("heading", { name: title }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: action }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: action })).toBeInTheDocument();
   });
 });

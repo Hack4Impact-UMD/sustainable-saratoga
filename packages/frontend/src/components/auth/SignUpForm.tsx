@@ -22,14 +22,23 @@ import {
 const invitedEmail = "test@example.com"; // TODO: Replace with actual invited email
 
 const passwordRequirements = [
-  { label: "At least 8 characters", test: (value: string) => value.length >= 8 },
+  {
+    label: "At least 8 characters",
+    test: (value: string) => value.length >= 8,
+  },
   {
     label: "At least 1 special symbol",
     test: (value: string) => /[^A-Za-z0-9\s]/.test(value),
   },
   { label: "At least 1 number", test: (value: string) => /[0-9]/.test(value) },
-  { label: "At least 1 uppercase letter", test: (value: string) => /[A-Z]/.test(value) },
-  { label: "At least 1 lowercase letter", test: (value: string) => /[a-z]/.test(value) },
+  {
+    label: "At least 1 uppercase letter",
+    test: (value: string) => /[A-Z]/.test(value),
+  },
+  {
+    label: "At least 1 lowercase letter",
+    test: (value: string) => /[a-z]/.test(value),
+  },
 ] as const;
 
 function checkPasswordRequirements(password: string) {
@@ -52,8 +61,9 @@ export function SignUpForm({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [passwordChecks, setPasswordChecks] =
-    useState<ReturnType<typeof checkPasswordRequirements> | null>(null);
+  const [passwordChecks, setPasswordChecks] = useState<ReturnType<
+    typeof checkPasswordRequirements
+  > | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const validationErrorCount =
@@ -72,9 +82,10 @@ export function SignUpForm({
       .filter(({ met }) => !met)
       .map(({ label }) => label);
     const nextNameError = name ? null : "Enter your name.";
-    const nextPasswordError = unmetPasswordRequirements.length > 0
-      ? `Password needs: ${unmetPasswordRequirements.join(", ")}.`
-      : null;
+    const nextPasswordError =
+      unmetPasswordRequirements.length > 0
+        ? `Password needs: ${unmetPasswordRequirements.join(", ")}.`
+        : null;
 
     setNameError(nextNameError);
     setPasswordError(nextPasswordError);
@@ -126,7 +137,11 @@ export function SignUpForm({
       <div className="grid grid-cols-4 md:grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-4 md:col-start-4 md:col-span-6 flex flex-col gap-4 rounded-md bg-page p-4">
           <header>
-            <img src={icon} alt="Sustainable Saratoga Logo" className="w-20 h-20 mx-auto" />
+            <img
+              src={icon}
+              alt="Sustainable Saratoga Logo"
+              className="w-20 h-20 mx-auto"
+            />
             <h1 className="type-h1 text-center">Create Account</h1>
           </header>
           <form
