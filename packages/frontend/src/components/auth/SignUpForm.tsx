@@ -17,7 +17,13 @@ import { Field, FieldError, FieldLabel } from "@frontend/components/ui/field";
 
 const invitedEmail = "test1@example.com"; // TODO: Replace with actual invited email
 
-export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
+export function SignUpForm({
+  onSuccess,
+  onAccountExists,
+}: {
+  onSuccess: () => void;
+  onAccountExists: () => void;
+}) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -70,13 +76,15 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
         typeof cause === "object" && cause !== null && "code" in cause
           ? cause.code
           : undefined;
-      setFormError(
-        code === "auth/email-already-in-use"
-          ? "An account already exists for this invite."
-          : code === "auth/weak-password"
+      if (code === "auth/email-already-in-use") {
+        onAccountExists();
+      } else {
+        setFormError(
+          code === "auth/weak-password"
             ? "Your password must be at least 8 characters."
             : "We couldn't create your account. Please try again.",
-      );
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -87,7 +95,7 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-4 md:grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-4 md:col-start-4 md:col-span-6 flex flex-col gap-4 rounded-md bg-page p-4">
           <header>
-            <img src={icon} alt="Leaf Logo" className="w-20 h-20 mx-auto" />
+            <img src={icon} alt="Sustainable Saratoga Logo" className="w-20 h-20 mx-auto" />
             <h1 className="type-h1 text-center">Create Account</h1>
           </header>
           <form

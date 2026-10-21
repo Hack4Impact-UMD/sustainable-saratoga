@@ -21,14 +21,21 @@ vi.mock("firebase/auth", () => ({
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
+import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 const createdUser = { uid: "new-user" } as User;
 
 function renderSignUpForm() {
   const onSuccess = vi.fn();
-  render(<SignUpForm onSuccess={onSuccess} />);
-  return { onSuccess };
+  const onAccountExists = vi.fn();
+  render(
+    <SignUpForm
+      onSuccess={onSuccess}
+      onAccountExists={onAccountExists}
+    />,
+  );
+  return { onSuccess, onAccountExists };
 }
 
 function fillForm({ name = "", password = "" } = {}) {
@@ -121,19 +128,33 @@ describe("SignUpForm", () => {
     await waitFor(() => expect(submitButton).toBeEnabled());
   });
 
-  it("shows a helpful message when the invite already has an account", async () => {
+  it("shows the account-exists result when the invite already has an account", async () => {
     firebase.createUserWithEmailAndPassword.mockRejectedValue(
       Object.assign(new Error("Account exists"), {
         code: "auth/email-already-in-use",
       }),
     );
-    renderSignUpForm();
+    const { onAccountExists } = renderSignUpForm();
     fillForm({ name: "Alex", password: "password123" });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
+    await waitFor(() => expect(onAccountExists).toHaveBeenCalledOnce());
+  });
+
+  it.each([
+    ["success", "You’re all set", "Open Tree Tracker"],
+    ["expired", "This invitation has expired", "Back to sign in"],
+    ["account-exists", "Account already exists", "Sign in"],
+    ["no-access", "No access yet", "Use another account"],
+  ] as const)("renders the static %s result state", (state, title, action) => {
+    render(<SignUpResult state={state} />);
+
     expect(
-      await screen.findByText("An account already exists for this invite."),
+      screen.getByRole("heading", { name: title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: action }),
     ).toBeInTheDocument();
   });
 });

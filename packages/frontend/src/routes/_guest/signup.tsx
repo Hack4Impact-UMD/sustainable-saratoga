@@ -1,10 +1,39 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm";
+import {
+  SignUpResult,
+  type SignUpResultState,
+} from "@frontend/components/auth/SignUpResult";
 
-export const Route = createFileRoute("/_guest/signup")({ component: SignUpPage });
+const resultStates: SignUpResultState[] = [
+  "success",
+  "expired",
+  "account-exists",
+  "no-access",
+];
+
+export const Route = createFileRoute("/_guest/signup")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    state: resultStates.find((state) => state === search.state),
+  }),
+  component: SignUpPage,
+});
 
 function SignUpPage() {
-  const navigate = useNavigate();
+  const { state: previewState } = Route.useSearch();
+  const [resultState, setResultState] = useState<SignUpResultState | undefined>(
+    previewState,
+  );
 
-  return <SignUpForm onSuccess={() => void navigate({ to: "/" })} />;
+  if (resultState) {
+    return <SignUpResult state={resultState} />;
+  }
+
+  return (
+    <SignUpForm
+      onSuccess={() => setResultState("success")}
+      onAccountExists={() => setResultState("account-exists")}
+    />
+  );
 }
