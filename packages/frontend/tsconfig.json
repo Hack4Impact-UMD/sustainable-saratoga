@@ -5,13 +5,12 @@
     "types": ["vite/client", "node"],
     "jsx": "react-jsx",
     "paths": {
-    "@/*": ["./src/*"],
-    "@common/*": ["../../packages/common/src/*"],
-    "@backend/*": ["../../packages/backend/src/*"],
-    "@frontend/*": ["./src/*"],
-    "@e2e/*": ["../../e2e/*"]
-  }
+      "@/*": ["./src/*"],
+      "@common/*": ["../../packages/common/src/*"],
+      "@backend/*": ["../../packages/backend/src/*"],
+      "@frontend/*": ["./src/*"],
+      "@e2e/*": ["../../e2e/*"]
+    }
   },
   "include": ["src", "vite.config.ts"]
-
 }

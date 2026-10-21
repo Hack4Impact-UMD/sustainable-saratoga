@@ -96,7 +96,11 @@ export function SignUpForm({
         invitedEmail,
         password,
       );
-      await updateProfile(user, { displayName: name });
+      try {
+        await updateProfile(user, { displayName: name });
+      } catch (error) {
+        console.error("Could not set display name", error);
+      }
       onSuccess();
     } catch (error) {
       const code =

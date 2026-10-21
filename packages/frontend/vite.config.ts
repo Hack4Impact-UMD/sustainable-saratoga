@@ -34,7 +34,7 @@ export default defineConfig({
       filename: "sw.ts",
       // A new version waits until the user accepts the prompt in UpdatePrompt,
       // so a deploy never reloads the page while a volunteer is mid-form.
-      registerType: "autoUpdate",
+      registerType: "prompt",
       devOptions: {
         // Off by default so the dev server never serves stale pages. Run
         // `PWA_DEV=true pnpm dev` to test service worker behavior locally.
