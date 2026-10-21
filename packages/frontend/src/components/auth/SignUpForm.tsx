@@ -15,7 +15,25 @@ import { auth } from "@frontend/lib/firebase.ts";
 import { Input } from "@frontend/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@frontend/components/ui/field";
 
-const invitedEmail = "test1@example.com"; // TODO: Replace with actual invited email
+const invitedEmail = "test@example.com"; // TODO: Replace with actual invited email
+
+const passwordRequirements = [
+  { label: "At least 8 characters", test: (value: string) => value.length >= 8 },
+  {
+    label: "At least 1 special symbol",
+    test: (value: string) => /[^A-Za-z0-9\s]/.test(value),
+  },
+  { label: "At least 1 number", test: (value: string) => /[0-9]/.test(value) },
+  { label: "At least 1 uppercase letter", test: (value: string) => /[A-Z]/.test(value) },
+  { label: "At least 1 lowercase letter", test: (value: string) => /[a-z]/.test(value) },
+] as const;
+
+function checkPasswordRequirements(password: string) {
+  return passwordRequirements.map(({ label, test }) => ({
+    label,
+    met: test(password),
+  }));
+}
 
 export function SignUpForm({
   onSuccess,
@@ -30,8 +48,8 @@ export function SignUpForm({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [passwordWasValidOnSubmit, setPasswordWasValidOnSubmit] =
-    useState(false);
+  const [passwordChecks, setPasswordChecks] =
+    useState<ReturnType<typeof checkPasswordRequirements> | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const validationErrorCount =
@@ -45,13 +63,18 @@ export function SignUpForm({
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
     const password = String(formData.get("password") ?? "");
+    const nextPasswordChecks = checkPasswordRequirements(password);
+    const unmetPasswordRequirements = nextPasswordChecks
+      .filter(({ met }) => !met)
+      .map(({ label }) => label);
     const nextNameError = name ? null : "Enter your name.";
-    const nextPasswordError =
-      password.length >= 8 ? null : "Use at least 8 characters.";
+    const nextPasswordError = unmetPasswordRequirements.length > 0
+      ? `Password needs: ${unmetPasswordRequirements.join(", ")}.`
+      : null;
 
     setNameError(nextNameError);
     setPasswordError(nextPasswordError);
-    setPasswordWasValidOnSubmit(nextPasswordError === null);
+    setPasswordChecks(nextPasswordChecks);
 
     if (nextNameError || nextPasswordError) {
       if (nextNameError) {
@@ -81,7 +104,7 @@ export function SignUpForm({
       } else {
         setFormError(
           code === "auth/weak-password"
-            ? "Your password must be at least 8 characters."
+            ? "Your password does not meet the required criteria."
             : "We couldn't create your account. Please try again.",
         );
       }
@@ -164,7 +187,6 @@ export function SignUpForm({
                   placeholder="••••••••"
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
-                  minLength={8}
                   autoComplete="new-password"
                   aria-invalid={Boolean(passwordError)}
                   aria-describedby={
@@ -204,24 +226,34 @@ export function SignUpForm({
             >
               <h2 className="font-bold">Your password needs</h2>
               <ul className="mt-2">
-                <li
-                  className={
-                    hasSubmitted && passwordWasValidOnSubmit
-                      ? "flex items-center gap-2 text-success"
-                      : hasSubmitted
-                        ? "flex items-center gap-2 text-destructive"
-                        : "flex items-center gap-2"
-                  }
-                >
-                  {hasSubmitted && passwordWasValidOnSubmit ? (
-                    <CircleCheck className="size-5" />
-                  ) : hasSubmitted ? (
-                    <CircleX className="size-5" />
-                  ) : (
-                    <Circle className="size-5 text-icon-secondary" />
-                  )}
-                  At least 8 characters
-                </li>
+                {passwordRequirements.map(({ label }, index) => {
+                  const requirement = passwordChecks?.[index];
+
+                  return (
+                    <li
+                      key={label}
+                      className={
+                        requirement?.met
+                          ? "flex items-center gap-2 text-success"
+                          : hasSubmitted
+                            ? "flex items-center gap-2 text-destructive"
+                            : "flex items-center gap-2"
+                      }
+                    >
+                      {requirement?.met ? (
+                        <CircleCheck aria-hidden="true" className="size-5" />
+                      ) : hasSubmitted ? (
+                        <CircleX aria-hidden="true" className="size-5" />
+                      ) : (
+                        <Circle
+                          aria-hidden="true"
+                          className="size-5 text-icon-secondary"
+                        />
+                      )}
+                      {label}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 

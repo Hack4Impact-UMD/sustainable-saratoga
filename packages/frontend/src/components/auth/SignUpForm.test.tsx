@@ -69,7 +69,9 @@ describe("SignUpForm", () => {
       screen.getByText("Fix 2 things to create your account").closest('[role="alert"]'),
     ).toBeInTheDocument();
     expect(screen.getByText("Enter your name.")).toBeInTheDocument();
-    expect(screen.getByText("Use at least 8 characters.")).toBeInTheDocument();
+    expect(screen.getByText(/Password needs:/)).toHaveTextContent(
+      "At least 8 characters",
+    );
     expect(screen.getByLabelText("Name")).toHaveFocus();
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
@@ -89,7 +91,7 @@ describe("SignUpForm", () => {
 
   it("creates the account with the invited email, sets the name, and calls onSuccess", async () => {
     const { onSuccess } = renderSignUpForm();
-    fillForm({ name: "Alex Doe", password: "password123" });
+    fillForm({ name: "Alex Doe", password: "Password123!" });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
@@ -98,7 +100,7 @@ describe("SignUpForm", () => {
     expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
       expect.anything(),
       invitedEmail.value,
-      "password123",
+      "Password123!",
     );
     expect(updateProfile).toHaveBeenCalledWith(createdUser, {
       displayName: "Alex Doe",
@@ -115,7 +117,7 @@ describe("SignUpForm", () => {
       }),
     );
     renderSignUpForm();
-    fillForm({ name: "Alex", password: "password123" });
+    fillForm({ name: "Alex", password: "Password123!" });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
@@ -135,11 +137,54 @@ describe("SignUpForm", () => {
       }),
     );
     const { onAccountExists } = renderSignUpForm();
-    fillForm({ name: "Alex", password: "password123" });
+    fillForm({ name: "Alex", password: "Password123!" });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     await waitFor(() => expect(onAccountExists).toHaveBeenCalledOnce());
+  });
+
+  it.each([
+    { password: "Abcdefg1", requirement: "At least 1 special symbol" },
+    { password: "Abcdefg!", requirement: "At least 1 number" },
+    { password: "abcdefg1!", requirement: "At least 1 uppercase letter" },
+    { password: "ABCDEFG1!", requirement: "At least 1 lowercase letter" },
+    { password: "Abc1!", requirement: "At least 8 characters" },
+  ])(
+    "rejects a password that fails $requirement",
+    ({ password, requirement }) => {
+      renderSignUpForm();
+      fillForm({ name: "Alex", password });
+
+      fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
+
+      expect(screen.getByText(/Password needs:/)).toHaveTextContent(
+        requirement,
+      );
+      expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+    },
+  );
+
+  it("marks all password requirements as met after a valid submission", async () => {
+    renderSignUpForm();
+    fillForm({ name: "Alex", password: "Password123!" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
+
+    await waitFor(() =>
+      expect(createUserWithEmailAndPassword).toHaveBeenCalledOnce(),
+    );
+    for (const requirement of [
+      "At least 8 characters",
+      "At least 1 special symbol",
+      "At least 1 number",
+      "At least 1 uppercase letter",
+      "At least 1 lowercase letter",
+    ]) {
+      expect(screen.getByText(requirement).closest("li")).toHaveClass(
+        "text-success",
+      );
+    }
   });
 
   it.each([
