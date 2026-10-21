@@ -2,12 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoginForm } from "@frontend/components/auth/LoginForm.tsx";
 
 /**
- * Validates the ?redirect= and ?reason= search params.
- *
- * - redirect: only kept when it's a same-origin path (starts with "/"),
- *   preventing open-redirect attacks.
- * - reason: only "session-expired" is a recognised value; anything else
- *   is dropped so arbitrary strings can't appear in the UI.
+ * redirect: only kept if it's a same-origin path (starts with "/") to prevent open-redirect attacks
+ * reason: only "session-expired" is valid, anything else is dropped
  */
 function validateSearch(search: Record<string, unknown>): {
   redirect?: string;
@@ -30,9 +26,8 @@ export const Route = createFileRoute("/_guest/login")({
 });
 
 /**
- * L1 — Sign in page.
- * L8 — Same page, but with a "Your session ended" banner when
- *       ?reason=session-expired is present in the URL.
+ * Sign in page. Also handles the session expired state when
+ * ?reason=session-expired is in the URL, showing a "Your session ended" banner.
  */
 function LoginPage() {
   const navigate = useNavigate();

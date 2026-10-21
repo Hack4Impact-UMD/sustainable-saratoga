@@ -4,7 +4,7 @@ import { ResetPasswordForm } from "@frontend/components/auth/ResetPasswordForm.t
 /**
  * Firebase appends oobCode (and optionally email) to the reset link it sends.
  * oobCode is required for the password reset to work; email is informational
- * (shown as "For jordan.lee@example.org").
+ * (shown as "For ___").
  */
 function validateSearch(search: Record<string, unknown>): {
   oobCode: string;
@@ -25,26 +25,24 @@ export const Route = createFileRoute("/_guest/reset-password")({
 });
 
 /**
- * L4   — Choose a new password (normal state).
- * L4b  — Link expired while the user was on this page.
- * L5   — Password updated successfully.
- * L6   — Link expired before the user arrived (detected on load).
- * L6b  — Link already used.
- *
- * All five states are inline inside ResetPasswordForm; this route supplies
- * the oobCode/email and navigation callbacks.
+ * Possible States:
+    * Choose a new password (normal state) (1)
+    * Link expired while the user was on this page (2)
+    * Password updated successfully (3)
+    * Link expired before the user arrived (detected on load) (4)
+    * Link already used (5)
  */
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const { oobCode, email } = Route.useSearch();
 
   function handleSuccess() {
-    // L5 — password updated; "Sign in" button on that screen goes to /login
+    // 3 - go to login page
     void navigate({ to: "/login" });
   }
 
   function handleSendNewLink() {
-    // L4b / L6 / L6b — send a fresh reset link; go back to forgot-password
+    // 2, 4, 5
     void navigate({ to: "/login/forgot-password" });
   }
 

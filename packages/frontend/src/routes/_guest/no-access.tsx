@@ -16,9 +16,8 @@ export const Route = createFileRoute("/_guest/no-access")({
 });
 
 /**
- * L7 — No access yet.
- * The account exists in Firebase but hasn't been approved.
- * "Use another account" signs the user out and returns them to /login.
+ * No access yet. The account exists but isn't approved
+ * "Use another account" signs the user out and redirects them to /login.
  */
 function NoAccessPage() {
   const navigate = useNavigate();

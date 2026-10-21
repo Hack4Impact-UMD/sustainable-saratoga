@@ -6,10 +6,9 @@ export const Route = createFileRoute("/_guest/login/forgot-password")({
 });
 
 /**
- * L2 — Reset your password.
- * User enters their email and clicks "Send reset link".
+ * Reset password - user enters email and clicks send reset link
  * On success, navigates to /login/check-mail with the email in search params
- * so that page can display "If jordan.lee@example.org has an account…".
+ * to display "If ___ has an account...".
  */
 function ForgotPasswordPage() {
   const navigate = useNavigate();
