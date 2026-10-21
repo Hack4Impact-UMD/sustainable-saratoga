@@ -24,7 +24,8 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [passwordWasValidOnSubmit, setPasswordWasValidOnSubmit] = useState(false);
+  const [passwordWasValidOnSubmit, setPasswordWasValidOnSubmit] =
+    useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const validationErrorCount =

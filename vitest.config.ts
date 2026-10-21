@@ -39,6 +39,9 @@ export default defineConfig({
         resolve: {
           alias: {
             ...alias,
+            "@": fileURLToPath(
+              new URL("./packages/frontend/src", import.meta.url),
+            ),
             // Virtual module from vite-plugin-pwa, which only exists inside the
             // Vite build. Tests mock it with `vi.mock`.
             "virtual:pwa-register/react": fileURLToPath(
