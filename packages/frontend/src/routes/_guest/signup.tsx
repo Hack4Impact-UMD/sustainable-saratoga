@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { SignUpForm } from "@frontend/components/auth/SignUpForm";
-import {
-  SignUpResult,
-  type SignUpResultState,
-} from "@frontend/components/auth/SignUpResult";
+import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
+import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
+import type { SignUpResultState } from "@frontend/components/auth/SignUpResult.tsx";
 
 const resultStates: SignUpResultState[] = [
   "success",

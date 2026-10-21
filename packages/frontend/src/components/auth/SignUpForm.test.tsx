@@ -5,12 +5,22 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import type { User } from "firebase/auth";
+import type { Auth, User } from "firebase/auth";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
+import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 
 const firebase = vi.hoisted(() => ({
-  createUserWithEmailAndPassword: vi.fn(),
-  updateProfile: vi.fn(),
+  createUserWithEmailAndPassword: vi.fn<
+    (auth: Auth, email: string, password: string) => Promise<{ user: User }>
+  >(),
+  updateProfile: vi.fn<
+    (user: User, profile: { displayName?: string | null }) => Promise<void>
+  >(),
 }));
 
 vi.mock("firebase/auth", () => ({
@@ -20,15 +30,11 @@ vi.mock("firebase/auth", () => ({
 
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
-import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
-import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-
 const createdUser = { uid: "new-user" } as User;
 
 function renderSignUpForm() {
-  const onSuccess = vi.fn();
-  const onAccountExists = vi.fn();
+  const onSuccess = vi.fn<() => void>();
+  const onAccountExists = vi.fn<() => void>();
   render(
     <SignUpForm
       onSuccess={onSuccess}
@@ -53,7 +59,7 @@ describe("SignUpForm", () => {
     firebase.createUserWithEmailAndPassword.mockResolvedValue({
       user: createdUser,
     });
-    firebase.updateProfile.mockResolvedValue(undefined);
+    firebase.updateProfile.mockImplementation(() => Promise.resolve());
   });
 
   afterEach(() => {
@@ -108,9 +114,7 @@ describe("SignUpForm", () => {
   });
 
   it("disables submission while Firebase is creating the account", async () => {
-    let resolveCreate:
-      | ((value: { user: User }) => void)
-      | undefined;
+    let resolveCreate!: (value: { user: User }) => void;
     firebase.createUserWithEmailAndPassword.mockReturnValue(
       new Promise((resolve) => {
         resolveCreate = resolve;
@@ -126,7 +130,7 @@ describe("SignUpForm", () => {
     });
     expect(submitButton).toBeDisabled();
 
-    resolveCreate?.({ user: createdUser });
+    resolveCreate({ user: createdUser });
     await waitFor(() => expect(submitButton).toBeEnabled());
   });
 

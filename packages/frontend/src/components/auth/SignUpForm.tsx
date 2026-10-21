@@ -12,8 +12,12 @@ import {
 } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
 import { auth } from "@frontend/lib/firebase.ts";
-import { Input } from "@frontend/components/ui/input";
-import { Field, FieldError, FieldLabel } from "@frontend/components/ui/field";
+import { Input } from "@frontend/components/ui/input.tsx";
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+} from "@frontend/components/ui/field.tsx";
 
 const invitedEmail = "test@example.com"; // TODO: Replace with actual invited email
 
@@ -94,10 +98,10 @@ export function SignUpForm({
       );
       await updateProfile(user, { displayName: name });
       onSuccess();
-    } catch (cause) {
+    } catch (error) {
       const code =
-        typeof cause === "object" && cause !== null && "code" in cause
-          ? cause.code
+        typeof error === "object" && error !== null && "code" in error
+          ? error.code
           : undefined;
       if (code === "auth/email-already-in-use") {
         onAccountExists();
