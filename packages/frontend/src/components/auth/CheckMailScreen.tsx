@@ -22,6 +22,7 @@ export function CheckMailScreen({
   onBackToSignIn,
 }: CheckMailScreenProps) {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const [isResending, setIsResending] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
   const [resendError, setResendError] = useState(false);
 
@@ -39,8 +40,9 @@ export function CheckMailScreen({
 
   /** Sends another reset email and starts the cooldown after success. */
   async function handleResend() {
-    if (!email || secondsRemaining > 0) return;
+    if (!email || secondsRemaining > 0 || isResending) return;
 
+    setIsResending(true);
     setResendError(false);
     try {
       // A successful resend replaces the previous reset link and restarts the timer.
@@ -49,6 +51,8 @@ export function CheckMailScreen({
       setSecondsRemaining(RESEND_COOLDOWN_SECONDS);
     } catch {
       setResendError(true);
+    } finally {
+      setIsResending(false);
     }
   }
 
@@ -122,12 +126,14 @@ export function CheckMailScreen({
           <button
             className="type-btn-secondary h-control w-full rounded-pill border border-primary bg-surface px-4 hover:bg-hover disabled:cursor-not-allowed disabled:border-divider disabled:text-disabled"
             type="button"
-            disabled={secondsRemaining > 0 || !email}
+            disabled={secondsRemaining > 0 || !email || isResending}
             onClick={() => void handleResend()}
           >
             {secondsRemaining > 0
               ? `Send another link in 0:${String(secondsRemaining).padStart(2, "0")}`
-              : "Send another link"}
+              : isResending
+                ? "Sending..."
+                : "Send another link"}
           </button>
         </div>
       </section>

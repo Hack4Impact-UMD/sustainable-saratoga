@@ -2,6 +2,7 @@ import {
   createFileRoute,
   Outlet,
   useNavigate,
+  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
 import { LoginForm } from "@frontend/components/auth/LoginForm.tsx";
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/_guest/login")({
  */
 function LoginPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -48,7 +50,7 @@ function LoginPage() {
   }
 
   function handleSuccess() {
-    void navigate({ to: redirect ?? "/" });
+    router.history.push(redirect ?? "/");
   }
 
   function handleForgotPassword() {

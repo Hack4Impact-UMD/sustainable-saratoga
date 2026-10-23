@@ -96,7 +96,14 @@ export function ResetPasswordForm({
       setState("success");
     } catch (error) {
       const code = getFirebaseErrorCode(error);
-      setState(code === "auth/expired-action-code" ? "expired" : "used");
+      if (code === "auth/expired-action-code") setState("expired");
+      else if (code === "auth/invalid-action-code") setState("used");
+      else
+        setPasswordError(
+          code === "auth/weak-password"
+            ? "Choose a stronger password."
+            : "We couldn't save your password. Please try again.",
+        );
     } finally {
       setIsSaving(false);
     }
@@ -152,9 +159,8 @@ export function ResetPasswordForm({
                 Reset links work for 1 hour
               </p>
               <p className="type-body-sm mt-1 text-warning">
-                Send a new one to{" "}
-                <strong>{email ?? "jordan.lee@example.org"}</strong> to
-                continue.
+                Send a new one{email ? " to " : ""}
+                {email ? <strong>{email}</strong> : null} to continue.
               </p>
             </div>
           </div>
