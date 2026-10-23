@@ -1,4 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { LoginForm } from "@frontend/components/auth/LoginForm.tsx";
 
 /**
@@ -31,7 +36,16 @@ export const Route = createFileRoute("/_guest/login")({
  */
 function LoginPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const { redirect, reason } = Route.useSearch();
+
+  // This route also owns /login/* child routes. Render those children through
+  // the outlet instead of leaving them hidden behind the login form.
+  if (pathname !== "/login") {
+    return <Outlet />;
+  }
 
   function handleSuccess() {
     void navigate({ to: redirect ?? "/" });

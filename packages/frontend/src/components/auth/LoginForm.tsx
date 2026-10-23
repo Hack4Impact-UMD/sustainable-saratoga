@@ -40,10 +40,12 @@ export function LoginForm({
   const [emailError, setEmailError] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
 
+  // TanStack Query exposes the Firebase request status and any auth failure.
   const signInError = login.isError
     ? authErrorMessage(login.error, "password")
     : null;
 
+  /** Validates the submitted credentials and starts the Firebase login mutation. */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -54,6 +56,7 @@ export function LoginForm({
 
     if (nextEmailError || nextPasswordError) return;
 
+    // The route decides where to navigate after the auth provider updates.
     login.mutate(
       { email: email.trim(), password },
       { onSuccess },
@@ -72,16 +75,25 @@ export function LoginForm({
           <h1 className="type-h1">Sign in</h1>
         </div>
 
+        {/* This banner is shown when an authenticated session has expired. */}
         {sessionExpired ? (
           <div
             className="mb-4 rounded-md border border-line-info bg-info-tint p-3 text-info"
             role="status"
           >
-            <p className="type-body-strong text-info">Your session ended</p>
-            <p className="type-body-sm text-info">Sign in again to continue.</p>
+            <div className="flex items-start gap-3">
+              <CircleAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+              <div className="text-left">
+                <p className="type-body-strong text-info">Your session ended</p>
+                <p className="type-body-sm text-info">
+                  Sign in again to continue.
+                </p>
+              </div>
+            </div>
           </div>
         ) : null}
 
+        {/* Firebase failures are mapped to the design's warning or error banner. */}
         {signInError ? (
           <div
             className={`mb-4 rounded-md border p-3 ${
@@ -91,43 +103,48 @@ export function LoginForm({
             }`}
             role="alert"
           >
-            {signInError.title ? (
-              <p
-                className={`type-body-strong flex items-center gap-2 ${
-                  signInError.variant === "warning"
-                    ? "text-warning"
-                    : "text-error"
-                }`}
-              >
-                {signInError.variant === "warning" ? (
-                  <CloudAlert size={20} aria-hidden="true" />
-                ) : (
-                  <CircleAlert size={20} aria-hidden="true" />
-                )}
-                {signInError.title}
-              </p>
-            ) : null}
-            <p
-              className={`type-body-sm ${
-                signInError.variant === "warning"
-                  ? "text-warning"
-                  : "text-error"
-              }`}
-            >
-              {signInError.message}
-            </p>
+            <div className="flex items-start gap-3">
+              {signInError.variant === "warning" ? (
+                <CloudAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+              ) : (
+                <CircleAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+              )}
+              <div className="text-left">
+                {signInError.title ? (
+                  <p
+                    className={`type-body-strong ${
+                      signInError.variant === "warning"
+                        ? "text-warning"
+                        : "text-error"
+                    }`}
+                  >
+                    {signInError.title}
+                  </p>
+                ) : null}
+                <p
+                  className={`type-body-sm ${
+                    signInError.variant === "warning"
+                      ? "text-warning"
+                      : "text-error"
+                  }`}
+                >
+                  {signInError.message}
+                </p>
+              </div>
+            </div>
           </div>
         ) : null}
 
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+          {/* Each field owns its validation message and accessible error link. */}
           <div>
             <label className="type-h4 mb-1 block" htmlFor="login-email">
               Email
             </label>
             <input
-              className={`h-control w-full rounded-input border bg-surface px-3 text-body outline-none focus:border-[length:var(--border-width-focus)] focus:border-primary focus:shadow-none ${
+              className={`h-control w-full rounded-input border bg-surface px-3 text-body outline-none focus:border-(length:--border-width-focus) focus:border-primary focus:shadow-none ${
                 emailError
-                  ? "border-[length:var(--border-width-error)] border-error"
+                  ? "border-(length:--border-width-error) border-error"
                   : "border-line-strong"
               }`}
               id="login-email"
@@ -157,9 +174,9 @@ export function LoginForm({
             </label>
             <div className="relative">
               <input
-                className={`h-control w-full rounded-input border bg-surface px-3 pr-12 text-body outline-none focus:border-[length:var(--border-width-focus)] focus:border-primary focus:shadow-none ${
+                className={`h-control w-full rounded-input border bg-surface px-3 pr-12 text-body outline-none focus:border-(length:--border-width-focus) focus:border-primary focus:shadow-none ${
                   passwordError
-                    ? "border-[length:var(--border-width-error)] border-error"
+                    ? "border-(length:--border-width-error) border-error"
                     : "border-line-strong"
                 }`}
                 id="login-password"
