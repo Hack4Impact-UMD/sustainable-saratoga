@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "firebase": "^12.18.0",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.61.0"
   }
 }

@@ -1,12 +1,22 @@
+import { useState } from "react";
+import type { FormEvent } from "react";
+import {
+  CircleAlert,
+  CloudAlert,
+  Eye,
+  EyeOff,
+  Info,
+} from "lucide-react";
+import icon from "@frontend/assets/Leaf logo.svg";
+import {
+  authErrorMessage,
+  emailFieldError,
+  passwordFieldError,
+} from "@frontend/lib/authErrors.ts";
+import { useLogin } from "@frontend/lib/useLogin.ts";
+
 /**
- * stub
- *
- * Props:
- * sessionExpired — when true, show "Your session ended" banner
- * onSuccess — called after a successful sign-in; route navigates to the redirect target
- * onForgotPassword — called when the user clicks "Forgot password?" and navigates to /login/forgot-password
- * onNoAccess — called with the user's email when user exists in Firebase
- * but not authorized/verified and navigates to /no-access
+ * Props for the sign-in form and its navigation actions.
  */
 export interface LoginFormProps {
   sessionExpired?: boolean;
@@ -15,7 +25,199 @@ export interface LoginFormProps {
   onNoAccess: (email: string) => void;
 }
 
-export function LoginForm(_props: LoginFormProps) {
-  // blank
-  return null;
+/**
+ * Renders the email/password sign-in form shown on the guest login page.
+ */
+export function LoginForm({
+  sessionExpired = false,
+  onSuccess,
+  onForgotPassword,
+}: LoginFormProps) {
+  const login = useLogin();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string>();
+  const [passwordError, setPasswordError] = useState<string>();
+
+  const signInError = login.isError
+    ? authErrorMessage(login.error, "password")
+    : null;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextEmailError = emailFieldError(email);
+    const nextPasswordError = passwordFieldError(password);
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+
+    if (nextEmailError || nextPasswordError) return;
+
+    login.mutate(
+      { email: email.trim(), password },
+      { onSuccess },
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen justify-center bg-page px-4 py-8">
+      <section className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <img
+            src={icon}
+            alt="Sustainable Saratoga"
+            className="mx-auto mb-4 h-auto w-24"
+          />
+          <h1 className="type-h1">Sign in</h1>
+        </div>
+
+        {sessionExpired ? (
+          <div
+            className="mb-4 rounded-md border border-line-info bg-info-tint p-3 text-info"
+            role="status"
+          >
+            <p className="type-body-strong text-info">Your session ended</p>
+            <p className="type-body-sm text-info">Sign in again to continue.</p>
+          </div>
+        ) : null}
+
+        {signInError ? (
+          <div
+            className={`mb-4 rounded-md border p-3 ${
+              signInError.variant === "warning"
+                ? "border-[#E6CF9E] bg-[#FBF0D9] text-warning"
+                : "border-line-error bg-error-tint text-error"
+            }`}
+            role="alert"
+          >
+            {signInError.title ? (
+              <p
+                className={`type-body-strong flex items-center gap-2 ${
+                  signInError.variant === "warning"
+                    ? "text-warning"
+                    : "text-error"
+                }`}
+              >
+                {signInError.variant === "warning" ? (
+                  <CloudAlert size={20} aria-hidden="true" />
+                ) : (
+                  <CircleAlert size={20} aria-hidden="true" />
+                )}
+                {signInError.title}
+              </p>
+            ) : null}
+            <p
+              className={`type-body-sm ${
+                signInError.variant === "warning"
+                  ? "text-warning"
+                  : "text-error"
+              }`}
+            >
+              {signInError.message}
+            </p>
+          </div>
+        ) : null}
+
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+          <div>
+            <label className="type-h4 mb-1 block" htmlFor="login-email">
+              Email
+            </label>
+            <input
+              className={`h-control w-full rounded-input border bg-surface px-3 text-body outline-none focus:border-[length:var(--border-width-focus)] focus:border-primary focus:shadow-none ${
+                emailError
+                  ? "border-[length:var(--border-width-error)] border-error"
+                  : "border-line-strong"
+              }`}
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="name@example.org"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (emailError) setEmailError(undefined);
+              }}
+              aria-invalid={Boolean(emailError)}
+              aria-describedby={emailError ? "login-email-error" : undefined}
+            />
+            {emailError ? (
+              <p className="type-error mt-1 flex items-center gap-1" id="login-email-error">
+                <CircleAlert size={16} aria-hidden="true" />
+                {emailError}
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className="type-h4 mb-1 block" htmlFor="login-password">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                className={`h-control w-full rounded-input border bg-surface px-3 pr-12 text-body outline-none focus:border-[length:var(--border-width-focus)] focus:border-primary focus:shadow-none ${
+                  passwordError
+                    ? "border-[length:var(--border-width-error)] border-error"
+                    : "border-line-strong"
+                }`}
+                id="login-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (passwordError) setPasswordError(undefined);
+                }}
+                aria-invalid={Boolean(passwordError)}
+                aria-describedby={
+                  passwordError ? "login-password-error" : undefined
+                }
+              />
+              <button
+                className="absolute right-1 top-1/2 flex size-touch -translate-y-1/2 items-center justify-center rounded-pill p-0 text-icon-primary hover:bg-hover"
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            {passwordError ? (
+              <p className="type-error mt-1 flex items-center gap-1" id="login-password-error">
+                <CircleAlert size={16} aria-hidden="true" />
+                {passwordError}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="text-right">
+            <button
+              className="type-link"
+              type="button"
+              onClick={onForgotPassword}
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          <button
+            className="type-btn-primary h-control w-full rounded-pill bg-primary px-4 hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-disabled-fill"
+            type="submit"
+            disabled={login.isPending}
+          >
+            {login.isPending ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <p className="type-caption mt-8 flex items-center justify-center gap-1 text-center">
+          <Info aria-hidden="true" size={16} />
+          <strong>Need access?</strong> Contact your administrator.
+        </p>
+      </section>
+    </main>
+  );
 }
