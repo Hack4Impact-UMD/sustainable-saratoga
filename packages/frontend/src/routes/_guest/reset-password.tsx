@@ -26,11 +26,11 @@ export const Route = createFileRoute("/_guest/reset-password")({
 
 /**
  * Possible States:
-    * Choose a new password (normal state) (1)
-    * Link expired while the user was on this page (2)
-    * Password updated successfully (3)
-    * Link expired before the user arrived (detected on load) (4)
-    * Link already used (5)
+ * Choose a new password (normal state) (1)
+ * Link expired while the user was on this page (2)
+ * Password updated successfully (3)
+ * Link expired before the user arrived (detected on load) (4)
+ * Link already used (5)
  */
 function ResetPasswordPage() {
   const navigate = useNavigate();

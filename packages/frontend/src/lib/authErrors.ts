@@ -20,12 +20,13 @@ export type AuthMethod = "password" | "google";
 
 // Inline field errors (V1)
 export const EMAIL_REQUIRED_MESSAGE = "Enter your email address.";
-export const EMAIL_INVALID_MESSAGE = "Enter a full email address, like name@example.org.";
+export const EMAIL_INVALID_MESSAGE =
+  "Enter a full email address, like name@example.org.";
 export const PASSWORD_REQUIRED_MESSAGE = "Enter your password.";
 
 /**
  * Checks whether an email is formatted correctly
- * @param email 
+ * @param email
  * @returns Error message if email is formatted incorreclty, undefined if correct
  */
 export function emailFieldError(email: string): string | undefined {
@@ -37,7 +38,7 @@ export function emailFieldError(email: string): string | undefined {
 
 /**
  * Checks if a password has been entered
- * @param password 
+ * @param password
  * @returns PASSWORD_REQUIRED_MESSAGE if not entered, undefined if entered
  */
 export function passwordFieldError(password: string): string | undefined {
@@ -50,7 +51,7 @@ const OFFLINE: AuthErrorContent = {
   title: "You're offline",
   message: "Connect to Wi-Fi or mobile data, then try again.",
   canRetry: true,
-}
+};
 
 const SIGN_IN_FAILED: AuthErrorContent = {
   variant: "warning",
@@ -74,7 +75,6 @@ export function authErrorMessage(
   error: unknown,
   method: AuthMethod = "password",
 ): AuthErrorContent | null {
-  
   const code = getAuthErrorCode(error);
 
   // User backed out of the Google pop: not an error
@@ -96,7 +96,11 @@ export function authErrorMessage(
 
   switch (code) {
     case "auth/invalid-email":
-      return { variant: "error", message: EMAIL_INVALID_MESSAGE, canRetry: false };
+      return {
+        variant: "error",
+        message: EMAIL_INVALID_MESSAGE,
+        canRetry: false,
+      };
     case "auth/invalid-credential":
     case "auth/user-not-found":
     case "auth/wrong-password":

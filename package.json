@@ -36,10 +36,8 @@
     "vitest": "^4.1.12"
   },
   "dependencies": {
-    "firebase": "^12.18.0",
+    "firebase": "^12.19.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.61.0"
-    "firebase": "^12.19.0",
-    "leaflet": "^1.9.4"
   }
 }

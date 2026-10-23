@@ -95,8 +95,8 @@ export function ResetPasswordForm({
       await confirmPasswordReset(auth, oobCode, password);
       setState("success");
     } catch (error) {
-        const code = getFirebaseErrorCode(error);
-        setState(code === "auth/expired-action-code" ? "expired" : "used");
+      const code = getFirebaseErrorCode(error);
+      setState(code === "auth/expired-action-code" ? "expired" : "used");
     } finally {
       setIsSaving(false);
     }
@@ -113,7 +113,11 @@ export function ResetPasswordForm({
         <h1 className="type-h1">Password updated</h1>
         <div className="mt-4 rounded-md border border-line-success bg-selected p-3 text-success">
           <div className="flex items-start gap-3">
-            <CircleCheck className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+            <CircleCheck
+              className="mt-0.5 shrink-0"
+              size={20}
+              aria-hidden="true"
+            />
             <div className="text-left">
               <p className="type-body-strong text-success">
                 You can now sign in with your new password
@@ -138,14 +142,19 @@ export function ResetPasswordForm({
         <h1 className="type-h1">This link has expired</h1>
         <div className="mt-4 rounded-md border border-line-warning bg-attention p-3 text-warning">
           <div className="flex items-start gap-3">
-            <ClockAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+            <ClockAlert
+              className="mt-0.5 shrink-0"
+              size={20}
+              aria-hidden="true"
+            />
             <div className="text-left">
               <p className="type-body-strong text-warning">
                 Reset links work for 1 hour
               </p>
               <p className="type-body-sm mt-1 text-warning">
                 Send a new one to{" "}
-                <strong>{email ?? "jordan.lee@example.org"}</strong> to continue.
+                <strong>{email ?? "jordan.lee@example.org"}</strong> to
+                continue.
               </p>
             </div>
           </div>
@@ -165,13 +174,18 @@ export function ResetPasswordForm({
         <h1 className="type-h1">This link was already used</h1>
         <div className="mt-4 rounded-md border border-line-info bg-info-tint p-3 text-info">
           <div className="flex items-start gap-3">
-            <KeyRound className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+            <KeyRound
+              className="mt-0.5 shrink-0"
+              size={20}
+              aria-hidden="true"
+            />
             <div className="text-left">
               <p className="type-body-strong text-info">
                 Each reset link works once
               </p>
               <p className="type-body-sm mt-1 text-info">
-                If you didn&apos;t finish resetting your password, send a new link.
+                If you didn&apos;t finish resetting your password, send a new
+                link.
               </p>
             </div>
           </div>
@@ -232,9 +246,7 @@ export function ResetPasswordForm({
             setConfirmation(value);
             setConfirmationError(undefined);
           }}
-          onToggleVisibility={() =>
-            setShowConfirmation((visible) => !visible)
-          }
+          onToggleVisibility={() => setShowConfirmation((visible) => !visible)}
         />
         <button
           className="type-btn-primary h-control w-full rounded-pill bg-primary px-4 hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-disabled-fill"
@@ -353,7 +365,10 @@ function ResetActions({
 }
 
 /** Returns the password validation message, if the new password is invalid. */
-function getPasswordError(password: string, email?: string): string | undefined {
+function getPasswordError(
+  password: string,
+  email?: string,
+): string | undefined {
   if (password.length < PASSWORD_MIN_LENGTH) {
     return `Use at least ${PASSWORD_MIN_LENGTH} characters.`;
   }

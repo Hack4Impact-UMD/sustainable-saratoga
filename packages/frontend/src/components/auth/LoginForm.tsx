@@ -1,12 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import {
-  CircleAlert,
-  CloudAlert,
-  Eye,
-  EyeOff,
-  Info,
-} from "lucide-react";
+import { CircleAlert, CloudAlert, Eye, EyeOff, Info } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
 import {
   authErrorMessage,
@@ -57,10 +51,7 @@ export function LoginForm({
     if (nextEmailError || nextPasswordError) return;
 
     // The route decides where to navigate after the auth provider updates.
-    login.mutate(
-      { email: email.trim(), password },
-      { onSuccess },
-    );
+    login.mutate({ email: email.trim(), password }, { onSuccess });
   }
 
   return (
@@ -82,7 +73,11 @@ export function LoginForm({
             role="status"
           >
             <div className="flex items-start gap-3">
-              <CircleAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+              <CircleAlert
+                className="mt-0.5 shrink-0"
+                size={20}
+                aria-hidden="true"
+              />
               <div className="text-left">
                 <p className="type-body-strong text-info">Your session ended</p>
                 <p className="type-body-sm text-info">
@@ -105,9 +100,17 @@ export function LoginForm({
           >
             <div className="flex items-start gap-3">
               {signInError.variant === "warning" ? (
-                <CloudAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+                <CloudAlert
+                  className="mt-0.5 shrink-0"
+                  size={20}
+                  aria-hidden="true"
+                />
               ) : (
-                <CircleAlert className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
+                <CircleAlert
+                  className="mt-0.5 shrink-0"
+                  size={20}
+                  aria-hidden="true"
+                />
               )}
               <div className="text-left">
                 {signInError.title ? (
@@ -161,7 +164,10 @@ export function LoginForm({
               aria-describedby={emailError ? "login-email-error" : undefined}
             />
             {emailError ? (
-              <p className="type-error mt-1 flex items-center gap-1" id="login-email-error">
+              <p
+                className="type-error mt-1 flex items-center gap-1"
+                id="login-email-error"
+              >
                 <CircleAlert size={16} aria-hidden="true" />
                 {emailError}
               </p>
@@ -204,7 +210,10 @@ export function LoginForm({
               </button>
             </div>
             {passwordError ? (
-              <p className="type-error mt-1 flex items-center gap-1" id="login-password-error">
+              <p
+                className="type-error mt-1 flex items-center gap-1"
+                id="login-password-error"
+              >
                 <CircleAlert size={16} aria-hidden="true" />
                 {passwordError}
               </p>

@@ -68,7 +68,11 @@ export function ForgotPasswordForm({
           role="alert"
         >
           <div className="flex items-start gap-3">
-            <CircleAlert className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
+            <CircleAlert
+              className="mt-0.5 shrink-0"
+              size={18}
+              aria-hidden="true"
+            />
             <div className="text-left">
               <p className="type-body-sm text-error">{submitError}</p>
             </div>
@@ -77,7 +81,11 @@ export function ForgotPasswordForm({
       ) : null}
 
       {/* The form intentionally validates on submit so the layout stays stable. */}
-      <form className="mt-6 space-y-4 text-left" onSubmit={handleSubmit} noValidate>
+      <form
+        className="mt-6 space-y-4 text-left"
+        onSubmit={handleSubmit}
+        noValidate
+      >
         <div>
           <label className="type-h4 mb-1 block" htmlFor="forgot-password-email">
             Email
