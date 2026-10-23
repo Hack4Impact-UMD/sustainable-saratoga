@@ -5,6 +5,8 @@ import { ResetPasswordForm } from "@frontend/components/auth/ResetPasswordForm.t
  * Firebase appends oobCode (and optionally email) to the reset link it sends.
  * oobCode is required for the password reset to work; email is informational
  * (shown as "For ___").
+ * This route lives outside _guest so authenticated users who follow a reset
+ * link from their email can still reach it.
  */
 function validateSearch(search: Record<string, unknown>): {
   oobCode: string;
@@ -19,7 +21,7 @@ function validateSearch(search: Record<string, unknown>): {
   };
 }
 
-export const Route = createFileRoute("/_guest/reset-password")({
+export const Route = createFileRoute("/reset-password")({
   validateSearch,
   component: ResetPasswordPage,
 });
