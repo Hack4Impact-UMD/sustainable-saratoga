@@ -1,12 +1,14 @@
 import { type } from "arktype";
 import type { Type } from "arktype";
 
-export function validateForm<T extends object>(
-  schema: Type<T>,
+// types come from the schema's output (S["infer"]) so transforms like trim are reflected
+export function validateForm<S extends Type<object>>(
+  schema: S,
   values: unknown,
 ):
-  | { ok: true; data: T }
-  | { ok: false; errors: FieldErrors<T>; formError?: string } {
+  | { ok: true; data: S["infer"] }
+  | { ok: false; errors: FieldErrors<S["infer"]>; formError?: string } {
+  type T = S["infer"];
   const result = schema(values);
 
   // successful validation then returns the data

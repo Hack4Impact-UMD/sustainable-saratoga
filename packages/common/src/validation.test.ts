@@ -1,5 +1,5 @@
 import { type } from "arktype";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { validateForm } from "@common/validation.ts";
 
 const schema = type({
@@ -44,4 +44,13 @@ describe("validateForm", () => {
       });
     },
   );
+
+  it("types data with the schema's output for transforming schemas", () => {
+    const profile = type({ name: type("string.trim").to("string > 0") });
+    const result = validateForm(profile, { name: " Jane " });
+    expect(result).toEqual({ ok: true, data: { name: "Jane" } });
+    if (result.ok) {
+      expectTypeOf(result.data.name).toEqualTypeOf<string>();
+    }
+  });
 });

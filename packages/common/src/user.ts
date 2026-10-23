@@ -1,21 +1,24 @@
 import { type } from "arktype";
+import { nonEmptyTrimmed } from "@common/fields.ts";
 import type { Session } from "@common/session.ts";
 
-export const userRole = type("'admin' | 'planter' | 'pruner'");
+// roles volunteers can pick at sign-up; admins are invite-only
+export const volunteerRole = type("'planter' | 'pruner'");
 
-// trim first so whitespace-only names count as empty
-const nonEmptyTrimmed = type("string.trim").to("string > 0");
+export const userRole = type("'admin'").or(volunteerRole);
 
 export const userProfile = type({
   firstName: nonEmptyTrimmed,
   lastName: nonEmptyTrimmed,
   email: "string.email",
+  role: userRole,
 });
 
 export const getUserInput = type({
   uid: "string > 0",
 });
 
+export type VolunteerRole = typeof volunteerRole.infer;
 export type UserRole = typeof userRole.infer;
 export type UserProfile = typeof userProfile.infer;
 export type GetUserInput = typeof getUserInput.infer;

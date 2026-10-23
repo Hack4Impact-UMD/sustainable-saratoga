@@ -1,16 +1,31 @@
 import { type } from "arktype";
+import { nonEmptyTrimmed } from "@common/fields.ts";
+import { volunteerRole } from "@common/user.ts";
 
 export const loginInput = type({
   email: "string.email",
-  password: "string >= 8",
+  // no strength rules on login: a short password should read as "wrong password", so Firebase decides
+  password: "string > 0",
 });
 
+// at least 8 characters, one letter, and one number; the message is fixed so the
+// regex and the submitted password never appear in the error shown to users
+const strongPassword = type(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).configure({
+  message:
+    "Password must be at least 8 characters and include a letter and a number",
+});
+
+// name and role fields shared by the sign-up and create-user schemas
+const profileFields = {
+  firstName: nonEmptyTrimmed,
+  lastName: nonEmptyTrimmed,
+  role: volunteerRole,
+};
+
 export const signUpInput = type({
-  firstName: "string > 0",
-  lastName: "string > 0",
+  ...profileFields,
   email: "string.email",
-  // regex to require at least 8 characters, one letter, and one number
-  password: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/,
+  password: strongPassword,
   confirmPassword: "string >= 8",
 }).narrow(
   (data, ctx) =>
@@ -23,8 +38,7 @@ export const signUpInput = type({
 );
 
 export const createUserInput = type({
-  firstName: "string > 0",
-  lastName: "string > 0",
+  ...profileFields,
 });
 
 export type LoginInput = typeof loginInput.infer;

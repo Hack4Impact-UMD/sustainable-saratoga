@@ -1,6 +1,11 @@
 import { type } from "arktype";
 import { describe, expect, it } from "vitest";
-import { getUserInput, userProfile, userRole } from "@common/user.ts";
+import {
+  getUserInput,
+  userProfile,
+  userRole,
+  volunteerRole,
+} from "@common/user.ts";
 
 describe("userRole", () => {
   it.each(["admin", "planter", "pruner"])("accepts %s", (role) => {
@@ -12,12 +17,23 @@ describe("userRole", () => {
   });
 });
 
+describe("volunteerRole", () => {
+  it.each(["planter", "pruner"])("accepts %s", (role) => {
+    expect(volunteerRole(role) instanceof type.errors).toBe(false);
+  });
+
+  it("rejects admin", () => {
+    expect(volunteerRole("admin") instanceof type.errors).toBe(true);
+  });
+});
+
 describe("userProfile", () => {
   it("accepts a complete profile", () => {
     const result = userProfile({
       firstName: "Jane",
       lastName: "Doe",
       email: "jane@example.com",
+      role: "planter",
     });
     expect(result instanceof type.errors).toBe(false);
   });
@@ -29,6 +45,7 @@ describe("userProfile", () => {
         firstName: "Jane",
         lastName: "Doe",
         email: "jane@example.com",
+        role: "planter",
         [field]: "   ",
       });
       expect(result instanceof type.errors).toBe(true);
@@ -40,11 +57,13 @@ describe("userProfile", () => {
       firstName: " Jane ",
       lastName: " Doe ",
       email: "jane@example.com",
+      role: "planter",
     });
     expect(result).toEqual({
       firstName: "Jane",
       lastName: "Doe",
       email: "jane@example.com",
+      role: "planter",
     });
   });
 
@@ -53,6 +72,7 @@ describe("userProfile", () => {
       firstName: "Jane",
       lastName: "Doe",
       email: "not-an-email",
+      role: "planter",
     });
     expect(result instanceof type.errors).toBe(true);
   });
