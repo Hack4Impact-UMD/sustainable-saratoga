@@ -11,42 +11,52 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
-import { Route as GuestLoginRouteImport } from './routes/_guest/login'
-import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
-import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as GuestLoginRouteImport } from './routes/_guest/login'
+import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
+import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-
+const GuestRouteRoute = GuestRouteRouteImport.update({
+  id: '/_guest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoAccessRoute = NoAccessRouteImport.update({
+  id: '/no-access',
+  path: '/no-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-
-const GuestRouteRoute = GuestRouteRouteImport.update({
-  id: '/_guest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 const GuestLoginRoute = GuestLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => GuestRouteRoute,
 } as any)
-
+const GuestLoginCheckMailRoute = GuestLoginCheckMailRouteImport.update({
+  id: '/check-mail',
+  path: '/check-mail',
+  getParentRoute: () => GuestLoginRoute,
+} as any)
 const GuestLoginForgotPasswordRoute =
   GuestLoginForgotPasswordRouteImport.update({
     id: '/forgot-password',
@@ -54,90 +64,68 @@ const GuestLoginForgotPasswordRoute =
     getParentRoute: () => GuestLoginRoute,
   } as any)
 
-const GuestLoginCheckMailRoute = GuestLoginCheckMailRouteImport.update({
-  id: '/check-mail',
-  path: '/check-mail',
-  getParentRoute: () => GuestLoginRoute,
-} as any)
-
-const NoAccessRoute = NoAccessRouteImport.update({
-  id: '/no-access',
-  path: '/no-access',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/login': typeof GuestLoginRoute
-  '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/login': typeof GuestLoginRouteWithChildren
+  '/login/check-mail': typeof GuestLoginCheckMailRoute
+  '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
-
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/login': typeof GuestLoginRoute
-  '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/login': typeof GuestLoginRouteWithChildren
+  '/login/check-mail': typeof GuestLoginCheckMailRoute
+  '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
-
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_guest': typeof GuestRouteRouteWithChildren
-  '/_guest/login': typeof GuestLoginRouteWithChildren
-  '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_guest/login': typeof GuestLoginRouteWithChildren
+  '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
+  '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
-    | '/login'
-    | '/login/forgot-password'
-    | '/login/check-mail'
     | '/no-access'
     | '/reset-password'
+    | '/dashboard'
+    | '/login'
+    | '/login/check-mail'
+    | '/login/forgot-password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
-    | '/login'
-    | '/login/forgot-password'
-    | '/login/check-mail'
     | '/no-access'
     | '/reset-password'
+    | '/dashboard'
+    | '/login'
+    | '/login/check-mail'
+    | '/login/forgot-password'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/_authenticated/dashboard'
     | '/_guest'
-    | '/_guest/login'
-    | '/_guest/login/forgot-password'
-    | '/_guest/login/check-mail'
     | '/no-access'
     | '/reset-password'
+    | '/_authenticated/dashboard'
+    | '/_guest/login'
+    | '/_guest/login/check-mail'
+    | '/_guest/login/forgot-password'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
@@ -162,40 +150,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_guest': {
       id: '/_guest'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof GuestRouteRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_guest/login': {
-      id: '/_guest/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof GuestLoginRouteImport
-      parentRoute: typeof GuestRouteRoute
-    }
-    '/_guest/login/forgot-password': {
-      id: '/_guest/login/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/login/forgot-password'
-      preLoaderRoute: typeof GuestLoginForgotPasswordRouteImport
-      parentRoute: typeof GuestLoginRoute
-    }
-    '/_guest/login/check-mail': {
-      id: '/_guest/login/check-mail'
-      path: '/check-mail'
-      fullPath: '/login/check-mail'
-      preLoaderRoute: typeof GuestLoginCheckMailRouteImport
-      parentRoute: typeof GuestLoginRoute
     }
     '/no-access': {
       id: '/no-access'
@@ -210,6 +170,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_guest/login': {
+      id: '/_guest/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof GuestLoginRouteImport
+      parentRoute: typeof GuestRouteRoute
+    }
+    '/_guest/login/check-mail': {
+      id: '/_guest/login/check-mail'
+      path: '/check-mail'
+      fullPath: '/login/check-mail'
+      preLoaderRoute: typeof GuestLoginCheckMailRouteImport
+      parentRoute: typeof GuestLoginRoute
+    }
+    '/_guest/login/forgot-password': {
+      id: '/_guest/login/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/login/forgot-password'
+      preLoaderRoute: typeof GuestLoginForgotPasswordRouteImport
+      parentRoute: typeof GuestLoginRoute
     }
   }
 }
@@ -226,17 +214,18 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface GuestLoginRouteChildren {
-  GuestLoginForgotPasswordRoute: typeof GuestLoginForgotPasswordRoute
   GuestLoginCheckMailRoute: typeof GuestLoginCheckMailRoute
+  GuestLoginForgotPasswordRoute: typeof GuestLoginForgotPasswordRoute
 }
 
 const GuestLoginRouteChildren: GuestLoginRouteChildren = {
-  GuestLoginForgotPasswordRoute: GuestLoginForgotPasswordRoute,
   GuestLoginCheckMailRoute: GuestLoginCheckMailRoute,
+  GuestLoginForgotPasswordRoute: GuestLoginForgotPasswordRoute,
 }
 
-const GuestLoginRouteWithChildren =
-  GuestLoginRoute._addFileChildren(GuestLoginRouteChildren)
+const GuestLoginRouteWithChildren = GuestLoginRoute._addFileChildren(
+  GuestLoginRouteChildren,
+)
 
 interface GuestRouteRouteChildren {
   GuestLoginRoute: typeof GuestLoginRouteWithChildren
@@ -246,8 +235,9 @@ const GuestRouteRouteChildren: GuestRouteRouteChildren = {
   GuestLoginRoute: GuestLoginRouteWithChildren,
 }
 
-const GuestRouteRouteWithChildren =
-  GuestRouteRoute._addFileChildren(GuestRouteRouteChildren)
+const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(
+  GuestRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -256,7 +246,6 @@ const rootRouteChildren: RootRouteChildren = {
   NoAccessRoute: NoAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
-
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
