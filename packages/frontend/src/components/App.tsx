@@ -8,5 +8,10 @@ import { useAuth } from "@frontend/lib/useAuth.ts";
  */
 export function App() {
   const auth = useAuth();
+
+  // Firebase restores a saved session asynchronously after a page load. Until
+  // it has, guards would treat a signed-in user as signed out and redirect.
+  if (auth.isPending) return null;
+
   return <RouterProvider router={router} context={{ auth }} />;
 }

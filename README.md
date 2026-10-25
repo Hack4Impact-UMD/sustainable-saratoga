@@ -32,7 +32,7 @@ sustainable-saratoga/
 ├── packages/
 │   ├── frontend/   # React + Vite web application (TanStack Router, Tailwind CSS)
 │   ├── backend/    # tRPC API on Express, deployed as Firebase Cloud Functions
-│   └── common/     # Shared TypeScript types and ArkType schemas
+│   └── common/     # Shared TypeScript types
 ├── firebase.json   # Firebase project and emulator configuration
 └── package.json    # Root package.json with workspace-level scripts
 ```
@@ -48,10 +48,10 @@ sustainable-saratoga/
    pnpm install
    ```
 
-2. Build the shared `common` package (required before first run):
+2. Optionally validate the shared `common` package:
 
    ```sh
-   pnpm --filter common run build
+   pnpm --filter @repo/common run typecheck
    ```
 
 3. Start the development environment:
@@ -140,9 +140,11 @@ sustainable-saratoga/
 <table align="center">
   <tr>
     <td align="center" width="160">
-      <img src="assets/team/shakiraAliImage.jpg" style="height:110px; border-radius:10%;"/><br/>
-      <b>Shakira Ali</b><br/>
-      <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      <a href="https://www.linkedin.com/in/shakiraali1" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/shakiraAliImage.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Shakira Ali</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
     </td>
     <td align="center" width="160">
       <a href="https://www.linkedin.com/in/victoria-xiao-449844270/" target="_blank" rel="noreferrer noopener">

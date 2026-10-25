@@ -104,7 +104,7 @@ describe("SyncStatus", () => {
 
     const item: RejectedSyncItem = {
       id: "r1",
-      path: "notes.add",
+      path: "trees.create",
       message: "Text is too long",
       createdAt: 1,
     };
@@ -129,7 +129,7 @@ describe("SyncStatus", () => {
       items: [
         {
           id: "r1",
-          path: "notes.add",
+          path: "trees.create",
           message: "Text is too long",
           createdAt: 1,
         },
@@ -149,13 +149,13 @@ describe("SyncStatus", () => {
       items: [
         {
           id: "r2",
-          path: "notes.add",
+          path: "trees.create",
           message: "Second",
           createdAt: 2,
         },
         {
           id: "r1",
-          path: "notes.add",
+          path: "trees.create",
           message: "First",
           createdAt: 1,
         },
