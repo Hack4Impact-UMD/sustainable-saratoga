@@ -2,7 +2,7 @@ import { type } from "arktype";
 
 /** Planting statuses shown on the landing-page map. */
 export const treeStatus = type(
-  "'requested' | 'approved' | 'planted' | 'not_planted'",
+  "'requested' | 'possible' | 'approved' | 'planted'",
 );
 export type TreeStatus = typeof treeStatus.infer;
 
