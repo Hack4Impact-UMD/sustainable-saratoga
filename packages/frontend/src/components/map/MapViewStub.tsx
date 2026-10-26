@@ -1,3 +1,4 @@
+import { MapOverlayLayer } from "@frontend/components/map/MapOverlayLayer.tsx";
 import type { MapViewProps } from "@frontend/components/map/types.ts";
 import { MapCameraContext } from "@frontend/components/map/useMapCamera.ts";
 import { stubCamera } from "@frontend/components/map/stubCamera.ts";
@@ -36,7 +37,7 @@ export function MapViewStub({
             );
           })}
         </ul>
-        {children}
+        <MapOverlayLayer>{children}</MapOverlayLayer>
       </div>
     </MapCameraContext.Provider>
   );

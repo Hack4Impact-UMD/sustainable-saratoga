@@ -1,4 +1,5 @@
 import type { MapMarker } from "@repo/common";
+import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapView } from "@frontend/components/map/MapView.tsx";
@@ -8,6 +9,28 @@ import {
   resetStubCamera,
 } from "@frontend/components/map/stubCamera.ts";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
+
+// Just enough of the SDK to render GoogleMap's layout without loading Google.
+vi.mock("@vis.gl/react-google-maps", () => ({
+  APILoadingStatus: { FAILED: "FAILED", AUTH_FAILURE: "AUTH_FAILURE" },
+  APIProvider: ({ children }: { children: ReactNode }) => children,
+  Map: ({
+    className,
+    children,
+  }: {
+    className?: string;
+    children: ReactNode;
+  }) => (
+    <div data-testid="map" className={className}>
+      {children}
+    </div>
+  ),
+  AdvancedMarker: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  useApiLoadingStatus: () => "LOADED",
+  useMap: () => null,
+}));
 
 const markers = [
   { id: "tree-1", lat: 43.08, lng: -73.78, status: "planted" },
@@ -114,6 +137,30 @@ describe("MapView", () => {
 
     expect(screen.getByTestId("map-stub")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "tree-1" })).toBeInTheDocument();
+  });
+
+  it("draws overlays in a layer over the map, not below it", () => {
+    vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "test-key");
+    vi.stubEnv("VITE_GOOGLE_MAPS_MAP_ID", "test-map-id");
+    render(
+      <MapView
+        markers={markers}
+        onMarkerSelect={vi.fn<(id: string) => void>()}
+        renderMarker={renderMarker}
+      >
+        <PanButton />
+      </MapView>,
+    );
+
+    // jsdom has no layout, so check the structure that keeps overlays
+    // inside the map's box: a full-size absolute layer in the same
+    // positioned wrapper as the map.
+    const map = screen.getByTestId("map");
+    const layer = screen.getByTestId("map-overlay");
+    expect(map.parentElement).toHaveClass("relative");
+    expect(layer.parentElement).toBe(map.parentElement);
+    expect(layer).toHaveClass("absolute", "inset-0", "pointer-events-none");
+    expect(layer).toContainElement(screen.getByRole("button", { name: "Pan" }));
   });
 
   it("shows a fallback, not a map, when the Map ID is missing", () => {

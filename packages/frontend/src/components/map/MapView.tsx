@@ -8,6 +8,7 @@ import {
 } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
+import { MapOverlayLayer } from "@frontend/components/map/MapOverlayLayer.tsx";
 import { MapViewStub } from "@frontend/components/map/MapViewStub.tsx";
 import type { MapViewProps } from "@frontend/components/map/types.ts";
 import { MapCameraContext } from "@frontend/components/map/useMapCamera.ts";
@@ -94,7 +95,9 @@ function GoogleMap({
           );
         })}
       </Map>
-      <GoogleMapCamera>{children}</GoogleMapCamera>
+      <GoogleMapCamera>
+        <MapOverlayLayer>{children}</MapOverlayLayer>
+      </GoogleMapCamera>
     </div>
   );
 }
@@ -151,7 +154,7 @@ function MapFallback({
         {import.meta.env.DEV && <p className="mt-1">{reason}</p>}
       </output>
       <MapCameraContext.Provider value={noopCamera}>
-        {children}
+        <MapOverlayLayer>{children}</MapOverlayLayer>
       </MapCameraContext.Provider>
     </div>
   );
