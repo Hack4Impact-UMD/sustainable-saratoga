@@ -2,22 +2,14 @@
 @import "./styles/tokens.css";
 @import "./styles/tailwind-theme.css";
 @import "./styles/global.css";
-@import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
+@theme inline {
+  --color-background: var(--bg-surface);
+  --color-foreground: var(--color-text);
+  --color-muted: var(--bg-hover);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-destructive: var(--color-error);
+  --color-input: var(--color-border-strong);
+  --color-ring: var(--color-focus);
 }
-
-
