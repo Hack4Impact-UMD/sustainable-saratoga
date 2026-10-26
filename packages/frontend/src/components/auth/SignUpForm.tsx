@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { signUpInput, validateForm } from "@repo/common";
+import type { FieldErrors, SignUpInput } from "@repo/common";
 import {
   Circle,
   CircleAlert,
@@ -23,29 +25,17 @@ const invitedEmail = "test@example.com"; // TODO: Replace with actual invited em
 const passwordRequirements = [
   {
     label: "At least 8 characters",
-    test: (value: string) => value.length >= 8,
+    test: (password: string) => password.length >= 8,
   },
   {
-    label: "At least 1 special symbol",
-    test: (value: string) => /[^A-Za-z0-9\s]/.test(value),
-  },
-  { label: "At least 1 number", test: (value: string) => /[0-9]/.test(value) },
-  {
-    label: "At least 1 uppercase letter",
-    test: (value: string) => /[A-Z]/.test(value),
+    label: "At least 1 letter",
+    test: (password: string) => /[A-Za-z]/.test(password),
   },
   {
-    label: "At least 1 lowercase letter",
-    test: (value: string) => /[a-z]/.test(value),
+    label: "At least 1 number",
+    test: (password: string) => /\d/.test(password),
   },
-] as const;
-
-function checkPasswordRequirements(password: string) {
-  return passwordRequirements.map(({ label, test }) => ({
-    label,
-    met: test(password),
-  }));
-}
+];
 
 export function SignUpForm({
   onSuccess,
@@ -55,19 +45,18 @@ export function SignUpForm({
   onAccountExists: () => void;
 }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<SignUpInput>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<ReturnType<
-    typeof checkPasswordRequirements
-  > | null>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const [passwordChecks, setPasswordChecks] = useState<boolean[] | null>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
+  const roleInputRef = useRef<HTMLSelectElement>(null);
   const signUp = useSignUp();
   const isSubmitting = signUp.isPending;
-  const validationErrorCount =
-    Number(Boolean(nameError)) + Number(Boolean(passwordError));
+  const validationErrorCount = Object.keys(fieldErrors).length;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,33 +64,39 @@ export function SignUpForm({
     setHasSubmitted(true);
 
     const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const nextPasswordChecks = checkPasswordRequirements(password);
-    const unmetPasswordRequirements = nextPasswordChecks
-      .filter(({ met }) => !met)
-      .map(({ label }) => label);
-    const nextNameError = name ? null : "Enter your name.";
-    const nextPasswordError =
-      unmetPasswordRequirements.length > 0
-        ? `Password needs: ${unmetPasswordRequirements.join(", ")}.`
-        : null;
+    setPasswordChecks(
+      passwordRequirements.map(({ test }) => test(password)),
+    );
+    const validation = validateForm(signUpInput, {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      role: formData.get("role"),
+      email: invitedEmail,
+      password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
+    });
 
-    setNameError(nextNameError);
-    setPasswordError(nextPasswordError);
-    setPasswordChecks(nextPasswordChecks);
-
-    if (nextNameError || nextPasswordError) {
-      if (nextNameError) {
-        nameInputRef.current?.focus();
-      } else {
+    if (!validation.ok) {
+      setFieldErrors(validation.errors);
+      setFormError(validation.formError ?? null);
+      if (validation.errors.firstName) {
+        firstNameInputRef.current?.focus();
+      } else if (validation.errors.lastName) {
+        lastNameInputRef.current?.focus();
+      } else if (validation.errors.password) {
         passwordInputRef.current?.focus();
+      } else if (validation.errors.confirmPassword) {
+        confirmPasswordInputRef.current?.focus();
+      } else if (validation.errors.role) {
+        roleInputRef.current?.focus();
       }
       return;
     }
 
+    setFieldErrors({});
     try {
-      await signUp.mutateAsync({ email: invitedEmail, password, name });
+      await signUp.mutateAsync(validation.data);
       onSuccess();
     } catch (error) {
       const code =
@@ -137,7 +132,7 @@ export function SignUpForm({
             noValidate
             onSubmit={handleSubmit}
           >
-            {hasSubmitted && (nameError || passwordError) && (
+            {hasSubmitted && validationErrorCount > 0 && (
               <div
                 role="alert"
                 className="flex items-center gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 font-bold text-destructive"
@@ -168,22 +163,52 @@ export function SignUpForm({
               </div>
             </Field>
             <Field>
-              <FieldLabel htmlFor="name">Name</FieldLabel>
+              <FieldLabel htmlFor="firstName">First Name</FieldLabel>
               <Input
-                id="name"
-                name="name"
-                ref={nameInputRef}
-                placeholder="Your Name"
+                id="firstName"
+                name="firstName"
+                ref={firstNameInputRef}
+                placeholder="First name"
                 className="bg-surface border border-line-strong px-4 h-12 rounded-input"
                 required
-                autoComplete="name"
-                aria-invalid={Boolean(nameError)}
-                aria-describedby={nameError ? "name-error" : undefined}
+                autoComplete="given-name"
+                aria-invalid={Boolean(fieldErrors.firstName)}
+                aria-describedby={
+                  fieldErrors.firstName ? "firstName-error" : undefined
+                }
               />
-              {nameError && (
-                <FieldError id="name-error" className="flex items-center gap-2">
+              {fieldErrors.firstName && (
+                <FieldError
+                  id="firstName-error"
+                  className="flex items-center gap-2"
+                >
                   <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {nameError}
+                  {fieldErrors.firstName}
+                </FieldError>
+              )}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
+              <Input
+                id="lastName"
+                name="lastName"
+                ref={lastNameInputRef}
+                placeholder="Last name"
+                className="bg-surface border border-line-strong px-4 h-12 rounded-input"
+                required
+                autoComplete="family-name"
+                aria-invalid={Boolean(fieldErrors.lastName)}
+                aria-describedby={
+                  fieldErrors.lastName ? "lastName-error" : undefined
+                }
+              />
+              {fieldErrors.lastName && (
+                <FieldError
+                  id="lastName-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.lastName}
                 </FieldError>
               )}
             </Field>
@@ -199,9 +224,11 @@ export function SignUpForm({
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
                   autoComplete="new-password"
-                  aria-invalid={Boolean(passwordError)}
+                  aria-invalid={Boolean(fieldErrors.password)}
                   aria-describedby={
-                    passwordError ? "password-error" : "password-requirements"
+                    fieldErrors.password
+                      ? "password-error"
+                      : "password-requirements"
                   }
                 />
                 <button
@@ -220,13 +247,73 @@ export function SignUpForm({
                   )}
                 </button>
               </div>
-              {passwordError && (
+              {fieldErrors.password && (
                 <FieldError
                   id="password-error"
                   className="flex items-center gap-2"
                 >
                   <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {passwordError}
+                  {fieldErrors.password}
+                </FieldError>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="confirmPassword">
+                Confirm Password
+              </FieldLabel>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                ref={confirmPasswordInputRef}
+                type={"password"}
+                placeholder=""
+                className="h-12 rounded-input border border-line-strong bg-surface px-4"
+                required
+                autoComplete="new-password"
+                aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                aria-describedby={
+                  fieldErrors.confirmPassword
+                    ? "confirmPassword-error"
+                    : undefined
+                }
+              />
+              {fieldErrors.confirmPassword && (
+                <FieldError
+                  id="confirmPassword-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.confirmPassword}
+                </FieldError>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="role">Volunteer role</FieldLabel>
+              <select
+                id="role"
+                name="role"
+                ref={roleInputRef}
+                defaultValue=""
+                className="h-12 rounded-input border border-line-strong bg-surface px-4"
+                required
+                aria-invalid={Boolean(fieldErrors.role)}
+                aria-describedby={fieldErrors.role ? "role-error" : undefined}
+              >
+                <option value="" disabled>
+                  Select a role
+                </option>
+                <option value="planter">Planter</option>
+                <option value="pruner">Pruner</option>
+              </select>
+              {fieldErrors.role && (
+                <FieldError
+                  id="role-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.role}
                 </FieldError>
               )}
             </Field>
@@ -238,22 +325,22 @@ export function SignUpForm({
               <h2 className="font-bold">Your password needs</h2>
               <ul className="mt-2">
                 {passwordRequirements.map(({ label }, index) => {
-                  const requirement = passwordChecks?.[index];
+                  const passed = passwordChecks?.[index];
 
                   return (
                     <li
                       key={label}
-                      className={
-                        requirement?.met
-                          ? "flex items-center gap-2 text-success"
-                          : hasSubmitted
-                            ? "flex items-center gap-2 text-destructive"
-                            : "flex items-center gap-2"
-                      }
+                      className={`flex items-center gap-2 ${
+                        passed === true
+                          ? "text-success"
+                          : passed === false
+                            ? "text-destructive"
+                            : ""
+                      }`}
                     >
-                      {requirement?.met ? (
+                      {passed === true ? (
                         <CircleCheck aria-hidden="true" className="size-5" />
-                      ) : hasSubmitted ? (
+                      ) : passed === false ? (
                         <CircleX aria-hidden="true" className="size-5" />
                       ) : (
                         <Circle

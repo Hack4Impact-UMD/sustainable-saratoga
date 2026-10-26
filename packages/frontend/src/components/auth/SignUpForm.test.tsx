@@ -43,12 +43,27 @@ function renderSignUpForm() {
   return { onSuccess, onAccountExists };
 }
 
-function fillForm({ name = "", password = "" } = {}) {
-  fireEvent.change(screen.getByLabelText("Name"), {
-    target: { value: name },
+function fillForm({
+  firstName = "",
+  lastName = "",
+  password = "",
+  confirmPassword = "",
+  role = "",
+} = {}) {
+  fireEvent.change(screen.getByLabelText("First name"), {
+    target: { value: firstName },
+  });
+  fireEvent.change(screen.getByLabelText("Last name"), {
+    target: { value: lastName },
   });
   fireEvent.change(screen.getByLabelText("Create a Password"), {
     target: { value: password },
+  });
+  fireEvent.change(screen.getByLabelText("Confirm password"), {
+    target: { value: confirmPassword },
+  });
+  fireEvent.change(screen.getByLabelText("Volunteer role"), {
+    target: { value: role },
   });
 }
 
@@ -65,42 +80,90 @@ describe("SignUpForm", () => {
     cleanup();
   });
 
-  it("shows a summary, field errors, and focuses the first invalid field", () => {
+  it("shows shared schema errors and focuses the first invalid field", () => {
     renderSignUpForm();
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     expect(
       screen
-        .getByText("Fix 2 things to create your account")
+        .getByText("Fix 5 things to create your account")
         .closest('[role="alert"]'),
     ).toBeInTheDocument();
-    expect(screen.getByText("Enter your name.")).toBeInTheDocument();
-    expect(screen.getByText(/Password needs:/)).toHaveTextContent(
-      "At least 8 characters",
+    expect(screen.getByLabelText("First name")).toHaveFocus();
+    expect(screen.getByLabelText("Confirm password")).toHaveAttribute(
+      "aria-invalid",
+      "true",
     );
-    expect(screen.getByLabelText("Name")).toHaveFocus();
+    expect(screen.getByLabelText("Volunteer role")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
-  it("shows only the password error and focuses the password field", () => {
+  it("shows the shared password error and focuses the password field", () => {
     renderSignUpForm();
-    fillForm({ name: "Alex", password: "short" });
+    fillForm({
+      firstName: "Alex",
+      lastName: "Doe",
+      password: "passwordonly",
+      confirmPassword: "passwordonly",
+      role: "planter",
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     expect(
-      screen
-        .getByText("Fix 1 thing to create your account")
-        .closest('[role="alert"]'),
+      screen.getByText(
+        "Password must be at least 8 characters and include a letter and a number",
+      ),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Enter your name.")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Create a Password")).toHaveFocus();
+    expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+    const requirements = screen
+      .getByText("Password requirements")
+      .parentElement?.querySelectorAll("li");
+    expect(requirements?.[0]).toHaveClass("text-success");
+    expect(requirements?.[0]?.querySelector("svg")).toHaveClass(
+      "lucide-circle-check",
+    );
+    expect(requirements?.[1]).toHaveClass("text-success");
+    expect(requirements?.[1]?.querySelector("svg")).toHaveClass(
+      "lucide-circle-check",
+    );
+    expect(requirements?.[2]).toHaveClass("text-destructive");
+    expect(requirements?.[2]?.querySelector("svg")).toHaveClass(
+      "lucide-circle-x",
+    );
+  });
+
+  it("reports a mismatch on the confirm password field", () => {
+    renderSignUpForm();
+    fillForm({
+      firstName: "Alex",
+      lastName: "Doe",
+      password: "password123",
+      confirmPassword: "password321",
+      role: "planter",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
+
+    expect(screen.getByLabelText("Confirm password")).toHaveFocus();
+    expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+    expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
   it("creates the account with the invited email, sets the name, and calls onSuccess", async () => {
     const { onSuccess } = renderSignUpForm();
-    fillForm({ name: "Alex Doe", password: "Password123!" });
+    fillForm({
+      firstName: " Alex ",
+      lastName: "Doe ",
+      password: "password123",
+      confirmPassword: "password123",
+      role: "planter",
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
@@ -109,10 +172,19 @@ describe("SignUpForm", () => {
     expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
       expect.anything(),
       invitedEmail.value,
-      "Password123!",
+      "password123",
     );
     expect(updateProfile).toHaveBeenCalledWith(createdUser, {
       displayName: "Alex Doe",
+    });
+    const requirements = screen
+      .getByText("Password requirements")
+      .parentElement?.querySelectorAll("li");
+    requirements?.forEach((requirement) => {
+      expect(requirement).toHaveClass("text-success");
+      expect(requirement.querySelector("svg")).toHaveClass(
+        "lucide-circle-check",
+      );
     });
   });
 
@@ -124,7 +196,13 @@ describe("SignUpForm", () => {
       }),
     );
     renderSignUpForm();
-    fillForm({ name: "Alex", password: "Password123!" });
+    fillForm({
+      firstName: "Alex",
+      lastName: "Doe",
+      password: "password123",
+      confirmPassword: "password123",
+      role: "planter",
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
@@ -144,54 +222,17 @@ describe("SignUpForm", () => {
       }),
     );
     const { onAccountExists } = renderSignUpForm();
-    fillForm({ name: "Alex", password: "Password123!" });
+    fillForm({
+      firstName: "Alex",
+      lastName: "Doe",
+      password: "password123",
+      confirmPassword: "password123",
+      role: "planter",
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     await waitFor(() => expect(onAccountExists).toHaveBeenCalledOnce());
-  });
-
-  it.each([
-    { password: "Abcdefg1", requirement: "At least 1 special symbol" },
-    { password: "Abcdefg!", requirement: "At least 1 number" },
-    { password: "abcdefg1!", requirement: "At least 1 uppercase letter" },
-    { password: "ABCDEFG1!", requirement: "At least 1 lowercase letter" },
-    { password: "Abc1!", requirement: "At least 8 characters" },
-  ])(
-    "rejects a password that fails $requirement",
-    ({ password, requirement }) => {
-      renderSignUpForm();
-      fillForm({ name: "Alex", password });
-
-      fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
-
-      expect(screen.getByText(/Password needs:/)).toHaveTextContent(
-        requirement,
-      );
-      expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
-    },
-  );
-
-  it("marks all password requirements as met after a valid submission", async () => {
-    renderSignUpForm();
-    fillForm({ name: "Alex", password: "Password123!" });
-
-    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
-
-    await waitFor(() =>
-      expect(createUserWithEmailAndPassword).toHaveBeenCalledOnce(),
-    );
-    for (const requirement of [
-      "At least 8 characters",
-      "At least 1 special symbol",
-      "At least 1 number",
-      "At least 1 uppercase letter",
-      "At least 1 lowercase letter",
-    ]) {
-      expect(screen.getByText(requirement).closest("li")).toHaveClass(
-        "text-success",
-      );
-    }
   });
 
   it.each([
