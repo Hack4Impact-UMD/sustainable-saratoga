@@ -1,6 +1,10 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { signUpInput, validateForm } from "@repo/common";
+import {
+  signUpInput,
+  signUpPasswordRequirements,
+  validateForm,
+} from "@repo/common";
 import type { FieldErrors, SignUpInput } from "@repo/common";
 import {
   Circle,
@@ -22,21 +26,6 @@ import {
 
 const invitedEmail = "test@example.com"; // TODO: Replace with actual invited email
 
-const passwordRequirements = [
-  {
-    label: "At least 8 characters",
-    test: (password: string) => password.length >= 8,
-  },
-  {
-    label: "At least 1 letter",
-    test: (password: string) => /[A-Za-z]/.test(password),
-  },
-  {
-    label: "At least 1 number",
-    test: (password: string) => /\d/.test(password),
-  },
-];
-
 export function SignUpForm({
   onSuccess,
   onAccountExists,
@@ -48,7 +37,8 @@ export function SignUpForm({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<SignUpInput>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<boolean[] | null>(null);
+  const [passwordValue, setPasswordValue] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +47,9 @@ export function SignUpForm({
   const signUp = useSignUp();
   const isSubmitting = signUp.isPending;
   const validationErrorCount = Object.keys(fieldErrors).length;
+  const passwordChecks = signUpPasswordRequirements.map(({ test }) =>
+    test(passwordValue),
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,10 +57,6 @@ export function SignUpForm({
     setHasSubmitted(true);
 
     const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") ?? "");
-    setPasswordChecks(
-      passwordRequirements.map(({ test }) => test(password)),
-    );
     const validation = validateForm(signUpInput, {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -224,6 +213,10 @@ export function SignUpForm({
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
                   autoComplete="new-password"
+                  onChange={(event) => {
+                    setPasswordValue(event.currentTarget.value);
+                    setPasswordTouched(true);
+                  }}
                   aria-invalid={Boolean(fieldErrors.password)}
                   aria-describedby={
                     fieldErrors.password
@@ -266,7 +259,7 @@ export function SignUpForm({
                 id="confirmPassword"
                 name="confirmPassword"
                 ref={confirmPasswordInputRef}
-                type={"password"}
+                type="password"
                 placeholder=""
                 className="h-12 rounded-input border border-line-strong bg-surface px-4"
                 required
@@ -324,8 +317,11 @@ export function SignUpForm({
             >
               <h2 className="font-bold">Your password needs</h2>
               <ul className="mt-2">
-                {passwordRequirements.map(({ label }, index) => {
-                  const passed = passwordChecks?.[index];
+                {signUpPasswordRequirements.map(({ label }, index) => {
+                  const passed =
+                    passwordTouched || hasSubmitted
+                      ? passwordChecks[index]
+                      : undefined;
 
                   return (
                     <li

@@ -50,16 +50,16 @@ function fillForm({
   confirmPassword = "",
   role = "",
 } = {}) {
-  fireEvent.change(screen.getByLabelText("First name"), {
+  fireEvent.change(screen.getByLabelText("First Name"), {
     target: { value: firstName },
   });
-  fireEvent.change(screen.getByLabelText("Last name"), {
+  fireEvent.change(screen.getByLabelText("Last Name"), {
     target: { value: lastName },
   });
   fireEvent.change(screen.getByLabelText("Create a Password"), {
     target: { value: password },
   });
-  fireEvent.change(screen.getByLabelText("Confirm password"), {
+  fireEvent.change(screen.getByLabelText("Confirm Password"), {
     target: { value: confirmPassword },
   });
   fireEvent.change(screen.getByLabelText("Volunteer role"), {
@@ -90,8 +90,8 @@ describe("SignUpForm", () => {
         .getByText("Fix 5 things to create your account")
         .closest('[role="alert"]'),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("First name")).toHaveFocus();
-    expect(screen.getByLabelText("Confirm password")).toHaveAttribute(
+    expect(screen.getByLabelText("First Name")).toHaveFocus();
+    expect(screen.getByLabelText("Confirm Password")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -122,7 +122,7 @@ describe("SignUpForm", () => {
     expect(screen.getByLabelText("Create a Password")).toHaveFocus();
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
     const requirements = screen
-      .getByText("Password requirements")
+      .getByText("Your password needs")
       .parentElement?.querySelectorAll("li");
     expect(requirements?.[0]).toHaveClass("text-success");
     expect(requirements?.[0]?.querySelector("svg")).toHaveClass(
@@ -138,6 +138,36 @@ describe("SignUpForm", () => {
     );
   });
 
+  it("updates password requirement indicators as the user types", () => {
+    renderSignUpForm();
+    const password = screen.getByLabelText("Create a Password");
+    const requirements = screen
+      .getByText("Your password needs")
+      .parentElement?.querySelectorAll("li");
+
+    expect(requirements?.[0]?.querySelector("svg")).toHaveClass(
+      "lucide-circle",
+    );
+
+    fireEvent.change(password, { target: { value: "pass" } });
+    expect(requirements?.[0]).toHaveClass("text-destructive");
+    expect(requirements?.[1]).toHaveClass("text-success");
+    expect(requirements?.[2]).toHaveClass("text-destructive");
+
+    fireEvent.change(password, { target: { value: "password" } });
+    expect(requirements?.[0]).toHaveClass("text-success");
+    expect(requirements?.[1]).toHaveClass("text-success");
+    expect(requirements?.[2]).toHaveClass("text-destructive");
+
+    fireEvent.change(password, { target: { value: "password1" } });
+    requirements?.forEach((requirement) => {
+      expect(requirement).toHaveClass("text-success");
+      expect(requirement.querySelector("svg")).toHaveClass(
+        "lucide-circle-check",
+      );
+    });
+  });
+
   it("reports a mismatch on the confirm password field", () => {
     renderSignUpForm();
     fillForm({
@@ -150,7 +180,7 @@ describe("SignUpForm", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
-    expect(screen.getByLabelText("Confirm password")).toHaveFocus();
+    expect(screen.getByLabelText("Confirm Password")).toHaveFocus();
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
@@ -178,7 +208,7 @@ describe("SignUpForm", () => {
       displayName: "Alex Doe",
     });
     const requirements = screen
-      .getByText("Password requirements")
+      .getByText("Your password needs")
       .parentElement?.querySelectorAll("li");
     requirements?.forEach((requirement) => {
       expect(requirement).toHaveClass("text-success");
