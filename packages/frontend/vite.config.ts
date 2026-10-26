@@ -76,9 +76,7 @@ export default defineConfig({
     },
   },
   server: {
-    // Bind IPv4 explicitly: the emulators and the tests all use 127.0.0.1,
-    // and Vite would otherwise listen on ::1 only.
-    host: "127.0.0.1",
+    host: "localhost",
     port: 5173,
     proxy: {
       "/api": {
