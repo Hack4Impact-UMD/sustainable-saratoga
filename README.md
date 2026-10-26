@@ -190,6 +190,13 @@ sustainable-saratoga/
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
+    <td align="center" width="160">
+      <a href="https://github.com/AbhinavManda-bit" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/abhinav-manda.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Abhinav Manda</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
+    </td>
   </tr>
 </table>
 
