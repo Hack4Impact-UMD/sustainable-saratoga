@@ -8,12 +8,30 @@ export const loginInput = type({
   password: "string > 0",
 });
 
-// at least 8 characters, one letter, and one number; the message is fixed so the
-// regex and the submitted password never appear in the error shown to users
-const strongPassword = type(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).configure({
+export const signUpPasswordRequirements = [
+  {
+    label: "At least 8 characters",
+    test: (password: string) => password.length >= 8,
+  },
+  {
+    label: "At least 1 letter",
+    test: (password: string) => /[A-Za-z]/.test(password),
+  },
+  {
+    label: "At least 1 number",
+    test: (password: string) => /\d/.test(password),
+  },
+] as const;
+
+// The shared checks drive both the schema and the live client-side checklist.
+const strongPassword = type("string")
+  .narrow((password) =>
+    signUpPasswordRequirements.every(({ test }) => test(password)),
+  )
+  .configure({
   message:
     "Password must be at least 8 characters and include a letter and a number",
-});
+  });
 
 // name and role fields shared by the sign-up and create-user schemas
 const profileFields = {
