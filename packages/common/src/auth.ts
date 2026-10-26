@@ -1,0 +1,46 @@
+import { type } from "arktype";
+import { nonEmptyTrimmed } from "@common/fields.ts";
+import { volunteerRole } from "@common/user.ts";
+
+export const loginInput = type({
+  email: "string.email",
+  // no strength rules on login: a short password should read as "wrong password", so Firebase decides
+  password: "string > 0",
+});
+
+// at least 8 characters, one letter, and one number; the message is fixed so the
+// regex and the submitted password never appear in the error shown to users
+const strongPassword = type(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).configure({
+  message:
+    "Password must be at least 8 characters and include a letter and a number",
+});
+
+// name and role fields shared by the sign-up and create-user schemas
+const profileFields = {
+  firstName: nonEmptyTrimmed,
+  lastName: nonEmptyTrimmed,
+  role: volunteerRole,
+};
+
+export const signUpInput = type({
+  ...profileFields,
+  email: "string.email",
+  password: strongPassword,
+  confirmPassword: "string >= 8",
+}).narrow(
+  (data, ctx) =>
+    data.password === data.confirmPassword ||
+    // attach the error to confirmPassword so validateForm reports it on that field
+    ctx.reject({
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    }),
+);
+
+export const createUserInput = type({
+  ...profileFields,
+});
+
+export type LoginInput = typeof loginInput.infer;
+export type SignUpInput = typeof signUpInput.infer;
+export type CreateUserInput = typeof createUserInput.infer;
