@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import {
   Circle,
   CircleAlert,
@@ -11,7 +10,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
-import { auth } from "@frontend/lib/firebase.ts";
+import { useSignUp } from "@frontend/lib/useSignUp.ts";
 import { Input } from "@frontend/components/ui/input.tsx";
 import {
   Field,
@@ -56,7 +55,6 @@ export function SignUpForm({
   onAccountExists: () => void;
 }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -66,6 +64,8 @@ export function SignUpForm({
   > | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const signUp = useSignUp();
+  const isSubmitting = signUp.isPending;
   const validationErrorCount =
     Number(Boolean(nameError)) + Number(Boolean(passwordError));
 
@@ -100,18 +100,8 @@ export function SignUpForm({
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(
-        auth,
-        invitedEmail,
-        password,
-      );
-      try {
-        await updateProfile(user, { displayName: name });
-      } catch (error) {
-        console.error("Could not set display name", error);
-      }
+      await signUp.mutateAsync({ email: invitedEmail, password, name });
       onSuccess();
     } catch (error) {
       const code =
@@ -127,8 +117,6 @@ export function SignUpForm({
             : "We couldn't create your account. Please try again.",
         );
       }
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -201,7 +189,7 @@ export function SignUpForm({
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Create a Password</FieldLabel>
-              <div className="relative w-full placeholder:text-primary">
+              <div className="relative w-full">
                 <Input
                   id="password"
                   name="password"

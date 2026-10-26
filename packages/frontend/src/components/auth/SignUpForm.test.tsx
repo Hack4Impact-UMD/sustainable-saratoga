@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Auth, User } from "firebase/auth";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
@@ -35,7 +36,9 @@ function renderSignUpForm() {
   const onSuccess = vi.fn<() => void>();
   const onAccountExists = vi.fn<() => void>();
   render(
-    <SignUpForm onSuccess={onSuccess} onAccountExists={onAccountExists} />,
+    <QueryClientProvider client={new QueryClient()}>
+      <SignUpForm onSuccess={onSuccess} onAccountExists={onAccountExists} />
+    </QueryClientProvider>,
   );
   return { onSuccess, onAccountExists };
 }
