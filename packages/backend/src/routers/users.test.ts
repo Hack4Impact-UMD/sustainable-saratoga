@@ -1,5 +1,5 @@
 import type { Firestore } from "firebase-admin/firestore";
-import type { Session, UserProfile } from "@repo/common";
+import type { CreateUserInput, Session, UserProfile } from "@repo/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCaller } from "@backend/routers/index.ts";
 import { createUserProfile, getUserProfile } from "@backend/services/users.ts";
@@ -17,11 +17,15 @@ const session: Session = {
   emailVerified: true,
 };
 const profile: UserProfile = {
-  uid: session.uid,
-  email: session.email,
-  displayName: "Demo User",
-  role: "member",
-  createdAt: "2026-10-01T00:00:00.000Z",
+  firstName: "Demo",
+  lastName: "User",
+  email: "demo@example.com",
+  role: "planter",
+};
+const createInput: CreateUserInput = {
+  firstName: profile.firstName,
+  lastName: profile.lastName,
+  role: "planter",
 };
 
 const anonymous = createCaller({ session: null, db });
@@ -34,7 +38,7 @@ beforeEach(() => {
 describe("users authentication", () => {
   it.each([
     ["me", () => anonymous.users.me()],
-    ["create", () => anonymous.users.create({})],
+    ["create", () => anonymous.users.create(createInput)],
     ["get", () => anonymous.users.get({ uid: "user-2" })],
   ] as const)("rejects anonymous calls to users.%s", async (_name, call) => {
     await expect(call()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
@@ -71,12 +75,16 @@ describe("users.me", () => {
 });
 
 describe("users.create", () => {
-  it.each([{}, { displayName: "Demo User" }])(
-    "creates a profile with input %j using the verified session",
-    async (input) => {
-      vi.mocked(createUserProfile).mockResolvedValue(profile);
+  it.each(["planter", "pruner"] as const)(
+    "forwards the selected %s role and verified session",
+    async (role) => {
+      const input: CreateUserInput = { ...createInput, role };
+      const createdProfile: UserProfile = { ...profile, role };
+      vi.mocked(createUserProfile).mockResolvedValue(createdProfile);
 
-      await expect(signedIn.users.create(input)).resolves.toEqual(profile);
+      await expect(signedIn.users.create(input)).resolves.toEqual(
+        createdProfile,
+      );
       expect(createUserProfile).toHaveBeenCalledExactlyOnceWith(
         db,
         session,
@@ -85,10 +93,32 @@ describe("users.create", () => {
     },
   );
 
-  it("rejects an empty display name before calling the service", async () => {
-    await expect(
-      signedIn.users.create({ displayName: "" }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  it("trims names before passing them to the service", async () => {
+    vi.mocked(createUserProfile).mockResolvedValue(profile);
+
+    await signedIn.users.create({
+      ...createInput,
+      firstName: " Demo ",
+      lastName: " User ",
+    });
+
+    expect(createUserProfile).toHaveBeenCalledExactlyOnceWith(
+      db,
+      session,
+      createInput,
+    );
+  });
+
+  it.each([
+    ["missing profile fields", {}],
+    ["empty first name", { ...createInput, firstName: "" }],
+    ["blank last name", { ...createInput, lastName: "   " }],
+    ["admin role", { ...createInput, role: "admin" }],
+    ["obsolete member role", { ...createInput, role: "member" }],
+  ])("rejects %s before calling the service", async (_name, input) => {
+    await expect(signedIn.users.create(input as never)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
     expect(createUserProfile).not.toHaveBeenCalled();
   });
 
@@ -97,7 +127,7 @@ describe("users.create", () => {
       new Error("not implemented"),
     );
 
-    await expect(signedIn.users.create({})).rejects.toMatchObject({
+    await expect(signedIn.users.create(createInput)).rejects.toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
       message: "not implemented",
     });
@@ -106,16 +136,17 @@ describe("users.create", () => {
 
 describe("users.get", () => {
   it("looks up the requested user rather than the caller", async () => {
-    const requestedProfile: UserProfile = { ...profile, uid: "user-2" };
+    const requestedUid = "user-2";
+    const requestedProfile: UserProfile = {
+      ...profile,
+      email: "other@example.com",
+    };
     vi.mocked(getUserProfile).mockResolvedValue(requestedProfile);
 
-    await expect(
-      signedIn.users.get({ uid: requestedProfile.uid }),
-    ).resolves.toEqual(requestedProfile);
-    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(
-      db,
-      requestedProfile.uid,
+    await expect(signedIn.users.get({ uid: requestedUid })).resolves.toEqual(
+      requestedProfile,
     );
+    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, requestedUid);
   });
 
   it("returns null when the requested profile does not exist", async () => {
