@@ -201,13 +201,13 @@ export function SignUpForm({
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Create a Password</FieldLabel>
-              <div className="relative w-full">
+              <div className="relative w-full placeholder:text-primary">
                 <Input
                   id="password"
                   name="password"
                   ref={passwordInputRef}
                   type={isPasswordVisible ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder=""
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
                   autoComplete="new-password"
