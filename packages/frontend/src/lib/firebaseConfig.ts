@@ -13,7 +13,8 @@ import type { Auth } from "firebase/auth";
 export const firebaseOptions: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "fake-api-key",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "demo-vtf-template",
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "demo-sustainable-saratoga",
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 

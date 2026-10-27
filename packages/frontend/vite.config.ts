@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID ?? "demo-vtf-template";
+const projectId =
+  process.env.VITE_FIREBASE_PROJECT_ID ?? "demo-sustainable-saratoga";
 const region = process.env.VITE_FUNCTIONS_REGION ?? "us-central1";
 const functionsPort = process.env.FUNCTIONS_EMULATOR_PORT ?? "5001";
 
@@ -27,7 +28,8 @@ export default defineConfig({
     tailwindcss(),
     // The service worker is our own src/sw.ts: it precaches the app shell,
     // caches Storage images, and queues writes made offline with Workbox
-    // Background Sync. Offline reads and map tiles are not handled yet.
+    // Background Sync. Google Maps requests are never cached. Offline reads
+    // are not handled yet.
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
