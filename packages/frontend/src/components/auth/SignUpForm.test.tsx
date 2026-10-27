@@ -70,6 +70,7 @@ function fillForm({
 describe("SignUpForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, "", "/");
     firebase.createUserWithEmailAndPassword.mockResolvedValue({
       user: createdUser,
     });
@@ -78,6 +79,7 @@ describe("SignUpForm", () => {
 
   afterEach(() => {
     cleanup();
+    window.history.replaceState({}, "", "/");
   });
 
   it("shows shared schema errors and focuses the first invalid field", () => {
@@ -87,10 +89,15 @@ describe("SignUpForm", () => {
 
     expect(
       screen
-        .getByText("Fix 5 things to create your account")
+        .getByText("Fix 6 things to create your account")
         .closest('[role="alert"]'),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeDisabled();
     expect(screen.getByLabelText("First Name")).toHaveFocus();
+    expect(screen.getByLabelText("Email")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
     expect(screen.getByLabelText("Confirm Password")).toHaveAttribute(
       "aria-invalid",
       "true",
@@ -169,6 +176,7 @@ describe("SignUpForm", () => {
   });
 
   it("reports a mismatch on the confirm password field", () => {
+    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     renderSignUpForm();
     fillForm({
       firstName: "Alex",
@@ -185,8 +193,10 @@ describe("SignUpForm", () => {
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
-  it("creates the account with the invited email, sets the name, and calls onSuccess", async () => {
+  it("prefills email from the URL and creates the account with that email", async () => {
+    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     const { onSuccess } = renderSignUpForm();
+    expect(screen.getByLabelText("Email")).toHaveValue("invite@example.org");
     fillForm({
       firstName: " Alex ",
       lastName: "Doe ",
@@ -198,10 +208,9 @@ describe("SignUpForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
-    const invitedEmail = screen.getByLabelText("Email") as HTMLInputElement;
     expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
       expect.anything(),
-      invitedEmail.value,
+      "invite@example.org",
       "password123",
     );
     expect(updateProfile).toHaveBeenCalledWith(createdUser, {
@@ -225,6 +234,7 @@ describe("SignUpForm", () => {
         resolveCreate = resolve;
       }),
     );
+    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     renderSignUpForm();
     fillForm({
       firstName: "Alex",
@@ -251,6 +261,7 @@ describe("SignUpForm", () => {
         code: "auth/email-already-in-use",
       }),
     );
+    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     const { onAccountExists } = renderSignUpForm();
     fillForm({
       firstName: "Alex",

@@ -24,8 +24,6 @@ import {
   FieldLabel,
 } from "@frontend/components/ui/field.tsx";
 
-const invitedEmail = "test@example.com"; // TODO: Replace with actual invited email
-
 export function SignUpForm({
   onSuccess,
   onAccountExists,
@@ -39,6 +37,8 @@ export function SignUpForm({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const invitedEmail =
+    new URLSearchParams(window.location.search).get("email") ?? "";
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -144,12 +144,25 @@ export function SignUpForm({
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
                   disabled
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={
+                    fieldErrors.email ? "email-error" : undefined
+                  }
                 />
                 <LockKeyhole
                   aria-hidden="true"
                   className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-icon-secondary"
                 />
               </div>
+              {fieldErrors.email && (
+                <FieldError
+                  id="email-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.email}
+                </FieldError>
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="firstName">First Name</FieldLabel>
@@ -301,10 +314,7 @@ export function SignUpForm({
                 <option value="pruner">Pruner</option>
               </select>
               {fieldErrors.role && (
-                <FieldError
-                  id="role-error"
-                  className="flex items-center gap-2"
-                >
+                <FieldError id="role-error" className="flex items-center gap-2">
                   <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
                   {fieldErrors.role}
                 </FieldError>
