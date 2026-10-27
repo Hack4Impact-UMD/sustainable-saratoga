@@ -48,13 +48,21 @@ sustainable-saratoga/
    pnpm install
    ```
 
-2. Optionally validate the shared `common` package:
+2. Set up your env file, then ask Ori for the Google Maps values in a private DM:
+
+   ```sh
+   cp packages/frontend/.env.example packages/frontend/.env.local
+   ```
+
+   That's the only env file you need: nothing reads one in the repo root or the backend.
+
+3. Optionally validate the shared `common` package:
 
    ```sh
    pnpm --filter @repo/common run typecheck
    ```
 
-3. Start the development environment:
+4. Start the development environment:
 
    ```sh
    pnpm dev

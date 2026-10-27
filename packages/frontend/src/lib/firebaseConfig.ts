@@ -7,8 +7,8 @@ import type { Auth } from "firebase/auth";
  * own Firebase app. No side effects here, so either can import it.
  *
  * In development every value can stay fake: the Auth emulator accepts any
- * API key. For production, copy the real values into `.env` or set them in
- * your CI. See `.env.example`.
+ * API key. For production, CI sets the real values; see
+ * `packages/frontend/.env.example`.
  */
 export const firebaseOptions: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "fake-api-key",
