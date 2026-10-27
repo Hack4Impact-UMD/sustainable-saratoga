@@ -32,7 +32,7 @@ sustainable-saratoga/
 ├── packages/
 │   ├── frontend/   # React + Vite web application (TanStack Router, Tailwind CSS)
 │   ├── backend/    # tRPC API on Express, deployed as Firebase Cloud Functions
-│   └── common/     # Shared TypeScript types
+│   └── common/     # Shared ArkType schemas and types
 ├── firebase.json   # Firebase project and emulator configuration
 └── package.json    # Root package.json with workspace-level scripts
 ```
@@ -40,7 +40,7 @@ sustainable-saratoga/
 ## Running Locally
 
 > [!IMPORTANT]
-> Prerequisites: [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed, plus the [Firebase CLI](https://firebase.google.com/docs/cli) (`pnpm i -g firebase-tools`).
+> Prerequisites: [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed, and [Java](https://adoptium.net/) for the Firebase emulators. The [Firebase CLI](https://firebase.google.com/docs/cli) is installed with the repo: run it as `pnpm exec firebase …` so everyone uses the same version.
 
 1. Install dependencies:
 
