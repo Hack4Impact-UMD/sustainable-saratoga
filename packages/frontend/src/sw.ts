@@ -8,7 +8,7 @@ import {
 } from "workbox-precaching";
 import type { PrecacheEntry } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
-import { CacheFirst } from "workbox-strategies";
+import { CacheFirst, NetworkOnly } from "workbox-strategies";
 import { MUTATION_QUEUE_NAME } from "@frontend/lib/offlineSync.ts";
 import type {
   RejectedSyncItem,
@@ -40,6 +40,13 @@ cleanupOutdatedCaches();
 if (!import.meta.env.DEV) {
   registerRoute(new NavigationRoute(createHandlerBoundToURL("index.html")));
 }
+
+registerRoute(
+  ({ url }) =>
+    url.hostname === "maps.googleapis.com" ||
+    url.hostname === "maps.gstatic.com",
+  new NetworkOnly(),
+);
 
 registerRoute(
   /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
