@@ -38,7 +38,8 @@ export function SignUpForm({
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
   const invitedEmail =
-    new URLSearchParams(window.location.search).get("email") ?? "";
+    new URLSearchParams(window.location.search).get("email") ||
+    "test@example.org";
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -229,6 +230,8 @@ export function SignUpForm({
                   onChange={(event) => {
                     setPasswordValue(event.currentTarget.value);
                     setPasswordTouched(true);
+                    setFieldErrors(({ password: _password, ...rest }) => rest);
+                    setFormError(null);
                   }}
                   aria-invalid={Boolean(fieldErrors.password)}
                   aria-describedby={
