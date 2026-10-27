@@ -1,6 +1,6 @@
 import { type } from "arktype";
 import { nonEmptyTrimmed } from "@common/fields.ts";
-import { volunteerRole } from "@common/user.ts";
+import { volunteerTypes } from "@common/user.ts";
 
 export const loginInput = type({
   email: "string.email",
@@ -15,12 +15,15 @@ const strongPassword = type(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).configure({
     "Password must be at least 8 characters and include a letter and a number",
 });
 
-// name and role fields shared by the sign-up and create-user schemas
+// fields shared by the sign-up and create-user schemas. there's no role: the
+// server always creates volunteers, and "+": "delete" drops any role (or other
+// unknown key) a client sends so it can't reach the profile write
 const profileFields = {
+  "+": "delete",
   firstName: nonEmptyTrimmed,
   lastName: nonEmptyTrimmed,
-  role: volunteerRole,
-};
+  volunteerTypes,
+} as const;
 
 export const signUpInput = type({
   ...profileFields,

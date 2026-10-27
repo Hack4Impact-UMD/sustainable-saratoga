@@ -6,7 +6,7 @@ import { validateForm } from "@common/validation.ts";
 const validSignUp = {
   firstName: "Jane",
   lastName: "Doe",
-  role: "planter",
+  volunteerTypes: ["planter"],
   email: "jane@example.com",
   password: "password123",
   confirmPassword: "password123",
@@ -94,30 +94,50 @@ describe("signUpInput", () => {
   );
 });
 
-describe("role at sign-up", () => {
-  it.each(["planter", "pruner"])("signUpInput accepts %s", (role) => {
-    expect(signUpInput({ ...validSignUp, role }) instanceof type.errors).toBe(
-      false,
-    );
-  });
+describe("volunteer types at sign-up", () => {
+  it.each([[["planter"]], [["pruner"]], [["planter", "pruner"]]])(
+    "signUpInput accepts %j",
+    (volunteerTypes) => {
+      const result = signUpInput({ ...validSignUp, volunteerTypes });
+      expect(result instanceof type.errors).toBe(false);
+    },
+  );
 
-  it.each(["admin", "guest", undefined])("signUpInput rejects %s", (role) => {
-    expect(signUpInput({ ...validSignUp, role }) instanceof type.errors).toBe(
-      true,
-    );
-  });
+  it.each([[[]], [["admin"]], [undefined]])(
+    "signUpInput rejects %j",
+    (volunteerTypes) => {
+      const result = signUpInput({ ...validSignUp, volunteerTypes });
+      expect(result instanceof type.errors).toBe(true);
+    },
+  );
 
-  it.each(["admin", "guest", undefined])(
-    "createUserInput rejects %s",
-    (role) => {
+  it.each([[[]], [["admin"]], [undefined]])(
+    "createUserInput rejects %j",
+    (volunteerTypes) => {
       const result = createUserInput({
         firstName: "Jane",
         lastName: "Doe",
-        role,
+        volunteerTypes,
       });
       expect(result instanceof type.errors).toBe(true);
     },
   );
+
+  it.each([
+    ["signUpInput", () => signUpInput({ ...validSignUp, role: "admin" })],
+    [
+      "createUserInput",
+      () =>
+        createUserInput({
+          firstName: "Jane",
+          lastName: "Doe",
+          volunteerTypes: ["planter"],
+          role: "admin",
+        }),
+    ],
+  ])("%s drops a role sent by the client", (_name, parse) => {
+    expect(parse()).not.toHaveProperty("role");
+  });
 });
 
 describe("createUserInput", () => {
@@ -125,7 +145,7 @@ describe("createUserInput", () => {
     const result = createUserInput({
       firstName: "Jane",
       lastName: "Doe",
-      role: "pruner",
+      volunteerTypes: ["pruner"],
     });
     expect(result instanceof type.errors).toBe(false);
   });
@@ -134,7 +154,7 @@ describe("createUserInput", () => {
     const result = createUserInput({
       firstName: "",
       lastName: "Doe",
-      role: "pruner",
+      volunteerTypes: ["pruner"],
     });
     expect(result instanceof type.errors).toBe(true);
   });
@@ -145,7 +165,7 @@ describe("createUserInput", () => {
       const result = createUserInput({
         firstName: "Jane",
         lastName: "Doe",
-        role: "pruner",
+        volunteerTypes: ["pruner"],
         [field]: "   ",
       });
       expect(result instanceof type.errors).toBe(true);
