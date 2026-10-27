@@ -4,76 +4,83 @@ import {
   getUserInput,
   userProfile,
   userRole,
-  volunteerRole,
+  volunteerTypes,
 } from "@common/user.ts";
 
+const volunteer = {
+  firstName: "Jane",
+  lastName: "Doe",
+  email: "jane@example.com",
+  role: "volunteer",
+  volunteerTypes: ["planter"],
+};
+
 describe("userRole", () => {
-  it.each(["admin", "planter", "pruner"])("accepts %s", (role) => {
+  it.each(["admin", "volunteer"])("accepts %s", (role) => {
     expect(userRole(role) instanceof type.errors).toBe(false);
   });
 
-  it("rejects an unknown role", () => {
-    expect(userRole("guest") instanceof type.errors).toBe(true);
+  it.each(["planter", "guest"])("rejects %s", (role) => {
+    expect(userRole(role) instanceof type.errors).toBe(true);
   });
 });
 
-describe("volunteerRole", () => {
-  it.each(["planter", "pruner"])("accepts %s", (role) => {
-    expect(volunteerRole(role) instanceof type.errors).toBe(false);
-  });
+describe("volunteerTypes", () => {
+  it.each([[["planter"]], [["pruner"]], [["planter", "pruner"]]])(
+    "accepts %j",
+    (types) => {
+      expect(volunteerTypes(types) instanceof type.errors).toBe(false);
+    },
+  );
 
-  it("rejects admin", () => {
-    expect(volunteerRole("admin") instanceof type.errors).toBe(true);
-  });
+  it.each([[[]], [["admin"]], [["planter", "planter"]], ["planter"]])(
+    "rejects %j",
+    (types) => {
+      expect(volunteerTypes(types) instanceof type.errors).toBe(true);
+    },
+  );
 });
 
 describe("userProfile", () => {
-  it("accepts a complete profile", () => {
-    const result = userProfile({
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@example.com",
-      role: "planter",
-    });
+  it("accepts a volunteer with volunteer types", () => {
+    expect(userProfile(volunteer) instanceof type.errors).toBe(false);
+  });
+
+  it("accepts an admin without volunteer types", () => {
+    const { volunteerTypes: _, ...rest } = volunteer;
+    const result = userProfile({ ...rest, role: "admin" });
     expect(result instanceof type.errors).toBe(false);
+  });
+
+  it("rejects a volunteer without volunteer types", () => {
+    const { volunteerTypes: _, ...rest } = volunteer;
+    expect(userProfile(rest) instanceof type.errors).toBe(true);
+  });
+
+  it("rejects an admin with volunteer types", () => {
+    const result = userProfile({ ...volunteer, role: "admin" });
+    expect(result instanceof type.errors).toBe(true);
   });
 
   it.each(["firstName", "lastName"])(
     "rejects a whitespace-only %s",
     (field) => {
-      const result = userProfile({
-        firstName: "Jane",
-        lastName: "Doe",
-        email: "jane@example.com",
-        role: "planter",
-        [field]: "   ",
-      });
+      const result = userProfile({ ...volunteer, [field]: "   " });
       expect(result instanceof type.errors).toBe(true);
     },
   );
 
   it("trims surrounding whitespace from names", () => {
     const result = userProfile({
+      ...volunteer,
       firstName: " Jane ",
       lastName: " Doe ",
-      email: "jane@example.com",
-      role: "planter",
     });
-    expect(result).toEqual({
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@example.com",
-      role: "planter",
-    });
+    expect(result).toEqual(volunteer);
   });
 
   it("rejects a bad email", () => {
-    const result = userProfile({
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "not-an-email",
-      role: "planter",
-    });
+    const result = userProfile({ ...volunteer, email: "not-an-email" });
     expect(result instanceof type.errors).toBe(true);
   });
 });
