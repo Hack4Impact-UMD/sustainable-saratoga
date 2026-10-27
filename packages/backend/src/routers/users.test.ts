@@ -20,12 +20,13 @@ const profile: UserProfile = {
   firstName: "Demo",
   lastName: "User",
   email: "demo@example.com",
-  role: "planter",
+  role: "volunteer",
+  volunteerTypes: ["planter"],
 };
 const createInput: CreateUserInput = {
   firstName: profile.firstName,
   lastName: profile.lastName,
-  role: "planter",
+  volunteerTypes: ["planter"],
 };
 
 const anonymous = createCaller({ session: null, db });
@@ -75,11 +76,16 @@ describe("users.me", () => {
 });
 
 describe("users.create", () => {
-  it.each(["planter", "pruner"] as const)(
-    "forwards the selected %s role and verified session",
-    async (role) => {
-      const input: CreateUserInput = { ...createInput, role };
-      const createdProfile: UserProfile = { ...profile, role };
+  it.each([[["planter"]], [["pruner"]], [["planter", "pruner"]]] as const)(
+    "forwards the selected %j volunteer types and verified session",
+    async (types) => {
+      const volunteerTypes = [...types];
+      const input: CreateUserInput = { ...createInput, volunteerTypes };
+      const createdProfile: UserProfile = {
+        ...profile,
+        role: "volunteer",
+        volunteerTypes,
+      };
       vi.mocked(createUserProfile).mockResolvedValue(createdProfile);
 
       await expect(signedIn.users.create(input)).resolves.toEqual(
@@ -113,13 +119,25 @@ describe("users.create", () => {
     ["missing profile fields", {}],
     ["empty first name", { ...createInput, firstName: "" }],
     ["blank last name", { ...createInput, lastName: "   " }],
-    ["admin role", { ...createInput, role: "admin" }],
-    ["obsolete member role", { ...createInput, role: "member" }],
+    ["no volunteer types", { ...createInput, volunteerTypes: [] }],
+    ["admin volunteer type", { ...createInput, volunteerTypes: ["admin"] }],
   ])("rejects %s before calling the service", async (_name, input) => {
     await expect(signedIn.users.create(input as never)).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
     expect(createUserProfile).not.toHaveBeenCalled();
+  });
+
+  it("drops a role sent by the client before calling the service", async () => {
+    vi.mocked(createUserProfile).mockResolvedValue(profile);
+
+    await signedIn.users.create({ ...createInput, role: "admin" } as never);
+
+    expect(createUserProfile).toHaveBeenCalledExactlyOnceWith(
+      db,
+      session,
+      createInput,
+    );
   });
 
   it("surfaces a failed profile creation", async () => {

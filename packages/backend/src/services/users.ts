@@ -9,7 +9,7 @@ export function getUserProfile(
   return Promise.reject(new Error("not implemented"));
 }
 
-// Writes users/{uid} for the signed-in user, with their selected volunteer role
+// Writes users/{uid} for the signed-in user as a volunteer with their selected volunteer types
 export function createUserProfile(
   _db: Firestore,
   _session: Session,
