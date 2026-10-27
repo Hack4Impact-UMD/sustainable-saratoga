@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { CircleAlert, CloudAlert, Eye, EyeOff, Info } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
@@ -8,6 +8,7 @@ import {
   passwordFieldError,
 } from "@frontend/lib/authErrors.ts";
 import { useLogin } from "@frontend/lib/useLogin.ts";
+import { useAuth } from "@frontend/lib/useAuth.ts";
 
 /**
  * Props for the sign-in form and its navigation actions.
@@ -16,7 +17,6 @@ export interface LoginFormProps {
   sessionExpired?: boolean;
   onSuccess: () => void;
   onForgotPassword: () => void;
-  onNoAccess: (email: string) => void;
 }
 
 /**
@@ -28,11 +28,22 @@ export function LoginForm({
   onForgotPassword,
 }: LoginFormProps) {
   const login = useLogin();
+  const { isAuthed } = useAuth();
+  const didNavigate = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
+
+  // App passes this auth state to the router before effects run, so route
+  // guards see the signed-in user when the success action navigates.
+  useEffect(() => {
+    if (login.isSuccess && isAuthed && !didNavigate.current) {
+      didNavigate.current = true;
+      onSuccess();
+    }
+  }, [login.isSuccess, isAuthed, onSuccess]);
 
   // TanStack Query exposes the Firebase request status and any auth failure.
   const signInError = login.isError
@@ -50,8 +61,7 @@ export function LoginForm({
 
     if (nextEmailError || nextPasswordError) return;
 
-    // The route decides where to navigate after the auth provider updates.
-    login.mutate({ email: email.trim(), password }, { onSuccess });
+    login.mutate({ email: email.trim(), password });
   }
 
   return (
@@ -233,9 +243,9 @@ export function LoginForm({
           <button
             className="type-btn-primary h-control w-full rounded-pill bg-primary px-4 hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-disabled-fill"
             type="submit"
-            disabled={login.isPending}
+            disabled={login.isPending || login.isSuccess}
           >
-            {login.isPending ? "Signing in..." : "Sign in"}
+            {login.isPending || login.isSuccess ? "Signing in..." : "Sign in"}
           </button>
         </form>
 

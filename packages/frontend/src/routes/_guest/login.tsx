@@ -57,16 +57,11 @@ function LoginPage() {
     void navigate({ to: "/login/forgot-password" });
   }
 
-  function handleNoAccess(email: string) {
-    void navigate({ to: "/no-access", search: { email } });
-  }
-
   return (
     <LoginForm
       sessionExpired={reason === "session-expired"}
       onSuccess={handleSuccess}
       onForgotPassword={handleForgotPassword}
-      onNoAccess={handleNoAccess}
     />
   );
 }

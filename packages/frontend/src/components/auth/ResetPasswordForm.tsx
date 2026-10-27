@@ -12,7 +12,13 @@ import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import icon from "@frontend/assets/Leaf logo.svg";
 import { auth } from "@frontend/lib/firebase.ts";
 
-type ResetState = "checking" | "form" | "expired" | "used" | "success";
+type ResetState =
+  | "checking"
+  | "form"
+  | "expired"
+  | "used"
+  | "error"
+  | "success";
 
 const PASSWORD_MIN_LENGTH = 12;
 
@@ -39,6 +45,7 @@ export function ResetPasswordForm({
   onBackToSignIn,
 }: ResetPasswordFormProps) {
   const [state, setState] = useState<ResetState>("checking");
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -64,9 +71,10 @@ export function ResetPasswordForm({
       } catch (error) {
         if (!isCurrent) return;
 
-        // Firebase distinguishes expired links from other invalid/used links.
         const code = getFirebaseErrorCode(error);
-        setState(code === "auth/expired-action-code" ? "expired" : "used");
+        if (code === "auth/expired-action-code") setState("expired");
+        else if (code === "auth/invalid-action-code") setState("used");
+        else setState("error");
       }
     }
 
@@ -75,7 +83,7 @@ export function ResetPasswordForm({
     return () => {
       isCurrent = false;
     };
-  }, [oobCode]);
+  }, [oobCode, verificationAttempt]);
 
   /** Validates both password fields and saves the new password in Firebase. */
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -111,6 +119,25 @@ export function ResetPasswordForm({
 
   if (state === "checking") {
     return null;
+  }
+
+  if (state === "error") {
+    return (
+      <ResetPageShell>
+        <h1 className="type-h1">We couldn&apos;t check this link</h1>
+        <p className="type-body-sm mt-4" role="alert">
+          Please try again to continue resetting your password.
+        </p>
+        <ResetActions
+          primaryLabel="Try again"
+          onPrimary={() => {
+            setState("checking");
+            setVerificationAttempt((attempt) => attempt + 1);
+          }}
+          onSecondary={onBackToSignIn}
+        />
+      </ResetPageShell>
+    );
   }
 
   // Each result state is rendered separately so its actions stay easy to adjust.
