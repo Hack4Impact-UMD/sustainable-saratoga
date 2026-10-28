@@ -133,11 +133,11 @@ export function ForgotPasswordForm({
           {isSending ? "Sending..." : "Send reset link"}
         </button>
         <button
-          className="type-btn-secondary h-control w-full rounded-pill border border-primary bg-surface px-4 hover:bg-hover"
+          className="type-link flex justify-self-center"
           type="button"
           onClick={onBackToSignIn}
         >
-          Back to sign in
+          ← Back to sign in
         </button>
       </form>
     </ForgotPageShell>

@@ -387,11 +387,11 @@ function ResetActions({
         {primaryLabel}
       </button>
       <button
-        className="type-btn-secondary h-control w-full rounded-pill border border-primary bg-surface px-4 hover:bg-hover"
+        className="type-link flex justify-self-center"
         type="button"
         onClick={onSecondary}
       >
-        Back to sign in
+        ← Back to sign in
       </button>
     </div>
   );

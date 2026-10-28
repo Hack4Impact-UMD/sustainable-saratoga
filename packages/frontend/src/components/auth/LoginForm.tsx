@@ -65,13 +65,13 @@ export function LoginForm({
   }
 
   return (
-    <main className="flex min-h-screen justify-center bg-page px-4 py-8">
-      <section className="w-full max-w-md">
-        <div className="mb-6 text-center">
+    <main className="flex min-h-screen justify-center bg-page px-4 pt-24 pb-12">
+      <section className="flex min-h-[calc(100vh-9rem)] w-full max-w-md flex-col">
+        <div className="mb-6 flex flex-col items-center gap-4 text-center">
           <img
             src={icon}
             alt="Sustainable Saratoga"
-            className="mx-auto mb-4 h-auto w-24"
+            className="w-24"
           />
           <h1 className="type-h1">Sign in</h1>
         </div>
@@ -247,9 +247,27 @@ export function LoginForm({
           >
             {login.isPending || login.isSuccess ? "Signing in..." : "Sign in"}
           </button>
+
+          <div className="relative flex items-center gap-(--space-4)">
+            <div className="grow border-t border-(--color-divider)"></div>
+            <span className="shrink text-(--color-text-muted)">or</span>
+            <div className="grow border-t border-(--color-divider)"></div>
+          </div>
+
+          <button
+            className="flex h-12 w-full justify-center items-center gap-(--space-2) rounded-(--radius-pill) border border-solid border-(--color-primary) bg-(--bg-surface) px-20.5 py-0"
+          >
+            <div className="flex px-1.75 justify-center items-center border-[1.5px] border-dashed border-(--color-border-strong) rounded-sm ">
+              <p className="font-bold text-[10px] text-(--color-text-muted)">
+                G
+              </p>
+            </div>
+            {/* Insert Google login logic here */}
+            Continue with Google
+          </button>
         </form>
 
-        <p className="type-caption mt-8 flex items-center justify-center gap-1 text-center">
+        <p className="type-caption mt-auto flex items-center justify-center gap-1 pt-(--space-4) text-center">
           <Info aria-hidden="true" size={16} />
           <strong>Need access?</strong> Contact your administrator.
         </p>
