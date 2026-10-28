@@ -8,6 +8,7 @@ import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
 import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
+import { StatusBadge } from "@frontend/components/status/StatusBadge.tsx";
 
 interface RouterContext {
   auth: AuthState;
@@ -32,6 +33,13 @@ function RootLayout() {
 
   return (
     <>
+      <div className="p-5">
+        <StatusBadge status="requested" />
+        <StatusBadge status="possible" />
+        <StatusBadge status="approved" />
+        <StatusBadge status="planted" />
+      </div>
+      
       <SyncStatus />
       <Outlet />
       {isAuthed && (
