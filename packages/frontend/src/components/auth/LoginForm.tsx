@@ -68,11 +68,7 @@ export function LoginForm({
     <main className="flex min-h-screen justify-center bg-page px-4 pt-24 pb-12">
       <section className="flex min-h-[calc(100vh-9rem)] w-full max-w-md flex-col">
         <div className="mb-6 flex flex-col items-center gap-4 text-center">
-          <img
-            src={icon}
-            alt="Sustainable Saratoga"
-            className="w-24"
-          />
+          <img src={icon} alt="Sustainable Saratoga" className="w-24" />
           <h1 className="type-h1">Sign in</h1>
         </div>
 
@@ -249,9 +245,9 @@ export function LoginForm({
           </button>
 
           <div className="relative flex items-center gap-(--space-4)">
-            <div className="grow border-t border-(--color-divider)"></div>
+            <div className="grow border-t border-(--color-divider)" />
             <span className="shrink text-(--color-text-muted)">or</span>
-            <div className="grow border-t border-(--color-divider)"></div>
+            <div className="grow border-t border-(--color-divider)" />
           </div>
 
           <button
