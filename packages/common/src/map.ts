@@ -25,7 +25,8 @@ export type MapMarker = typeof mapMarker.infer;
  * `undefined` values, returns every marker.
  */
 export const mapMarkersInput = type({
-  "year?": "number.integer | undefined",
-  "status?": treeStatus.or("undefined"),
+  "year?": "number[] | undefined",
+  "status?": treeStatus.array().or("undefined"),
+  "memberId?": "number.integer[] | undefined",
 });
 export type MapMarkersInput = typeof mapMarkersInput.infer;
