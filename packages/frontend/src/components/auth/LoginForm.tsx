@@ -256,6 +256,7 @@ export function LoginForm({
 
           <button
             className="flex h-12 w-full justify-center items-center gap-(--space-2) rounded-(--radius-pill) border border-solid border-(--color-primary) bg-(--bg-surface) px-20.5 py-0"
+            type="button"
           >
             <div className="flex px-1.75 justify-center items-center border-[1.5px] border-dashed border-(--color-border-strong) rounded-sm ">
               <p className="font-bold text-[10px] text-(--color-text-muted)">
