@@ -36,7 +36,6 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "firebase": "^12.18.0",
-    "leaflet": "^1.9.4"
+    "firebase": "^12.18.0"
   }
 }
