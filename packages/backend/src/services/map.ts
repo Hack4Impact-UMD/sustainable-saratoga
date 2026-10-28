@@ -23,7 +23,7 @@ function matchesFilters(marker: MapMarker, filters: MapMarkersInput): boolean {
 
   if (
     filters.year !== undefined &&
-    (marker.plantedYear === undefined || !filters.year.includes(marker.plantedYear))
+    !filters.year.includes(marker.seasonYear)
   ) {
     return false;
   }

@@ -8,8 +8,14 @@ const publicFields = [
   "id",
   "lat",
   "lng",
+  "address",
+  "treeNumber",
+  "treeCount",
+  "recordType",
   "status",
+  "issuedBy",
   "species",
+  "seasonYear",
   "plantedYear",
 ] as const;
 
@@ -29,19 +35,21 @@ describe("map.markers", () => {
     const markers = await anonymous.map.markers({ status: ["planted"] });
 
     expect(markers.map((marker) => marker.id)).toEqual([
-      "maple-congress",
-      "oak-broadway",
+      "maple-ln-2",
+      "orchard-row",
     ]);
   });
 
-  it("narrows by year and drops markers with no planted year", async () => {
+  it("filters by season year, including requested records", async () => {
     const markers = await anonymous.map.markers({ year: [2024] });
 
     expect(markers.map((marker) => marker.id)).toEqual([
-      "maple-congress",
-      "birch-circular",
+      "maple-ln",
+      "maple-ln-2",
+      "birchfield-ave",
+      "fernhill-dr",
     ]);
-    expect(markers.every((marker) => marker.plantedYear === 2024)).toBe(true);
+    expect(markers.every((marker) => marker.seasonYear === 2024)).toBe(true);
   });
 
   it("applies status and year together", async () => {
@@ -51,7 +59,24 @@ describe("map.markers", () => {
     });
 
     expect(markers).toEqual([
-      expect.objectContaining({ id: "maple-congress" }),
+      expect.objectContaining({ id: "maple-ln-2", treeCount: 12 }),
+    ]);
+  });
+
+  it("returns issuer user IDs for each marker", async () => {
+    const markers = await anonymous.map.markers({});
+
+    expect(
+      markers.map(({ id, issuedBy }) => [id, issuedBy]),
+    ).toEqual([
+      ["maple-ln", "dana-ruiz"],
+      ["maple-ln-2", "leo-brandt"],
+      ["birchfield-ave", "sam-okafor"],
+      ["lantern-ct", "priya-nair"],
+      ["orchard-row", "leo-brandt"],
+      ["quarry-st", "dana-ruiz"],
+      ["willowbrook-rd", "sam-okafor"],
+      ["fernhill-dr", "priya-nair"],
     ]);
   });
 
@@ -74,7 +99,19 @@ describe("map.markers", () => {
     if (!first) return;
 
     expect(Object.keys(first).sort()).toEqual(
-      ["id", "lat", "lng", "plantedYear", "species", "status"].sort(),
+      [
+        "id",
+        "lat",
+        "lng",
+        "address",
+        "treeNumber",
+        "treeCount",
+        "recordType",
+        "issuedBy",
+        "seasonYear",
+        "species",
+        "status",
+      ].sort(),
     );
     for (const marker of markers) {
       for (const key of Object.keys(marker)) {
