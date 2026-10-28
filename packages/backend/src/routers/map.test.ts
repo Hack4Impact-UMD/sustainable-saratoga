@@ -26,7 +26,7 @@ describe("map.markers", () => {
   });
 
   it("narrows by status", async () => {
-    const markers = await anonymous.map.markers({ status: "planted" });
+    const markers = await anonymous.map.markers({ status: ["planted"] });
 
     expect(markers.map((marker) => marker.id)).toEqual([
       "maple-congress",
@@ -35,7 +35,7 @@ describe("map.markers", () => {
   });
 
   it("narrows by year and drops markers with no planted year", async () => {
-    const markers = await anonymous.map.markers({ year: 2024 });
+    const markers = await anonymous.map.markers({ year: [2024] });
 
     expect(markers.map((marker) => marker.id)).toEqual([
       "maple-congress",
@@ -46,8 +46,8 @@ describe("map.markers", () => {
 
   it("applies status and year together", async () => {
     const markers = await anonymous.map.markers({
-      status: "planted",
-      year: 2024,
+      status: ["planted"],
+      year: [2024],
     });
 
     expect(markers).toEqual([
