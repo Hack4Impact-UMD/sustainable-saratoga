@@ -1,5 +1,5 @@
 {
-  "name": "vite-trpc-firebase-template",
+  "name": "sustainable-saratoga",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,7 +20,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "checks": "pnpm run \"/^(lint|format:check|typecheck|test)$/\"",
-    "emulators": "firebase emulators:start --only auth,functions,firestore",
+    "emulators": "firebase emulators:start --project demo-sustainable-saratoga --only auth,functions,firestore",
     "deploy": "turbo run build && firebase deploy"
   },
   "devDependencies": {
@@ -36,8 +36,6 @@
     "vitest": "^4.1.12"
   },
   "dependencies": {
-    "firebase": "^12.19.0",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^1.61.0"
+    "leaflet": "^1.9.4"
   }
 }
