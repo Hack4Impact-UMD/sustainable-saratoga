@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      leaflet:
-        specifier: ^1.9.4
-        version: 1.9.4
+      firebase:
+        specifier: ^12.18.0
+        version: 12.18.0
     devDependencies:
       '@playwright/test':
         specifier: ^1.64.1
@@ -132,8 +132,8 @@ importers:
         specifier: ^12.18.0
         version: 12.18.0
       lucide-react:
-        specifier: ^1.61.0
-        version: 1.61.0(@types/react@19.2.18)(react@19.2.8)
+        specifier: ^1.62.0
+        version: 1.62.0(@types/react@19.2.18)(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -4682,9 +4682,6 @@ packages:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
     engines: {node: '>= 0.6.3'}
 
-  leaflet@1.9.4:
-    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
-
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
     engines: {node: '>=6'}
@@ -4924,8 +4921,8 @@ packages:
     resolution: {integrity: sha512-XTFlOBHeuXnUGuUQI0kBb4O4oQW7qCV7MRGQja1xNpxgrI/jptlly+/5126RiRold1zgyxY520qOZUZ31V0I2A==}
     engines: {node: '>=20.0.0'}
 
-  lucide-react@1.61.0:
-    resolution: {integrity: sha512-v2SQPPPNjnr+BlhL9Spuzmo5yR+hLkftfuE4E3jaxdNPgSH0hJKPcLJBP7yAta87jQNPsSERS59PJjCJ/CorBA==}
+  lucide-react@1.62.0:
+    resolution: {integrity: sha512-2i8QZZhkgYMA3oJvKYpCltHh54VnT/3rIPkDLHbzr3IJQBaCz8+7j7V2k2rczYd2aCqcBaMmNlWQ2KKeDfcxmw==}
     peerDependencies:
       '@types/react': '*'
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -11494,8 +11491,6 @@ snapshots:
     dependencies:
       readable-stream: 2.3.8
 
-  leaflet@1.9.4: {}
-
   leven@3.1.0: {}
 
   libsodium-wrappers@0.7.16:
@@ -11675,7 +11670,7 @@ snapshots:
 
   lsofi@2.0.0: {}
 
-  lucide-react@1.61.0(@types/react@19.2.18)(react@19.2.8):
+  lucide-react@1.62.0(@types/react@19.2.18)(react@19.2.8):
     dependencies:
       react: 19.2.8
     optionalDependencies:
