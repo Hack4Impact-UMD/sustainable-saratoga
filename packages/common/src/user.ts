@@ -2,23 +2,44 @@ import { type } from "arktype";
 import { nonEmptyTrimmed } from "@common/fields.ts";
 import type { Session } from "@common/session.ts";
 
-// roles volunteers can pick at sign-up; admins are invite-only
-export const volunteerRole = type("'planter' | 'pruner'");
+// what a volunteer does; one volunteer can do both
+export const volunteerType = type("'planter' | 'pruner'");
 
-export const userRole = type("'admin'").or(volunteerRole);
+// at least one, no repeats
+export const volunteerTypes = volunteerType
+  .array()
+  .atLeastLength(1)
+  .narrow(
+    (types, ctx) =>
+      new Set(types).size === types.length ||
+      ctx.reject({ message: "Volunteer types must not repeat" }),
+  );
 
-export const userProfile = type({
+// admins are invite-only; everyone who signs up is a volunteer
+export const userRole = type("'admin' | 'volunteer'");
+
+const profileBase = {
   firstName: nonEmptyTrimmed,
   lastName: nonEmptyTrimmed,
   email: "string.email",
-  role: userRole,
+} as const;
+
+// only volunteers carry volunteerTypes
+export const userProfile = type({
+  ...profileBase,
+  role: "'admin'",
+  "volunteerTypes?": "never",
+}).or({
+  ...profileBase,
+  role: "'volunteer'",
+  volunteerTypes,
 });
 
 export const getUserInput = type({
   uid: "string > 0",
 });
 
-export type VolunteerRole = typeof volunteerRole.infer;
+export type VolunteerType = typeof volunteerType.infer;
 export type UserRole = typeof userRole.infer;
 export type UserProfile = typeof userProfile.infer;
 export type GetUserInput = typeof getUserInput.infer;

@@ -32,7 +32,7 @@ sustainable-saratoga/
 ├── packages/
 │   ├── frontend/   # React + Vite web application (TanStack Router, Tailwind CSS)
 │   ├── backend/    # tRPC API on Express, deployed as Firebase Cloud Functions
-│   └── common/     # Shared TypeScript types
+│   └── common/     # Shared ArkType schemas and types
 ├── firebase.json   # Firebase project and emulator configuration
 └── package.json    # Root package.json with workspace-level scripts
 ```
@@ -40,7 +40,7 @@ sustainable-saratoga/
 ## Running Locally
 
 > [!IMPORTANT]
-> Prerequisites: [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed, plus the [Firebase CLI](https://firebase.google.com/docs/cli) (`pnpm i -g firebase-tools`).
+> Prerequisites: [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed, and [Java](https://adoptium.net/) for the Firebase emulators. The [Firebase CLI](https://firebase.google.com/docs/cli) is installed with the repo: run it as `pnpm exec firebase …` so everyone uses the same version.
 
 1. Install dependencies:
 
@@ -48,13 +48,21 @@ sustainable-saratoga/
    pnpm install
    ```
 
-2. Optionally validate the shared `common` package:
+2. Set up your env file, then ask Ori for the Google Maps values in a private DM:
+
+   ```sh
+   cp packages/frontend/.env.example packages/frontend/.env.local
+   ```
+
+   That's the only env file you need: nothing reads one in the repo root or the backend.
+
+3. Optionally validate the shared `common` package:
 
    ```sh
    pnpm --filter @repo/common run typecheck
    ```
 
-3. Start the development environment:
+4. Start the development environment:
 
    ```sh
    pnpm dev
@@ -187,6 +195,13 @@ sustainable-saratoga/
       <a href="https://www.linkedin.com/in/esther-e-yu/" target="_blank" rel="noreferrer noopener">
         <img src="assets/team/esther-yu.jpg" style="height:110px; border-radius:10%;"/><br/>
         <b>Esther Yu</b><br/>
+        <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
+      </a>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/AbhinavManda-bit" target="_blank" rel="noreferrer noopener">
+        <img src="assets/team/abhinav-manda.jpg" style="height:110px; border-radius:10%;"/><br/>
+        <b>Abhinav Manda</b><br/>
         <img src="https://img.shields.io/badge/💻_engineer-27AE60?style=flat-square"/>
       </a>
     </td>
