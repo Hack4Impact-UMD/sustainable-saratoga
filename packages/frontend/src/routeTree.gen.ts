@@ -16,6 +16,7 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
+import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 
@@ -52,6 +53,11 @@ const GuestLoginRoute = GuestLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const GuestSignupRoute = GuestSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => GuestRouteRoute,
+} as any)
 const GuestLoginCheckMailRoute = GuestLoginCheckMailRouteImport.update({
   id: '/check-mail',
   path: '/check-mail',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
+  '/signup': typeof GuestSignupRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
+  '/signup': typeof GuestSignupRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_guest/login': typeof GuestLoginRouteWithChildren
+  '/_guest/signup': typeof GuestSignupRoute
   '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/login'
+    | '/signup'
     | '/login/check-mail'
     | '/login/forgot-password'
   fileRoutesByTo: FileRoutesByTo
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/login'
+    | '/signup'
     | '/login/check-mail'
     | '/login/forgot-password'
   id:
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/dashboard'
     | '/_guest/login'
+    | '/_guest/signup'
     | '/_guest/login/check-mail'
     | '/_guest/login/forgot-password'
   fileRoutesById: FileRoutesById
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestLoginRouteImport
       parentRoute: typeof GuestRouteRoute
     }
+    '/_guest/signup': {
+      id: '/_guest/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof GuestSignupRouteImport
+      parentRoute: typeof GuestRouteRoute
+    }
     '/_guest/login/check-mail': {
       id: '/_guest/login/check-mail'
       path: '/check-mail'
@@ -229,10 +248,12 @@ const GuestLoginRouteWithChildren = GuestLoginRoute._addFileChildren(
 
 interface GuestRouteRouteChildren {
   GuestLoginRoute: typeof GuestLoginRouteWithChildren
+  GuestSignupRoute: typeof GuestSignupRoute
 }
 
 const GuestRouteRouteChildren: GuestRouteRouteChildren = {
   GuestLoginRoute: GuestLoginRouteWithChildren,
+  GuestSignupRoute: GuestSignupRoute,
 }
 
 const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(
