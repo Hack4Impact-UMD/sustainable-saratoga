@@ -9,6 +9,7 @@ import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 import { StatusBadge } from "@frontend/components/status/StatusBadge.tsx";
+import { StatusMarker } from "@frontend/components/status/StatusMarker";
 
 interface RouterContext {
   auth: AuthState;
@@ -38,6 +39,10 @@ function RootLayout() {
         <StatusBadge status="possible" />
         <StatusBadge status="approved" />
         <StatusBadge status="planted" />
+        <StatusMarker status="requested" size={20} />
+        <StatusMarker status="possible" size={24} />
+        <StatusMarker status="approved" size={32} />
+        <StatusMarker status="planted" size={44} />
       </div>
       
       <SyncStatus />
