@@ -29,8 +29,8 @@ const strongPassword = type("string")
     signUpPasswordRequirements.every(({ test }) => test(password)),
   )
   .configure({
-  message:
-    "Password must be at least 8 characters and include a letter and a number",
+    message:
+      "Password must be at least 8 characters and include a letter and a number",
   });
 
 // fields shared by the sign-up and create-user schemas. there's no role: the
