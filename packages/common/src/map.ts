@@ -33,6 +33,5 @@ export type MapMarker = typeof mapMarker.infer;
 export const mapMarkersInput = type({
   "year?": "number.integer[] | undefined",
   "status?": treeStatus.array().or("undefined"),
-  "memberId?": "number.integer[] | undefined",
 });
 export type MapMarkersInput = typeof mapMarkersInput.infer;
