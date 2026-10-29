@@ -52,6 +52,12 @@ describe("map.markers", () => {
     expect(markers.every((marker) => marker.seasonYear === 2024)).toBe(true);
   });
 
+  it("rejects fractional season years", async () => {
+    await expect(
+      anonymous.map.markers({ year: [2024.5] }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("applies status and year together", async () => {
     const markers = await anonymous.map.markers({
       status: ["planted"],

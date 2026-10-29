@@ -87,8 +87,8 @@ export const mockMapMarkers: MapMarker[] = [
   },
   {
     id: "willowbrook-rd",
-    lat: 43.0766,
-    lng: -73.7902,
+    lat: 43.0769,
+    lng: -73.7908,
     address: "31 Willowbrook Rd",
     treeNumber: 1,
     treeCount: 1,
@@ -100,8 +100,8 @@ export const mockMapMarkers: MapMarker[] = [
   },
   {
     id: "fernhill-dr",
-    lat: 43.0766,
-    lng: -73.7902,
+    lat: 43.0762,
+    lng: -73.7896,
     address: "260 Fernhill Dr",
     treeNumber: 1,
     treeCount: 1,

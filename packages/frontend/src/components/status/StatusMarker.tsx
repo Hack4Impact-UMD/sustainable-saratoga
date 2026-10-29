@@ -74,7 +74,8 @@ export function StatusMarker({
 
   return (
     <span
-      aria-hidden="true"
+      role="img"
+      aria-label={`${status} status${selected ? ", selected" : ""}`}
       className={`relative grid ${markerSize.className} shrink-0 place-items-center ${styles.marker} ${styles.shape} ${selected ? "shadow-pin-selected" : "shadow-pin"}`}
     >
       {status === "requested" && (
