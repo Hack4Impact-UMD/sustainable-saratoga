@@ -39,10 +39,11 @@ function RootLayout() {
         <StatusBadge status="possible" />
         <StatusBadge status="approved" />
         <StatusBadge status="planted" />
-        <StatusMarker status="requested" size={20} />
-        <StatusMarker status="possible" size={24} />
-        <StatusMarker status="approved" size={32} />
-        <StatusMarker status="planted" size={44} />
+        <br></br>
+        <span>Size 20</span><StatusMarker status="requested" size={20} /> 
+        <span>Size 24, selected</span><StatusMarker status="possible" size={24}  selected={true} /> 
+        <span>Size 32</span><StatusMarker status="approved" size={32} /> 
+        <span>Size 44, selected</span><StatusMarker status="planted" size={44} selected={true} /> 
       </div>
       
       <SyncStatus />
