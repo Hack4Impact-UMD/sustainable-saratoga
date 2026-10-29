@@ -147,7 +147,7 @@ export function ForgotPasswordForm({
 /** Provides the shared logo, page background, and centered auth layout. */
 function ForgotPageShell({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen justify-center bg-page px-4 py-8">
+    <main className="flex min-h-screen justify-center bg-page px-4 pt-24 pb-12">
       <section className="w-full max-w-md text-center">
         <img
           src={icon}

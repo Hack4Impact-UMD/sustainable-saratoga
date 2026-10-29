@@ -296,7 +296,7 @@ export function ResetPasswordForm({
 /** Provides the shared shell used by each reset-link result screen. */
 function ResetPageShell({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen justify-center bg-page px-4 py-8">
+    <main className="flex min-h-screen justify-center bg-page px-4 pt-24 pb-12">
       <section className="w-full max-w-md text-center">
         <img
           src={icon}
