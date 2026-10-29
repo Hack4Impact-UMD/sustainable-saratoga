@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Auth, User } from "firebase/auth";
+import type { CreateUserInput } from "@repo/common";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
 import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
@@ -30,6 +31,18 @@ vi.mock("firebase/auth", () => ({
 
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
+const createProfile = vi.hoisted(() =>
+  vi.fn<(input: CreateUserInput) => Promise<unknown>>(),
+);
+
+vi.mock("@frontend/lib/trpc.ts", () => ({
+  trpc: {
+    users: {
+      create: { mutationOptions: () => ({ mutationFn: createProfile }) },
+    },
+  },
+}));
+
 const createdUser = { uid: "new-user" } as User;
 
 function renderSignUpForm() {
@@ -37,7 +50,11 @@ function renderSignUpForm() {
   const onAccountExists = vi.fn<() => void>();
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <SignUpForm onSuccess={onSuccess} onAccountExists={onAccountExists} />
+      <SignUpForm
+        email="invite@example.org"
+        onSuccess={onSuccess}
+        onAccountExists={onAccountExists}
+      />
     </QueryClientProvider>,
   );
   return { onSuccess, onAccountExists };
@@ -48,7 +65,7 @@ function fillForm({
   lastName = "",
   password = "",
   confirmPassword = "",
-  role = "",
+  volunteerTypes = [] as string[],
 } = {}) {
   fireEvent.change(screen.getByLabelText("First Name"), {
     target: { value: firstName },
@@ -62,24 +79,23 @@ function fillForm({
   fireEvent.change(screen.getByLabelText("Confirm Password"), {
     target: { value: confirmPassword },
   });
-  fireEvent.change(screen.getByLabelText("Volunteer role"), {
-    target: { value: role },
-  });
+  for (const type of volunteerTypes) {
+    fireEvent.click(screen.getByLabelText(type));
+  }
 }
 
 describe("SignUpForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.history.replaceState({}, "", "/");
     firebase.createUserWithEmailAndPassword.mockResolvedValue({
       user: createdUser,
     });
     firebase.updateProfile.mockImplementation(() => Promise.resolve());
+    createProfile.mockResolvedValue({});
   });
 
   afterEach(() => {
     cleanup();
-    window.history.replaceState({}, "", "/");
   });
 
   it("shows shared schema errors and focuses the first invalid field", () => {
@@ -89,23 +105,18 @@ describe("SignUpForm", () => {
 
     expect(
       screen
-        .getByText("Fix 6 things to create your account")
+        .getByText("Fix 5 things to create your account")
         .closest('[role="alert"]'),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeDisabled();
     expect(screen.getByLabelText("First Name")).toHaveFocus();
-    expect(screen.getByLabelText("Email")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
     expect(screen.getByLabelText("Confirm Password")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
-    expect(screen.getByLabelText("Volunteer role")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
+    expect(
+      screen.getByRole("group", { name: "Volunteer type" }),
+    ).toHaveAttribute("aria-invalid", "true");
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
@@ -116,7 +127,7 @@ describe("SignUpForm", () => {
       lastName: "Doe",
       password: "passwordonly",
       confirmPassword: "passwordonly",
-      role: "planter",
+      volunteerTypes: ["Planter"],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
@@ -176,14 +187,13 @@ describe("SignUpForm", () => {
   });
 
   it("reports a mismatch on the confirm password field", () => {
-    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     renderSignUpForm();
     fillForm({
       firstName: "Alex",
       lastName: "Doe",
       password: "password123",
       confirmPassword: "password321",
-      role: "planter",
+      volunteerTypes: ["Planter"],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
@@ -193,8 +203,7 @@ describe("SignUpForm", () => {
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
-  it("prefills email from the URL and creates the account with that email", async () => {
-    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
+  it("creates the account and profile with the invited email", async () => {
     const { onSuccess } = renderSignUpForm();
     expect(screen.getByLabelText("Email")).toHaveValue("invite@example.org");
     fillForm({
@@ -202,7 +211,7 @@ describe("SignUpForm", () => {
       lastName: "Doe ",
       password: "password123",
       confirmPassword: "password123",
-      role: "planter",
+      volunteerTypes: ["Planter", "Pruner"],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
@@ -216,6 +225,14 @@ describe("SignUpForm", () => {
     expect(updateProfile).toHaveBeenCalledWith(createdUser, {
       displayName: "Alex Doe",
     });
+    expect(createProfile).toHaveBeenCalledWith(
+      {
+        firstName: "Alex",
+        lastName: "Doe",
+        volunteerTypes: ["planter", "pruner"],
+      },
+      expect.anything(),
+    );
     const requirements = screen
       .getByText("Your password needs")
       .parentElement?.querySelectorAll("li");
@@ -234,14 +251,13 @@ describe("SignUpForm", () => {
         resolveCreate = resolve;
       }),
     );
-    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     renderSignUpForm();
     fillForm({
       firstName: "Alex",
       lastName: "Doe",
       password: "password123",
       confirmPassword: "password123",
-      role: "planter",
+      volunteerTypes: ["Planter"],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
@@ -255,20 +271,40 @@ describe("SignUpForm", () => {
     await waitFor(() => expect(submitButton).toBeEnabled());
   });
 
+  it("shows an error and stays on the form if the profile can't be created", async () => {
+    createProfile.mockRejectedValue(new Error("not implemented"));
+    const { onSuccess } = renderSignUpForm();
+    fillForm({
+      firstName: "Alex",
+      lastName: "Doe",
+      password: "password123",
+      confirmPassword: "password123",
+      volunteerTypes: ["Pruner"],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
+
+    expect(
+      await screen.findByText(
+        "We couldn't create your account. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
   it("shows the account-exists result when the invite already has an account", async () => {
     firebase.createUserWithEmailAndPassword.mockRejectedValue(
       Object.assign(new Error("Account exists"), {
         code: "auth/email-already-in-use",
       }),
     );
-    window.history.replaceState({}, "", "/signup?email=invite%40example.org");
     const { onAccountExists } = renderSignUpForm();
     fillForm({
       firstName: "Alex",
       lastName: "Doe",
       password: "password123",
       confirmPassword: "password123",
-      role: "planter",
+      volunteerTypes: ["Planter"],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));

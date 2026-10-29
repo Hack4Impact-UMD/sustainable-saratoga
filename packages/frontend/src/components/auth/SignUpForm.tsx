@@ -22,12 +22,22 @@ import {
   Field,
   FieldError,
   FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@frontend/components/ui/field.tsx";
+import { Separator } from "@frontend/components/ui/separator.tsx";
+
+const volunteerTypeOptions = [
+  { value: "planter", label: "Planter" },
+  { value: "pruner", label: "Pruner" },
+] as const;
 
 export function SignUpForm({
+  email,
   onSuccess,
   onAccountExists,
 }: {
+  email: string;
   onSuccess: () => void;
   onAccountExists: () => void;
 }) {
@@ -37,14 +47,11 @@ export function SignUpForm({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const invitedEmail =
-    new URLSearchParams(window.location.search).get("email") ||
-    "test@example.org";
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
-  const roleInputRef = useRef<HTMLSelectElement>(null);
+  const volunteerTypesInputRef = useRef<HTMLInputElement>(null);
   const signUp = useSignUp();
   const isSubmitting = signUp.isPending;
   const validationErrorCount = Object.keys(fieldErrors).length;
@@ -61,8 +68,8 @@ export function SignUpForm({
     const validation = validateForm(signUpInput, {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
-      role: formData.get("role"),
-      email: invitedEmail,
+      volunteerTypes: formData.getAll("volunteerTypes"),
+      email,
       password: formData.get("password"),
       confirmPassword: formData.get("confirmPassword"),
     });
@@ -78,8 +85,8 @@ export function SignUpForm({
         passwordInputRef.current?.focus();
       } else if (validation.errors.confirmPassword) {
         confirmPasswordInputRef.current?.focus();
-      } else if (validation.errors.role) {
-        roleInputRef.current?.focus();
+      } else if (validation.errors.volunteerTypes) {
+        volunteerTypesInputRef.current?.focus();
       }
       return;
     }
@@ -135,13 +142,13 @@ export function SignUpForm({
                 </span>
               </div>
             )}
-            <Field className="text-bold">
+            <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
               <div className="relative w-full">
                 <Input
                   id="email"
                   placeholder="name@example.org"
-                  value={invitedEmail}
+                  value={email}
                   className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
                   required
                   disabled
@@ -267,63 +274,6 @@ export function SignUpForm({
               )}
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="confirmPassword">
-                Confirm Password
-              </FieldLabel>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                ref={confirmPasswordInputRef}
-                type="password"
-                placeholder=""
-                className="h-12 rounded-input border border-line-strong bg-surface px-4"
-                required
-                autoComplete="new-password"
-                aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                aria-describedby={
-                  fieldErrors.confirmPassword
-                    ? "confirmPassword-error"
-                    : undefined
-                }
-              />
-              {fieldErrors.confirmPassword && (
-                <FieldError
-                  id="confirmPassword-error"
-                  className="flex items-center gap-2"
-                >
-                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {fieldErrors.confirmPassword}
-                </FieldError>
-              )}
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="role">Volunteer role</FieldLabel>
-              <select
-                id="role"
-                name="role"
-                ref={roleInputRef}
-                defaultValue=""
-                className="h-12 rounded-input border border-line-strong bg-surface px-4"
-                required
-                aria-invalid={Boolean(fieldErrors.role)}
-                aria-describedby={fieldErrors.role ? "role-error" : undefined}
-              >
-                <option value="" disabled>
-                  Select a role
-                </option>
-                <option value="planter">Planter</option>
-                <option value="pruner">Pruner</option>
-              </select>
-              {fieldErrors.role && (
-                <FieldError id="role-error" className="flex items-center gap-2">
-                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {fieldErrors.role}
-                </FieldError>
-              )}
-            </Field>
-
             <div
               id="password-requirements"
               className="bg-pressed py-3 px-4 rounded-md"
@@ -364,6 +314,69 @@ export function SignUpForm({
               </ul>
             </div>
 
+            <Field>
+              <FieldLabel htmlFor="confirmPassword">
+                Confirm Password
+              </FieldLabel>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                ref={confirmPasswordInputRef}
+                type="password"
+                placeholder=""
+                className="h-12 rounded-input border border-line-strong bg-surface px-4"
+                required
+                autoComplete="new-password"
+                aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                aria-describedby={
+                  fieldErrors.confirmPassword
+                    ? "confirmPassword-error"
+                    : undefined
+                }
+              />
+              {fieldErrors.confirmPassword && (
+                <FieldError
+                  id="confirmPassword-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.confirmPassword}
+                </FieldError>
+              )}
+            </Field>
+
+            <FieldSet
+              aria-invalid={Boolean(fieldErrors.volunteerTypes)}
+              aria-describedby={
+                fieldErrors.volunteerTypes ? "volunteerTypes-error" : undefined
+              }
+            >
+              <FieldLegend>Volunteer type</FieldLegend>
+              <div className="flex flex-col gap-2">
+                {volunteerTypeOptions.map(({ value, label }, index) => (
+                  <label key={value} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      name="volunteerTypes"
+                      value={value}
+                      ref={index === 0 ? volunteerTypesInputRef : undefined}
+                      className="size-5 accent-primary"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              {fieldErrors.volunteerTypes && (
+                <FieldError
+                  id="volunteerTypes-error"
+                  className="flex items-center gap-2"
+                >
+                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+                  {fieldErrors.volunteerTypes}
+                </FieldError>
+              )}
+            </FieldSet>
+
             {formError && <FieldError>{formError}</FieldError>}
 
             <div>
@@ -374,15 +387,12 @@ export function SignUpForm({
               >
                 {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>
-              <div
-                className="flex items-center gap-6 py-4"
-                role="separator"
-                aria-label="or"
-              >
-                <span className="h-px flex-1 bg-divider" />
+              <div className="flex items-center gap-6 py-4">
+                <Separator className="w-auto flex-1" />
                 <span className="type-body text-body-muted">or</span>
-                <span className="h-px flex-1 bg-divider" />
+                <Separator className="w-auto flex-1" />
               </div>
+              {/* TODO: Wire up Google sign-up and swap in the Google icon */}
               <button
                 type="button"
                 className="type-btn-secondary flex h-control w-full items-center justify-center gap-3 rounded-full border border-primary bg-surface px-5 hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 cursor-pointer"
