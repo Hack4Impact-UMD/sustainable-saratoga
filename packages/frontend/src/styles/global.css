@@ -23,6 +23,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
   /* Visible keyboard focus everywhere by default. Uses outline (not box-shadow)
      so it survives Windows high-contrast mode and never clobbers a component's
      own shadow. Components that need the exact Figma ring (2px white + 2px blue)
