@@ -9,7 +9,7 @@ import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 import { StatusBadge } from "@frontend/components/status/StatusBadge.tsx";
-import { StatusMarker } from "@frontend/components/status/StatusMarker";
+import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 
 interface RouterContext {
   auth: AuthState;
@@ -39,13 +39,17 @@ function RootLayout() {
         <StatusBadge status="possible" />
         <StatusBadge status="approved" />
         <StatusBadge status="planted" />
-        <br></br>
-        <span>Size 20</span><StatusMarker status="requested" size={20} /> 
-        <span>Size 24, selected</span><StatusMarker status="possible" size={24}  selected={true} /> 
-        <span>Size 32</span><StatusMarker status="approved" size={32} /> 
-        <span>Size 44, selected</span><StatusMarker status="planted" size={44} selected={true} /> 
+        <br />
+        <span>Size 20</span>
+        <StatusMarker status="requested" size={20} />
+        <span>Size 24, selected</span>
+        <StatusMarker status="possible" size={24} selected />
+        <span>Size 32</span>
+        <StatusMarker status="approved" size={32} />
+        <span>Size 44, selected</span>
+        <StatusMarker status="planted" size={44} selected />
       </div>
-      
+
       <SyncStatus />
       <Outlet />
       {isAuthed && (

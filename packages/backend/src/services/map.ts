@@ -21,10 +21,7 @@ function matchesFilters(marker: MapMarker, filters: MapMarkersInput): boolean {
     return false;
   }
 
-  if (
-    filters.year !== undefined &&
-    !filters.year.includes(marker.seasonYear)
-  ) {
+  if (filters.year !== undefined && !filters.year.includes(marker.seasonYear)) {
     return false;
   }
 

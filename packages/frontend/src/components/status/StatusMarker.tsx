@@ -45,7 +45,8 @@ const markerStyles: Record<
     label: "R",
   },
   possible: {
-    marker: "border-2 border-status-possible bg-status-possible-tint text-status-possible",
+    marker:
+      "border-2 border-status-possible bg-status-possible-tint text-status-possible",
     shape: "rounded-input",
     label: "P",
   },

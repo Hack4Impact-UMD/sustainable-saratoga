@@ -66,9 +66,7 @@ describe("map.markers", () => {
   it("returns issuer user IDs for each marker", async () => {
     const markers = await anonymous.map.markers({});
 
-    expect(
-      markers.map(({ id, issuedBy }) => [id, issuedBy]),
-    ).toEqual([
+    expect(markers.map(({ id, issuedBy }) => [id, issuedBy])).toEqual([
       ["maple-ln", "dana-ruiz"],
       ["maple-ln-2", "leo-brandt"],
       ["birchfield-ave", "sam-okafor"],
