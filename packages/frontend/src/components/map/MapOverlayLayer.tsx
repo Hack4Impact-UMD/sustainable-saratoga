@@ -8,7 +8,7 @@ export function MapOverlayLayer({ children }: { children?: ReactNode }) {
   return (
     <div
       data-testid="map-overlay"
-      className="pointer-events-none absolute inset-0 *:pointer-events-auto"
+      className="pointer-events-none absolute inset-0"
     >
       {children}
     </div>
