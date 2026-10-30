@@ -1,9 +1,6 @@
 import type { MapMarker as MapMarkerData } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapMarker } from "@frontend/components/map/MapMarker.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";

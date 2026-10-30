@@ -34,9 +34,9 @@ describe("MapOverlays", () => {
     expect(
       screen.getByRole("button", { name: "Find my location" }),
     ).toHaveClass("pointer-events-auto");
-    expect(
-      screen.getByRole("button", { name: "Add record" }),
-    ).toHaveClass("pointer-events-auto");
+    expect(screen.getByRole("button", { name: "Add record" })).toHaveClass(
+      "pointer-events-auto",
+    );
   });
 
   it("centers the map after locating the user", () => {
@@ -66,7 +66,10 @@ describe("MapOverlays", () => {
       _success: PositionCallback,
       error?: PositionErrorCallback | null,
     ) => {
-      error?.({ code: 1, message: "Permission denied" } as GeolocationPositionError);
+      error?.({
+        code: 1,
+        message: "Permission denied",
+      } as GeolocationPositionError);
     };
     Object.defineProperty(navigator, "geolocation", {
       configurable: true,

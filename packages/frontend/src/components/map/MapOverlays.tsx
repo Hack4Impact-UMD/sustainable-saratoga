@@ -39,7 +39,10 @@ export function MapOverlays() {
             disabled={status === "requesting"}
             onClick={locate}
           >
-            <LocateFixed className="w-5.5 h-5.5 text-primary disabled:text-disabled" aria-hidden="true" />
+            <LocateFixed
+              className="w-5.5 h-5.5 text-primary disabled:text-disabled"
+              aria-hidden="true"
+            />
           </button>
 
           {/* Location error messages have been added just because. Needs a design (?) */}

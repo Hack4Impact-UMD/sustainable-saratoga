@@ -11,7 +11,9 @@ describe("MapLegend", () => {
     expect(
       screen.getByRole("button", { name: /^Legend$/ }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Legend" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Legend" }),
+    ).not.toBeInTheDocument();
   });
 
   it("expands to show every status", () => {
@@ -35,6 +37,8 @@ describe("MapLegend", () => {
     expect(
       screen.getByRole("button", { name: /^Legend$/ }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Legend" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Legend" }),
+    ).not.toBeInTheDocument();
   });
 });

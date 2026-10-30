@@ -49,26 +49,19 @@ export function MapLegend() {
           aria-label="Map legend"
         >
           <div className="ml-4.25 mt-[14.5px] mb-3.75">
-            <h2 className="w-14 text-heading type-body-strong">
-              Legend
-            </h2>
+            <h2 className="w-14 text-heading type-body-strong">Legend</h2>
             <ul>
-            {LEGEND_ITEMS.map(({ status, label }) => (
-              <li
-                className="mt-2.5 flex gap-2.5"
-                key={status}
-              >
-                <StatusMarker status={status} />
-                <span 
-                  className="text-(--color-text-muted) leading-(--type-supporting-line-height)"
-                >
-                  {label}
-                </span>
-              </li>
-            ))}
-          </ul>
+              {LEGEND_ITEMS.map(({ status, label }) => (
+                <li className="mt-2.5 flex gap-2.5" key={status}>
+                  <StatusMarker status={status} />
+                  <span className="text-(--color-text-muted) leading-(--type-supporting-line-height)">
+                    {label}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-          
+
           <button
             className="flex w-10 h-10 justify-center items-center rounded-pill pt-1.75 pr-1.75"
             type="button"
@@ -80,7 +73,6 @@ export function MapLegend() {
         </section>
       </div>
     </div>
-    
   );
 }
 
@@ -90,7 +82,10 @@ function StatusMarker({ status }: { status: TreeStatus }) {
     requested: { glyph: "R", label: "Requested marker" },
     not_planted: { glyph: "P", label: "Possible marker" },
     approved: { glyph: "A", label: "Approved marker" },
-    planted: { glyph: <Check className="w-3.25 h-3.25 stroke-3" />, label: "Planted marker" },
+    planted: {
+      glyph: <Check className="w-3.25 h-3.25 stroke-3" />,
+      label: "Planted marker",
+    },
   }[status];
 
   // Different CSS for each different marker type

@@ -1,9 +1,6 @@
 import type { MapMarker } from "@repo/common";
 import { describe, expect, it } from "vitest";
-import {
-  findSelectedMarker,
-  validateSearch,
-} from "@frontend/routes/index.tsx";
+import { findSelectedMarker, validateSearch } from "@frontend/routes/index.tsx";
 
 const markers: MapMarker[] = [
   { id: "tree-1", lat: 43.08, lng: -73.78, status: "planted" },
@@ -17,14 +14,12 @@ describe("home map route selection", () => {
     });
   });
 
-  it.each([
-    {},
-    { record: "" },
-    { record: 123 },
-    { record: null },
-  ])("drops an invalid record search value: %j", (search) => {
-    expect(validateSearch(search)).toEqual({});
-  });
+  it.each([{}, { record: "" }, { record: 123 }, { record: null }])(
+    "drops an invalid record search value: %j",
+    (search) => {
+      expect(validateSearch(search)).toEqual({});
+    },
+  );
 
   it("finds the marker selected by the record search parameter", () => {
     expect(findSelectedMarker(markers, "tree-2")).toEqual(markers[1]);
