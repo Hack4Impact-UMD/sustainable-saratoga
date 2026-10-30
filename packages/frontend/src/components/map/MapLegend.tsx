@@ -24,6 +24,7 @@ export function MapLegend() {
       {/* Compact legend button */}
       <div
         aria-hidden={isExpanded}
+        inert={isExpanded}
         className={`absolute bottom-0 left-0 transition-opacity duration-150 ${
           isExpanded ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
@@ -40,6 +41,7 @@ export function MapLegend() {
       {/* Expanded legend with marker list */}
       <div
         aria-hidden={!isExpanded}
+        inert={!isExpanded}
         className={`absolute bottom-0 left-0 transition-opacity duration-150 ${
           isExpanded ? "opacity-100" : "pointer-events-none opacity-0"
         }`}

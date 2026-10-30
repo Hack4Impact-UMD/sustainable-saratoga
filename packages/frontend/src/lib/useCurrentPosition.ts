@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export type LocationStatus =
   | "idle"
@@ -23,29 +23,44 @@ const PERMISSION_DENIED = 1;
 export function useCurrentPosition(): UseCurrentPositionResult {
   const [status, setStatus] = useState<LocationStatus>("idle");
   const [position, setPosition] = useState<CurrentPosition | null>(null);
+  const requestId = useRef(0);
 
   const locate = useCallback(() => {
+    const request = ++requestId.current;
     if (!navigator.geolocation) {
       setStatus("error");
       return;
     }
 
     setStatus("requesting");
+
+    const uiTimeout = window.setTimeout(() => {
+      if (requestId.current === request) setStatus("error");
+    }, 15_000);
+    const finish = (
+      nextStatus: "success" | "denied" | "error",
+      nextPosition?: CurrentPosition,
+    ) => {
+      if (requestId.current !== request) return;
+      window.clearTimeout(uiTimeout);
+      if (nextPosition !== undefined) setPosition(nextPosition);
+      setStatus(nextStatus);
+    };
+
     try {
       // The browser Geolocation API exposes callbacks rather than a promise.
       // oxlint-disable promise/prefer-await-to-callbacks
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
-          setPosition({ lat: coords.latitude, lng: coords.longitude });
-          setStatus("success");
+          finish("success", { lat: coords.latitude, lng: coords.longitude });
         },
         (error) => {
-          setStatus(error.code === PERMISSION_DENIED ? "denied" : "error");
+          finish(error.code === PERMISSION_DENIED ? "denied" : "error");
         },
+        { timeout: 15_000 },
       );
-      // oxlint-enable promise/prefer-await-to-callbacks
     } catch {
-      setStatus("error");
+      finish("error");
     }
   }, []);
 
