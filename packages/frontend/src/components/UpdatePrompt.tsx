@@ -25,7 +25,7 @@ export function UpdatePrompt() {
       <button
         type="button"
         onClick={() => setNeedRefresh(false)}
-        className="type-control rounded-md px-3 py-1.5 text-muted hover:bg-hover"
+        className="type-control rounded-md px-3 py-1.5 text-body-muted hover:bg-hover"
       >
         Later
       </button>
