@@ -1,6 +1,6 @@
 import type { MapMarker as MapMarkerData } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapMarker } from "@frontend/components/map/MapMarker.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
@@ -18,6 +18,16 @@ export function validateSearch(search: Record<string, unknown>): {
 
 export const Route = createFileRoute("/")({
   validateSearch,
+  // Temporary: the landing page has no signed-out view yet, so send visitors to
+  // sign in instead of showing a blank page.
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthed) {
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      });
+    }
+  },
   component: Home,
 });
 
