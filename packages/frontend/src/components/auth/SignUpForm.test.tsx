@@ -318,9 +318,11 @@ describe("SignUpForm", () => {
     ["account-exists", "Account already exists", "Sign in"],
     ["no-access", "No access yet", "Use another account"],
   ] as const)("renders the static %s result state", (state, title, action) => {
-    render(<SignUpResult state={state} />);
+    const onAction = vi.fn<() => void>();
+    render(<SignUpResult state={state} onAction={onAction} />);
 
     expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: action })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    expect(onAction).toHaveBeenCalledOnce();
   });
 });

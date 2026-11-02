@@ -25,12 +25,16 @@ function SignUpPage() {
 
   // TODO: Validate the invite itself once invitations exist; for now a link
   // without an email can't be an invite
+  function goToLogin() {
+    void navigate({ to: "/login" });
+  }
+
   if (!email) {
-    return <SignUpResult state="expired" />;
+    return <SignUpResult state="expired" onAction={goToLogin} />;
   }
 
   if (accountExists) {
-    return <SignUpResult state="account-exists" />;
+    return <SignUpResult state="account-exists" onAction={goToLogin} />;
   }
 
   return (

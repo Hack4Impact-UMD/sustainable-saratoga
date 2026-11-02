@@ -58,7 +58,13 @@ const noticeStyles = {
   plain: "",
 };
 
-export function SignUpResult({ state }: { state: SignUpResultState }) {
+export function SignUpResult({
+  state,
+  onAction,
+}: {
+  state: SignUpResultState;
+  onAction: () => void;
+}) {
   const result = resultContent[state];
   const Icon = result.icon;
   const isPlain = result.tone === "plain";
@@ -110,6 +116,7 @@ export function SignUpResult({ state }: { state: SignUpResultState }) {
 
           <button
             type="button"
+            onClick={onAction}
             className={
               state === "expired"
                 ? "type-btn-secondary h-control w-full rounded-full border border-primary bg-surface px-5"
