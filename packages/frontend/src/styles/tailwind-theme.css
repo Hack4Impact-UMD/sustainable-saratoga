@@ -38,10 +38,11 @@
   --color-icon-primary: var(--color-icon-primary);
   --color-icon-secondary: var(--color-icon-secondary);
 
-  /* backgrounds      → bg-page, bg-surface, bg-hover, bg-pressed, bg-selected, bg-attention,
+  /* backgrounds      → bg-page, bg-surface, bg-scrim, bg-hover, bg-pressed, bg-selected, bg-attention,
                         bg-info-tint, bg-error-tint, bg-disabled-fill */
   --color-page: var(--bg-page);
   --color-surface: var(--bg-surface);
+  --color-scrim: var(--bg-scrim);
   --color-hover: var(--bg-hover);
   --color-pressed: var(--bg-pressed);
   --color-selected: var(--bg-selected);
