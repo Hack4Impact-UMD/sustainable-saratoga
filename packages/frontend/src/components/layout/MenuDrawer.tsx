@@ -14,6 +14,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetTitle,
 } from "@frontend/components/ui/sheet.tsx";
 
 interface MenuDrawerProps {
@@ -60,9 +61,10 @@ export function MenuDrawer({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="!w-[min(18rem,85vw)] !max-w-none gap-0 border-r border-line-subtle bg-surface p-0 text-body shadow-2"
+        className="!w-[min(18rem,85vw)] !max-w-none gap-0 overflow-y-auto border-r border-line-subtle bg-surface p-0 text-body shadow-2"
       >
         <header className="flex min-h-24 items-center gap-3 border-b border-line-subtle px-4 py-4">
+          <SheetTitle className="sr-only">User Menu</SheetTitle>
           <div
             aria-hidden="true"
             className={`grid size-10 shrink-0 place-items-center rounded-full ${
@@ -119,14 +121,16 @@ export function MenuDrawer({
               <div className="space-y-1">
                 <button
                   type="button"
-                  className="type-btn-secondary flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-body-muted hover:bg-hover"
+                  disabled // Disable the button for now, as the feature is not implemented yet
+                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
                 >
                   <UsersRound aria-hidden="true" className="size-5 shrink-0" />
                   People &amp; invitations
                 </button>
                 <button
                   type="button"
-                  className="type-btn-secondary flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-body-muted hover:bg-hover"
+                  disabled // Disable the button for now, as the feature is not implemented yet
+                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
                 >
                   <SlidersHorizontal
                     aria-hidden="true"
@@ -139,10 +143,11 @@ export function MenuDrawer({
           )}
         </nav>
 
-        <footer className="space-y-1 border-t border-divider p-3 text-body">
+        <footer className="shrink-0 space-y-1 border-t border-divider p-3 text-body">
           <button
             type="button"
-            className="type-btn-secondary flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-body hover:bg-hover"
+            disabled // Disable the button for now, as the feature is not implemented yet
+            className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body"
           >
             <Settings aria-hidden="true" className="size-5 shrink-0" />
             Account settings

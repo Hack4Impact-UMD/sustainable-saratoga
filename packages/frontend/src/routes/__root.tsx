@@ -50,7 +50,7 @@ function RootLayout() {
           <MenuDrawer
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
-            onSignOut={() => signOut.mutate()}
+            onSignOut={() => {setMenuOpen(false); signOut.mutate();}}
             signOutPending={signOut.isPending}
           />
         </>
