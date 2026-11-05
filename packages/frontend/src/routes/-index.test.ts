@@ -2,9 +2,18 @@ import type { MapMarker } from "@repo/common";
 import { describe, expect, it } from "vitest";
 import { findSelectedMarker, validateSearch } from "@frontend/routes/index.tsx";
 
+const base = {
+  address: "1 Broadway",
+  treeNumber: 1,
+  treeCount: 1,
+  recordType: "planting",
+  seasonYear: 2026,
+  issuedBy: "Sustainable Saratoga",
+} satisfies Partial<MapMarker>;
+
 const markers: MapMarker[] = [
-  { id: "tree-1", lat: 43.08, lng: -73.78, status: "planted" },
-  { id: "tree-2", lat: 43.09, lng: -73.79, status: "requested" },
+  { ...base, id: "tree-1", lat: 43.08, lng: -73.78, status: "planted" },
+  { ...base, id: "tree-2", lat: 43.09, lng: -73.79, status: "requested" },
 ];
 
 describe("home map route selection", () => {

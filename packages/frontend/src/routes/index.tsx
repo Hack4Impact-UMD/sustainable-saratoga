@@ -2,8 +2,8 @@ import type { MapMarker as MapMarkerData } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
-import { MapMarker } from "@frontend/components/map/MapMarker.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
+import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useEffect } from "react";
@@ -92,7 +92,13 @@ function RecordCamera({ marker }: { marker?: MapMarkerData }) {
   return null;
 }
 
-/** Supplies the reusable marker glyph component to MapView. */
+/** Draws a record's status pin, enlarged when it is the selected record. */
 function renderMarker(marker: MapMarkerData, selected: boolean) {
-  return <MapMarker marker={marker} selected={selected} />;
+  return (
+    <StatusMarker
+      status={marker.status}
+      size={selected ? 44 : 32}
+      selected={selected}
+    />
+  );
 }

@@ -1,10 +1,11 @@
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
 import type { TreeStatus } from "@repo/common";
+import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 
 const LEGEND_ITEMS: { status: TreeStatus; label: string }[] = [
   { status: "requested", label: "Requested" },
-  { status: "not_planted", label: "Possible" },
+  { status: "possible", label: "Possible" },
   { status: "approved", label: "Approved" },
   { status: "planted", label: "Planted" },
 ];
@@ -55,7 +56,10 @@ export function MapLegend() {
             <ul>
               {LEGEND_ITEMS.map(({ status, label }) => (
                 <li className="mt-2.5 flex gap-2.5" key={status}>
-                  <StatusMarker status={status} />
+                  {/* Hidden from screen readers: the label beside it names the status */}
+                  <span aria-hidden="true" className="flex shrink-0">
+                    <StatusMarker status={status} size={24} />
+                  </span>
                   <span className="text-(--color-text-muted) leading-(--type-supporting-line-height)">
                     {label}
                   </span>
@@ -74,38 +78,6 @@ export function MapLegend() {
           </button>
         </section>
       </div>
-    </div>
-  );
-}
-
-function StatusMarker({ status }: { status: TreeStatus }) {
-  /** Selects the glyph and accessible label for a legend status. */
-  const marker = {
-    requested: { glyph: "R", label: "Requested marker" },
-    not_planted: { glyph: "P", label: "Possible marker" },
-    approved: { glyph: "A", label: "Approved marker" },
-    planted: {
-      glyph: <Check className="w-3.25 h-3.25 stroke-3" />,
-      label: "Planted marker",
-    },
-  }[status];
-
-  // Different CSS for each different marker type
-  return (
-    <div
-      aria-label={marker.label}
-      title={marker.label}
-      className={`flex h-6 w-6 justify-center items-center border-2  ${
-        status === "requested"
-          ? "px-(--space-2) border-dashed border-[2.5px] border-status-requested text-status-requested bg-status-requested-tint rounded-md type-marker-24"
-          : status === "not_planted"
-            ? "px-(--space-2) border-status-possible text-status-possible bg-status-possible-tint rounded-[7px] border-2 type-marker-24"
-            : status === "approved"
-              ? "px-(--space-2) border-status-approved-ring bg-status-approved text-status-approved-glyph rounded-md type-marker-24"
-              : "border-(--color-primary-pressed) bg-status-planted border-2 rounded-md text-on-primary"
-      }`}
-    >
-      {marker.glyph}
     </div>
   );
 }
