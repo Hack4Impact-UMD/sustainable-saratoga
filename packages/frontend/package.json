@@ -22,7 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "firebase": "^12.18.0",
-    "lucide-react": "^1.61.0",
+    "lucide-react": "^1.62.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3",

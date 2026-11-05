@@ -44,6 +44,7 @@
      Figma: bg/*                                                            */
   --bg-page: #f7f7f5; /* sign-in and other full-page screens */
   --bg-surface: #ffffff; /* sheet, rows, menus, fields, buttons, floating controls */
+  --bg-scrim: #181c1a7a; /* modal and sheet backdrops */
   --bg-hover: #f1f5ee; /* desktop hover: secondary button, row */
   --bg-pressed: #f3f4f1; /* pressed row, open dropdown, clear (×) button, checklist well */
   --bg-selected: #e6f0e3; /* selected row / menu item, pressed secondary, success banner */

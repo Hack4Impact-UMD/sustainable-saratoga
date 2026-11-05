@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   createRootRouteWithContext,
   Outlet,
   useRouter,
 } from "@tanstack/react-router";
+import { Menu } from "lucide-react";
 import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
+import { MenuDrawer } from "@frontend/components/layout/MenuDrawer.tsx";
 import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
@@ -19,6 +22,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   const { isAuthed } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -32,19 +36,31 @@ function RootLayout() {
 
   return (
     <>
+      {isAuthed && (
+        <>
+          <button
+            type="button"
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)}
+            className="fixed top-4 left-4 z-40 grid size-10 place-items-center rounded-full border !border-line-subtle !bg-surface text-icon-primary shadow-1 hover:!bg-surface aria-expanded:!bg-surface"
+          >
+            <Menu aria-hidden="true" className="size-5" />
+          </button>
+          <MenuDrawer
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            onSignOut={() => {
+              setMenuOpen(false);
+              signOut.mutate();
+            }}
+            signOutPending={signOut.isPending}
+          />
+        </>
+      )}
+
       <SyncStatus />
       <Outlet />
-      {isAuthed && (
-        <button
-          type="button"
-          data-testid="sign-out"
-          onClick={() => signOut.mutate()}
-          className="type-control fixed right-4 top-4 rounded-pill border border-line-strong bg-surface px-4 py-2 shadow-1 hover:bg-hover disabled:text-disabled"
-          disabled={signOut.isPending}
-        >
-          Sign out
-        </button>
-      )}
     </>
   );
 }
