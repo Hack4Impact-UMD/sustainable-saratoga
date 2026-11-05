@@ -34,8 +34,5 @@
     "turbo": "^2.11.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.12"
-  },
-  "dependencies": {
-    "leaflet": "^1.9.4"
   }
 }
