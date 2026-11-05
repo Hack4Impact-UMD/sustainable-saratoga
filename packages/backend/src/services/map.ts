@@ -17,11 +17,11 @@ export function listMapMarkers(
 }
 
 function matchesFilters(marker: MapMarker, filters: MapMarkersInput): boolean {
-  if (filters.status !== undefined && !filters.status.includes(marker.status)) {
+  if (filters.status?.length && !filters.status.includes(marker.status)) {
     return false;
   }
 
-  if (filters.year !== undefined && !filters.year.includes(marker.seasonYear)) {
+  if (filters.year?.length && !filters.year.includes(marker.seasonYear)) {
     return false;
   }
 

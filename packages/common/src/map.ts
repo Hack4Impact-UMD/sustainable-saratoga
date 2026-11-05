@@ -27,8 +27,8 @@ export const mapMarker = type({
 export type MapMarker = typeof mapMarker.infer;
 
 /**
- * Optional filters for `map.markers`. An empty object, or explicit
- * `undefined` values, returns every marker.
+ * Optional filters for `map.markers`. An empty object, empty filter arrays, or
+ * explicit `undefined` values returns every marker for those filters.
  */
 export const mapMarkersInput = type({
   "year?": "number.integer[] | undefined",
