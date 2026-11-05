@@ -27,10 +27,10 @@
   --color-secondary: var(--color-secondary);
   --color-accent: var(--color-accent);
 
-  /* text             → text-heading, text-body, text-muted, text-disabled, text-on-primary */
+  /* text             → text-heading, text-body, text-body-muted, text-disabled, text-on-primary */
   --color-heading: var(--color-heading);
   --color-body: var(--color-text);
-  --color-muted: var(--color-text-muted);
+  --color-body-muted: var(--color-text-muted);
   --color-disabled: var(--color-text-disabled);
   --color-on-primary: var(--color-text-on-primary);
 
