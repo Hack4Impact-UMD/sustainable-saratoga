@@ -74,7 +74,9 @@ export function MenuDrawer({
             {profile?.role === "admin" ? (
               <UserRound className="size-6" />
             ) : (
-              <span className="type-body-sm text-on-primary font-bold">{initials}</span>
+              <span className="type-body-sm text-on-primary font-bold">
+                {initials}
+              </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
