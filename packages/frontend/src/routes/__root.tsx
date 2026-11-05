@@ -10,6 +10,7 @@ import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 import { StatusBadge } from "@frontend/components/status/StatusBadge.tsx";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { SheetDemo } from "@frontend/components/layout/SheetDemo";
 
 interface RouterContext {
   auth: AuthState;
@@ -35,7 +36,7 @@ function RootLayout() {
   return (
     <>
       <div className="p-5">
-        <StatusBadge status="requested" />
+        {/* <StatusBadge status="requested" />
         <StatusBadge status="possible" />
         <StatusBadge status="approved" />
         <StatusBadge status="planted" />
@@ -47,7 +48,8 @@ function RootLayout() {
         <span>Size 32</span>
         <StatusMarker status="approved" size={32} />
         <span>Size 44, selected</span>
-        <StatusMarker status="planted" size={44} selected />
+        <StatusMarker status="planted" size={44} selected /> */}
+        <SheetDemo></SheetDemo>
       </div>
 
       <SyncStatus />
