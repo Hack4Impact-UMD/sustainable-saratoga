@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { FilterSheet } from "@frontend/components/filters/FilterSheet.tsx";
 import { DEFAULT_FILTERS } from "@frontend/lib/filters.ts";
+import { SearchBar } from "@frontend/components/search/SearchBar";
 
 export const Route = createFileRoute("/")({
   // Temporary: the landing page has no signed-out view yet, so send visitors to
@@ -18,14 +20,28 @@ export const Route = createFileRoute("/")({
 
 /** Landing page. Placeholder until the designs are built. */
 function Home() {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [query, setQuery] = useState("");
   // return null;
   // this is a placeholder until the search bar is built
   return (
+    <>
+    <div className="absolute left-20 right-4 top-4 z-50">
+        <SearchBar
+          query={query}
+          activeFilterCount={0}
+          onQueryChange={setQuery}
+          onFilterClick={() => setIsFilterOpen(true)}
+        />
+      </div>
+
+
     <FilterSheet
-      open
-      onClose={() => {}}
+      open={isFilterOpen}
+      onClose={() => setIsFilterOpen(false)}
       applied={DEFAULT_FILTERS}
       onApply={(f) => console.log("apply", f)}
     />
+    </>
   );
 }
