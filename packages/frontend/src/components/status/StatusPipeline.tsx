@@ -39,7 +39,7 @@ export function StatusPipeline({ status, origin }: RecordPipelineState) {
                 className={`absolute -left-1/2 top-3 -z-10 h-0.5 w-full -translate-y-1/2 ${currentIndex >= index ? "bg-primary" : "bg-divider"}`}
               />
             )}
-            <StatusMarker status={step} selected={isCurrent} size={24} />
+            <StatusMarker status={step} selected={isCurrent} flat size={24} />
             <span
               className={`type-caption text-center ${isCurrent ? "font-bold text-heading" : ""}`}
             >
