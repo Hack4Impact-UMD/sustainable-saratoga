@@ -7,10 +7,10 @@ import { formatDate } from "@frontend/lib/formatDate.ts";
 
 /** Back bar, address, species, city, latest photo and status pipeline. */
 export function RecordHeader({ record }: { record: TreeRecord }) {
-  const photo = record.photos[0];
-  const photoDate = formatDate(
-    record.latestPhotoDate ?? photo?.takenAt ?? null,
-  );
+  const photo = record.photos.toSorted((a, b) =>
+    b.takenAt.localeCompare(a.takenAt),
+  )[0];
+  const photoDate = formatDate(photo?.takenAt ?? record.latestPhotoDate);
 
   return (
     <header>
@@ -29,7 +29,7 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
             <h1 className="type-h1 text-heading">{record.address}</h1>
             <p className="type-body text-body-muted">
               <strong className="font-bold text-heading">
-                {record.species ?? "Species not recorded"}
+                {record.species || "Species not recorded"}
               </strong>{" "}
               · Tree #{record.treeNumber}
               {record.treeCount > 1 && (
