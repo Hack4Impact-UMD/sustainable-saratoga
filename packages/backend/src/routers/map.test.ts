@@ -1,3 +1,4 @@
+import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import { describe, expect, it } from "vitest";
 import type { Context } from "@backend/trpc/context.ts";
@@ -21,7 +22,8 @@ const publicFields = [
 
 function caller(session: Context["session"]) {
   const db = undefined as unknown as Firestore;
-  return createCaller({ session, db });
+  const auth = undefined as unknown as Auth;
+  return createCaller({ session, db, auth });
 }
 
 const anonymous = caller(null);

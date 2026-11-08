@@ -4,3 +4,4 @@ export * from "@common/auth.ts";
 export * from "@common/user.ts";
 export * from "@common/validation.ts";
 export * from "@common/record.ts";
+export * from "@common/people.ts";

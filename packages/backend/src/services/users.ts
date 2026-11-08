@@ -32,6 +32,7 @@ export async function createUserProfile(
     ...input,
     email: session.email,
     role: "volunteer",
+    status: "active",
   };
 
   try {
