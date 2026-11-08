@@ -10,11 +10,16 @@ import type { Auth } from "firebase/auth";
  * API key. For production, CI sets the real values; see
  * `packages/frontend/.env.example`.
  */
+const projectId =
+  import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "sustainable-saratoga";
+
 export const firebaseOptions: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "fake-api-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:
-    import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "demo-sustainable-saratoga",
+  // Google sign-in refuses to open its popup without an auth domain. Locally
+  // the emulator serves the popup, so the project's default domain is enough.
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
+  projectId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
