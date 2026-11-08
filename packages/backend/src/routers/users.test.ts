@@ -1,3 +1,4 @@
+import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import type { CreateUserInput, Session, UserProfile } from "@repo/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,7 @@ vi.mock("@backend/services/users.ts", () => ({
 
 // Only the mocked services receive this database; no Firebase app is needed.
 const db = {} as Firestore;
+const auth = {} as Auth;
 const session: Session = {
   uid: "user-1",
   email: "demo@example.com",
@@ -21,6 +23,7 @@ const profile: UserProfile = {
   lastName: "User",
   email: "demo@example.com",
   role: "volunteer",
+  status: "active",
   volunteerTypes: ["planter"],
 };
 const createInput: CreateUserInput = {
@@ -29,8 +32,8 @@ const createInput: CreateUserInput = {
   volunteerTypes: ["planter"],
 };
 
-const anonymous = createCaller({ session: null, db });
-const signedIn = createCaller({ session, db });
+const anonymous = createCaller({ session: null, db, auth });
+const signedIn = createCaller({ session, db, auth });
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -48,12 +51,32 @@ describe("users authentication", () => {
   });
 });
 
+describe("removed users", () => {
+  const removed: UserProfile = {
+    ...profile,
+    status: "removed",
+    removedAt: "2026-01-01T00:00:00.000Z",
+    removedBy: "admin-1",
+  };
+
+  it.each([
+    ["me", () => signedIn.users.me()],
+    ["create", () => signedIn.users.create(createInput)],
+    ["get", () => signedIn.users.get({ uid: "user-2" })],
+  ] as const)("refuses users.%s", async (_name, call) => {
+    vi.mocked(getUserProfile).mockResolvedValue(removed);
+
+    await expect(call()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(createUserProfile).not.toHaveBeenCalled();
+  });
+});
+
 describe("users.me", () => {
   it("returns the verified session and its profile", async () => {
     vi.mocked(getUserProfile).mockResolvedValue(profile);
 
     await expect(signedIn.users.me()).resolves.toEqual({ session, profile });
-    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, session.uid);
+    expect(getUserProfile).toHaveBeenCalledWith(db, session.uid);
   });
 
   it("returns a null profile when one has not been created", async () => {
@@ -159,28 +182,32 @@ describe("users.get", () => {
       ...profile,
       email: "other@example.com",
     };
-    vi.mocked(getUserProfile).mockResolvedValue(requestedProfile);
+    vi.mocked(getUserProfile).mockImplementation((_db, uid) =>
+      Promise.resolve(uid === requestedUid ? requestedProfile : profile),
+    );
 
     await expect(signedIn.users.get({ uid: requestedUid })).resolves.toEqual(
       requestedProfile,
     );
-    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, requestedUid);
+    expect(getUserProfile).toHaveBeenCalledWith(db, requestedUid);
   });
 
   it("returns null when the requested profile does not exist", async () => {
-    vi.mocked(getUserProfile).mockResolvedValue(null);
+    vi.mocked(getUserProfile).mockImplementation((_db, uid) =>
+      Promise.resolve(uid === session.uid ? profile : null),
+    );
 
     await expect(
       signedIn.users.get({ uid: "missing-user" }),
     ).resolves.toBeNull();
-    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, "missing-user");
+    expect(getUserProfile).toHaveBeenCalledWith(db, "missing-user");
   });
 
   it("rejects an empty uid before calling the service", async () => {
     await expect(signedIn.users.get({ uid: "" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(getUserProfile).not.toHaveBeenCalled();
+    expect(getUserProfile).not.toHaveBeenCalledWith(db, "");
   });
 
   it("surfaces a failed profile lookup", async () => {

@@ -76,7 +76,27 @@ describe("userProfile", () => {
       firstName: " Jane ",
       lastName: " Doe ",
     });
-    expect(result).toEqual(volunteer);
+    expect(result).toEqual({ ...volunteer, status: "active" });
+  });
+
+  it("defaults status to active for profiles saved without one", () => {
+    expect(userProfile(volunteer)).toMatchObject({ status: "active" });
+  });
+
+  it("accepts a removed profile with removedAt and removedBy", () => {
+    const removed = {
+      ...volunteer,
+      status: "removed",
+      removedAt: "2026-01-01T00:00:00.000Z",
+      removedBy: "admin-1",
+    };
+    expect(userProfile(removed)).toEqual(removed);
+  });
+
+  it("rejects an unknown status", () => {
+    expect(
+      userProfile({ ...volunteer, status: "banned" }) instanceof type.errors,
+    ).toBe(true);
   });
 
   it("rejects a bad email", () => {
