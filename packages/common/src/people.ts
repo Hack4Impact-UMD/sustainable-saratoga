@@ -11,8 +11,8 @@ export const invitation = type({
   "firstName?": "string",
   "lastName?": "string",
   status: invitationStatus,
-  // ISO timestamps
-  invitedAt: "string",
+  // ISO timestamps; field names match the Invite spec in the invitations task
+  createdAt: "string",
   expiresAt: "string",
   invitedBy: "string",
 });

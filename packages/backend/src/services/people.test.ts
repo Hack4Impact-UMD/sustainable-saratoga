@@ -42,7 +42,7 @@ const invite = (id: string, invitedAt: string, expiresAt: string) => ({
     email: `${id}@example.com`,
     role: "volunteer",
     status: "pending",
-    invitedAt,
+    createdAt: invitedAt,
     expiresAt,
     invitedBy: "admin-1",
   }),
