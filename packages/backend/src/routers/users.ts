@@ -5,10 +5,10 @@ import { createUserProfile, getUserProfile } from "@backend/services/users.ts";
 
 export const usersRouter = router({
   // Current-user/session endpoint: the verified session plus the Firestore profile
-  me: protectedProcedure.query(async ({ ctx }): Promise<CurrentUser> => {
-    const profile = await getUserProfile(ctx.db, ctx.session.uid);
-    return { session: ctx.session, profile };
-  }),
+  me: protectedProcedure.query(({ ctx }): CurrentUser => ({
+    session: ctx.session,
+    profile: ctx.profile,
+  })),
 
   // Creates the profile right after Firebase sign-up
   create: protectedProcedure
