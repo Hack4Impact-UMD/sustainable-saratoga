@@ -7,7 +7,7 @@ import { formatDate } from "@frontend/lib/formatDate.ts";
 
 /** Back bar, address, species, city, latest photo and status pipeline. */
 export function RecordHeader({ record }: { record: TreeRecord }) {
-  const photo = record.photos.toSorted((a, b) =>
+  const photo = [...record.photos].sort((a, b) =>
     b.takenAt.localeCompare(a.takenAt),
   )[0];
   const photoDate = formatDate(photo?.takenAt ?? record.latestPhotoDate);
