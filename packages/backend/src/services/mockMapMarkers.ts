@@ -1,30 +1,30 @@
+import { sampleRecordIds } from "@repo/common";
 import type { MapMarker } from "@repo/common";
 
 /**
  * Placeholder points around Saratoga Springs (about 43.08, -73.78).
  * Covers every planting status and more than one season.
  */
-export const mockMapMarkers: MapMarker[] = [
-  {
-    id: "maple-ln",
+const markers = {
+  "maple-ln": {
+    lat: 43.0831,
+    lng: -73.7845,
+    address: "12 Maple Hollow Ln",
+    treeNumber: 2,
+    treeCount: 2,
+    recordType: "planting",
+    status: "planted",
+    issuedBy: "dana-ruiz",
+    species: "Red maple",
+    seasonYear: 2026,
+    plantedYear: 2026,
+  },
+  "maple-ln-2": {
     lat: 43.0831,
     lng: -73.7845,
     address: "12 Maple Hollow Ln",
     treeNumber: 1,
-    treeCount: 12,
-    recordType: "planting",
-    status: "requested",
-    issuedBy: "dana-ruiz",
-    species: "Red maple",
-    seasonYear: 2024,
-  },
-  {
-    id: "maple-ln-2",
-    lat: 43.0831,
-    lng: -73.7845,
-    address: "12 Maple Hollow Ln",
-    treeNumber: 12,
-    treeCount: 12,
+    treeCount: 2,
     recordType: "planting",
     status: "planted",
     issuedBy: "leo-brandt",
@@ -32,8 +32,7 @@ export const mockMapMarkers: MapMarker[] = [
     seasonYear: 2024,
     plantedYear: 2024,
   },
-  {
-    id: "birchfield-ave",
+  "birchfield-ave": {
     lat: 43.0788,
     lng: -73.7814,
     address: "48 Birchfield Ave",
@@ -45,8 +44,7 @@ export const mockMapMarkers: MapMarker[] = [
     species: "River birch",
     seasonYear: 2024,
   },
-  {
-    id: "lantern-ct",
+  "lantern-ct": {
     lat: 43.0812,
     lng: -73.7871,
     address: "7 Lantern Ct",
@@ -58,8 +56,7 @@ export const mockMapMarkers: MapMarker[] = [
     species: "White oak",
     seasonYear: 2026,
   },
-  {
-    id: "orchard-row",
+  "orchard-row": {
     lat: 43.0766,
     lng: -73.7902,
     address: "115 Orchard Row",
@@ -72,8 +69,7 @@ export const mockMapMarkers: MapMarker[] = [
     seasonYear: 2023,
     plantedYear: 2023,
   },
-  {
-    id: "quarry-st",
+  "quarry-st": {
     lat: 43.0854,
     lng: -73.7789,
     address: "203 Quarry St",
@@ -85,8 +81,7 @@ export const mockMapMarkers: MapMarker[] = [
     species: "American elm",
     seasonYear: 2026,
   },
-  {
-    id: "willowbrook-rd",
+  "willowbrook-rd": {
     lat: 43.0769,
     lng: -73.7908,
     address: "31 Willowbrook Rd",
@@ -98,8 +93,7 @@ export const mockMapMarkers: MapMarker[] = [
     species: "Eastern white pine",
     seasonYear: 2023,
   },
-  {
-    id: "fernhill-dr",
+  "fernhill-dr": {
     lat: 43.0762,
     lng: -73.7896,
     address: "260 Fernhill Dr",
@@ -111,4 +105,9 @@ export const mockMapMarkers: MapMarker[] = [
     species: "Eastern white pine",
     seasonYear: 2024,
   },
-];
+} satisfies Record<(typeof sampleRecordIds)[number], Omit<MapMarker, "id">>;
+
+export const mockMapMarkers: MapMarker[] = sampleRecordIds.map((id) => ({
+  ...markers[id],
+  id,
+}));

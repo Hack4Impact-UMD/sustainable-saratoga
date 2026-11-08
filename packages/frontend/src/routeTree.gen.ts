@@ -14,9 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
+import { Route as AuthenticatedRecordsRecordIdRouteImport } from './routes/_authenticated/records/$recordId'
 import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 
@@ -43,11 +43,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const GuestLoginRoute = GuestLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -58,6 +53,12 @@ const GuestSignupRoute = GuestSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const AuthenticatedRecordsRecordIdRoute =
+  AuthenticatedRecordsRecordIdRouteImport.update({
+    id: '/records/$recordId',
+    path: '/records/$recordId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const GuestLoginCheckMailRoute = GuestLoginCheckMailRouteImport.update({
   id: '/check-mail',
   path: '/check-mail',
@@ -74,9 +75,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
+  '/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -84,9 +85,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
+  '/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -97,9 +98,9 @@ export interface FileRoutesById {
   '/_guest': typeof GuestRouteRouteWithChildren
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_guest/login': typeof GuestLoginRouteWithChildren
   '/_guest/signup': typeof GuestSignupRoute
+  '/_authenticated/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
   '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
 }
@@ -109,9 +110,9 @@ export interface FileRouteTypes {
     | '/'
     | '/no-access'
     | '/reset-password'
-    | '/dashboard'
     | '/login'
     | '/signup'
+    | '/records/$recordId'
     | '/login/check-mail'
     | '/login/forgot-password'
   fileRoutesByTo: FileRoutesByTo
@@ -119,9 +120,9 @@ export interface FileRouteTypes {
     | '/'
     | '/no-access'
     | '/reset-password'
-    | '/dashboard'
     | '/login'
     | '/signup'
+    | '/records/$recordId'
     | '/login/check-mail'
     | '/login/forgot-password'
   id:
@@ -131,9 +132,9 @@ export interface FileRouteTypes {
     | '/_guest'
     | '/no-access'
     | '/reset-password'
-    | '/_authenticated/dashboard'
     | '/_guest/login'
     | '/_guest/signup'
+    | '/_authenticated/records/$recordId'
     | '/_guest/login/check-mail'
     | '/_guest/login/forgot-password'
   fileRoutesById: FileRoutesById
@@ -183,13 +184,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_guest/login': {
       id: '/_guest/login'
       path: '/login'
@@ -203,6 +197,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/signup'
       preLoaderRoute: typeof GuestSignupRouteImport
       parentRoute: typeof GuestRouteRoute
+    }
+    '/_authenticated/records/$recordId': {
+      id: '/_authenticated/records/$recordId'
+      path: '/records/$recordId'
+      fullPath: '/records/$recordId'
+      preLoaderRoute: typeof AuthenticatedRecordsRecordIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_guest/login/check-mail': {
       id: '/_guest/login/check-mail'
@@ -222,11 +223,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRecordsRecordIdRoute: typeof AuthenticatedRecordsRecordIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRecordsRecordIdRoute: AuthenticatedRecordsRecordIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
