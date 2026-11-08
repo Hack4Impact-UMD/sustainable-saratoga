@@ -9,7 +9,9 @@ import {
   passwordFieldError,
 } from "@frontend/lib/authErrors.ts";
 import { useLogin } from "@frontend/lib/useLogin.ts";
+import { useGoogleLogin } from "@frontend/lib/useGoogleAuth.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
+import { GoogleIcon } from "@frontend/components/auth/GoogleIcon.tsx";
 
 /**
  * Props for the sign-in form and its navigation actions.
@@ -18,6 +20,8 @@ export interface LoginFormProps {
   sessionExpired?: boolean;
   onSuccess: () => void;
   onForgotPassword: () => void;
+  /** Google sign-in worked, but the account was never set up. */
+  onNoAccess: (email: string | null) => void;
 }
 
 /**
@@ -27,8 +31,15 @@ export function LoginForm({
   sessionExpired = false,
   onSuccess,
   onForgotPassword,
+  onNoAccess,
 }: LoginFormProps) {
   const login = useLogin();
+  const googleLogin = useGoogleLogin();
+  const isSigningIn =
+    login.isPending ||
+    login.isSuccess ||
+    googleLogin.isPending ||
+    googleLogin.data?.status === "signed-in";
   const { isAuthed } = useAuth();
   const didNavigate = useRef(false);
   const [email, setEmail] = useState("");
@@ -39,17 +50,32 @@ export function LoginForm({
 
   // App passes this auth state to the router before effects run, so route
   // guards see the signed-in user when the success action navigates.
+  const signedIn = login.isSuccess || googleLogin.data?.status === "signed-in";
   useEffect(() => {
-    if (login.isSuccess && isAuthed && !didNavigate.current) {
+    if (signedIn && isAuthed && !didNavigate.current) {
       didNavigate.current = true;
       onSuccess();
     }
-  }, [login.isSuccess, isAuthed, onSuccess]);
+  }, [signedIn, isAuthed, onSuccess]);
+
+  useEffect(() => {
+    if (googleLogin.data?.status === "no-access") {
+      onNoAccess(googleLogin.data.email);
+    }
+  }, [googleLogin.data, onNoAccess]);
 
   // TanStack Query exposes the Firebase request status and any auth failure.
   const signInError = login.isError
     ? authErrorMessage(login.error, "password")
-    : null;
+    : googleLogin.isError
+      ? authErrorMessage(googleLogin.error, "google")
+      : null;
+
+  /** Starts Google sign-in, clearing any earlier email/password error. */
+  function handleGoogleSignIn() {
+    login.reset();
+    googleLogin.mutate();
+  }
 
   /** Validates the submitted credentials and starts the Firebase login mutation. */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -62,6 +88,7 @@ export function LoginForm({
 
     if (nextEmailError || nextPasswordError) return;
 
+    googleLogin.reset();
     login.mutate({ email: email.trim(), password });
   }
 
@@ -240,7 +267,7 @@ export function LoginForm({
           <button
             className="type-btn-primary h-control w-full rounded-pill bg-primary px-4 hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-disabled-fill"
             type="submit"
-            disabled={login.isPending || login.isSuccess}
+            disabled={isSigningIn}
           >
             {login.isPending || login.isSuccess ? "Signing in..." : "Sign in"}
           </button>
@@ -252,16 +279,13 @@ export function LoginForm({
           </div>
 
           <button
-            className="flex h-12 w-full justify-center items-center gap-(--space-2) rounded-(--radius-pill) border border-solid border-(--color-primary) bg-(--bg-surface) px-20.5 py-0"
+            className="flex h-12 w-full items-center justify-center gap-(--space-2) rounded-(--radius-pill) border border-solid border-(--color-primary) bg-(--bg-surface) px-4 py-0 hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
             type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isSigningIn}
           >
-            <div className="flex px-1.75 justify-center items-center border-[1.5px] border-dashed border-(--color-border-strong) rounded-sm ">
-              <p className="font-bold text-[10px] text-(--color-text-muted)">
-                G
-              </p>
-            </div>
-            {/* Insert Google login logic here */}
-            Continue with Google
+            <GoogleIcon />
+            {googleLogin.isPending ? "Signing in..." : "Continue with Google"}
           </button>
         </form>
 

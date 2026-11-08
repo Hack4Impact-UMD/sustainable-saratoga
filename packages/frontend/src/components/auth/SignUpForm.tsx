@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
+  createUserInput,
   signUpInput,
   signUpPasswordRequirements,
   validateForm,
@@ -16,7 +17,13 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
+import { authErrorMessage } from "@frontend/lib/authErrors.ts";
+import {
+  useGoogleSignUp,
+  WrongGoogleAccountError,
+} from "@frontend/lib/useGoogleAuth.ts";
 import { useSignUp } from "@frontend/lib/useSignUp.ts";
+import { GoogleIcon } from "@frontend/components/auth/GoogleIcon.tsx";
 import { Input } from "@frontend/components/ui/input.tsx";
 import {
   Field,
@@ -52,12 +59,70 @@ export function SignUpForm({
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const volunteerTypesInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const signUp = useSignUp();
-  const isSubmitting = signUp.isPending;
+  const googleSignUp = useGoogleSignUp();
+  const isSubmitting = signUp.isPending || googleSignUp.isPending;
   const validationErrorCount = Object.keys(fieldErrors).length;
   const passwordChecks = signUpPasswordRequirements.map(({ test }) =>
     test(passwordValue),
   );
+
+  /** Shows validation errors and focuses the first field that has one. */
+  function showErrors(errors: FieldErrors<SignUpInput>, error?: string) {
+    setFieldErrors(errors);
+    setFormError(error ?? null);
+    if (errors.firstName) {
+      firstNameInputRef.current?.focus();
+    } else if (errors.lastName) {
+      lastNameInputRef.current?.focus();
+    } else if (errors.password) {
+      passwordInputRef.current?.focus();
+    } else if (errors.confirmPassword) {
+      confirmPasswordInputRef.current?.focus();
+    } else if (errors.volunteerTypes) {
+      volunteerTypesInputRef.current?.focus();
+    }
+  }
+
+  /**
+   * Creates the account with Google instead of a password. The name and
+   * volunteer types still come from the form; the password fields are skipped.
+   */
+  async function handleGoogleSignUp() {
+    const form = formRef.current;
+    if (!form) return;
+    setFormError(null);
+    setHasSubmitted(true);
+
+    const formData = new FormData(form);
+    const validation = validateForm(createUserInput, {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      volunteerTypes: formData.getAll("volunteerTypes"),
+    });
+    if (!validation.ok) {
+      showErrors(validation.errors, validation.formError);
+      return;
+    }
+
+    setFieldErrors({});
+    try {
+      await googleSignUp.mutateAsync({ ...validation.data, email });
+      onSuccess();
+    } catch (error) {
+      if (error instanceof WrongGoogleAccountError) {
+        setFormError(
+          `That Google account doesn't match your invite. Choose the Google account for ${email}, or create a password instead.`,
+        );
+      } else if (authErrorMessage(error, "google")) {
+        // null means they closed the Google popup, which isn't an error
+        setFormError(
+          "We couldn't create your account with Google. Please try again.",
+        );
+      }
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,19 +140,7 @@ export function SignUpForm({
     });
 
     if (!validation.ok) {
-      setFieldErrors(validation.errors);
-      setFormError(validation.formError ?? null);
-      if (validation.errors.firstName) {
-        firstNameInputRef.current?.focus();
-      } else if (validation.errors.lastName) {
-        lastNameInputRef.current?.focus();
-      } else if (validation.errors.password) {
-        passwordInputRef.current?.focus();
-      } else if (validation.errors.confirmPassword) {
-        confirmPasswordInputRef.current?.focus();
-      } else if (validation.errors.volunteerTypes) {
-        volunteerTypesInputRef.current?.focus();
-      }
+      showErrors(validation.errors, validation.formError);
       return;
     }
 
@@ -125,6 +178,7 @@ export function SignUpForm({
             <h1 className="type-h1 text-center">Create Account</h1>
           </header>
           <form
+            ref={formRef}
             className="flex flex-col gap-4"
             noValidate
             onSubmit={handleSubmit}
@@ -385,25 +439,25 @@ export function SignUpForm({
                 disabled={isSubmitting}
                 className="type-btn-primary h-control w-full rounded-full bg-primary px-5 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
               >
-                {isSubmitting ? "Creating Account..." : "Create Account"}
+                {signUp.isPending ? "Creating Account..." : "Create Account"}
               </button>
               <div className="flex items-center gap-6 py-4">
                 <Separator className="w-auto flex-1" />
                 <span className="type-body text-body-muted">or</span>
                 <Separator className="w-auto flex-1" />
               </div>
-              {/* TODO: Wire up Google sign-up and swap in the Google icon */}
               <button
                 type="button"
-                className="type-btn-secondary flex h-control w-full items-center justify-center gap-3 rounded-full border border-primary bg-surface px-5 hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 cursor-pointer"
+                onClick={() => void handleGoogleSignUp()}
+                disabled={isSubmitting}
+                className="type-btn-secondary flex h-control w-full items-center justify-center gap-3 rounded-full border border-primary bg-surface px-5 hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-md border-2 border-dashed border-line-strong font-bold"
-                >
-                  G
+                <GoogleIcon />
+                <span>
+                  {googleSignUp.isPending
+                    ? "Creating Account..."
+                    : "Continue with Google"}
                 </span>
-                <span>Continue with Google</span>
               </button>
             </div>
           </form>
