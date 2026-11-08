@@ -18,14 +18,16 @@ export const createCallerFactory = t.createCallerFactory;
 export const publicProcedure = t.procedure;
 
 /**
- * Callable only with a valid Firebase ID token. Downstream resolvers see
- * `ctx.session` narrowed to a non-null `Session`, and `ctx.profile`, which is
- * null until the user creates one (right after sign-up).
+ * Callable with a valid Firebase ID token, even before the user has a profile.
+ * Downstream resolvers see `ctx.session` narrowed to a non-null `Session`, and
+ * `ctx.profile`, which is null until the user creates one (right after
+ * sign-up). Only for the endpoints that read or create the caller's own
+ * profile; everything else uses `protectedProcedure`.
  *
- * Removed users are refused here, so every protected endpoint -- not just the
- * admin ones -- locks them out on their next request.
+ * Removed users are refused here, so every endpoint built on this -- not just
+ * the admin ones -- locks them out on their next request.
  */
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const signedInProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -44,10 +46,27 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, session: ctx.session, profile } });
 });
 
+/**
+ * Callable only by a signed-in user with an active profile. A Firebase account
+ * with no profile (for example, someone who used Google sign-in without being
+ * set up) gets `FORBIDDEN`. Resolvers see `ctx.profile` as non-null.
+ */
+export const protectedProcedure = signedInProcedure.use(({ ctx, next }) => {
+  const { profile } = ctx;
+  if (!profile) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "This account isn't set up yet.",
+    });
+  }
+
+  return next({ ctx: { ...ctx, profile } });
+});
+
 /** Callable only by an active admin. Everyone else gets `FORBIDDEN`. */
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   const { profile } = ctx;
-  if (profile?.role !== "admin" || profile.status !== "active") {
+  if (profile.role !== "admin" || profile.status !== "active") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Only admins can call this procedure.",

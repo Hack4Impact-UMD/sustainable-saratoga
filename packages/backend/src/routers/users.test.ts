@@ -175,6 +175,25 @@ describe("users.create", () => {
   });
 });
 
+describe("users without a profile", () => {
+  it("can read their own empty profile", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue(null);
+
+    await expect(signedIn.users.me()).resolves.toEqual({
+      session,
+      profile: null,
+    });
+  });
+
+  it("are refused by users.get", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue(null);
+
+    await expect(signedIn.users.get({ uid: "user-2" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+});
+
 describe("users.get", () => {
   it("looks up the requested user rather than the caller", async () => {
     const requestedUid = "user-2";
@@ -204,6 +223,8 @@ describe("users.get", () => {
   });
 
   it("rejects an empty uid before calling the service", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue(profile);
+
     await expect(signedIn.users.get({ uid: "" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });

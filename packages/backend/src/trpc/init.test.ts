@@ -7,6 +7,7 @@ import {
   createCallerFactory,
   protectedProcedure,
   router,
+  signedInProcedure,
 } from "@backend/trpc/init.ts";
 import { getUserProfile } from "@backend/services/users.ts";
 
@@ -39,6 +40,7 @@ const admin: UserProfile = {
 
 const caller = createCallerFactory(
   router({
+    signedInPing: signedInProcedure.query(({ ctx }) => ctx.profile),
     protectedPing: protectedProcedure.query(() => "ok"),
     adminPing: adminProcedure.query(() => "ok"),
   }),
@@ -50,9 +52,9 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe("protectedProcedure", () => {
+describe("signedInProcedure", () => {
   it("refuses signed-out callers without reading a profile", async () => {
-    await expect(anonymous.protectedPing()).rejects.toMatchObject({
+    await expect(anonymous.signedInPing()).rejects.toMatchObject({
       code: "UNAUTHORIZED",
     });
     expect(getUserProfile).not.toHaveBeenCalled();
@@ -61,7 +63,42 @@ describe("protectedProcedure", () => {
   it("allows a signed-in user who has no profile yet", async () => {
     vi.mocked(getUserProfile).mockResolvedValue(null);
 
-    await expect(signedIn.protectedPing()).resolves.toBe("ok");
+    await expect(signedIn.signedInPing()).resolves.toBeNull();
+    expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, session.uid);
+  });
+
+  it("passes the caller's profile through", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue(volunteer);
+
+    await expect(signedIn.signedInPing()).resolves.toEqual(volunteer);
+  });
+
+  it("refuses a removed user", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue({
+      ...volunteer,
+      status: "removed",
+    });
+
+    await expect(signedIn.signedInPing()).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+});
+
+describe("protectedProcedure", () => {
+  it("refuses signed-out callers without reading a profile", async () => {
+    await expect(anonymous.protectedPing()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(getUserProfile).not.toHaveBeenCalled();
+  });
+
+  it("refuses a signed-in user with no profile, like a stray Google sign-in", async () => {
+    vi.mocked(getUserProfile).mockResolvedValue(null);
+
+    await expect(signedIn.protectedPing()).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
     expect(getUserProfile).toHaveBeenCalledExactlyOnceWith(db, session.uid);
   });
 
