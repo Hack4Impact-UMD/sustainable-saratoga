@@ -11,7 +11,7 @@ import type { Auth } from "firebase/auth";
  * `packages/frontend/.env.example`.
  */
 const projectId =
-  import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "sustainable-saratoga";
+  import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "demo-sustainable-saratoga";
 
 export const firebaseOptions: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "fake-api-key",
