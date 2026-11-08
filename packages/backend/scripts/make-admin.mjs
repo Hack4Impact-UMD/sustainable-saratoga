@@ -29,6 +29,9 @@ try {
     throw new Error(`${email} has no profile yet. Have them sign up first.`);
   }
 
+  // re-enable the Auth account first, so a failure here never leaves an
+  // active admin profile on a disabled account
+  await getAuth().updateUser(uid, { disabled: false });
   await ref.update({
     role: "admin",
     status: "active",
@@ -37,7 +40,6 @@ try {
     removedAt: FieldValue.delete(),
     removedBy: FieldValue.delete(),
   });
-  await getAuth().updateUser(uid, { disabled: false });
   console.log(`${email} (${uid}) is now an admin.`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
