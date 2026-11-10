@@ -8,7 +8,10 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/_guest")({
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthed) {
-      throw redirect({ to: "/" });
+      throw redirect({
+        to: "/",
+        search: { view: "planting", expanded: false },
+      });
     }
   },
   component: GuestLayout,

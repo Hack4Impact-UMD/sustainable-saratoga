@@ -4,6 +4,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { TreeList } from "@frontend/components/landing/TreeList.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useEffect } from "react";
@@ -11,9 +12,22 @@ import { useEffect } from "react";
 /** Keeps only a non-empty record ID from the root route's search params. */
 export function validateSearch(search: Record<string, unknown>): {
   record?: string;
+  view: "planting" | "pruning";
+  expanded: boolean;
 } {
   const record = search["record"];
-  return typeof record === "string" && record.length > 0 ? { record } : {};
+  const rawView = search["view"];
+  const rawExpanded = search["expanded"];
+
+  const view: "planting" | "pruning" =
+    rawView === "planting" || rawView === "pruning" ? rawView : "planting";
+  const expanded = rawExpanded === true ? true : false;
+
+  return {
+    ...(typeof record === "string" && record.length > 0 ? { record } : {}),
+    view,
+    expanded,
+  };
 }
 
 export const Route = createFileRoute("/")({
@@ -34,39 +48,73 @@ export const Route = createFileRoute("/")({
 /** Loads map records and composes the map with its overlay controls. */
 function Home() {
   const navigate = useNavigate();
-  const { record } = Route.useSearch();
+  const { record, view, expanded } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
 
-  if (markersQuery.isPending) {
-    return <output>Loading map...</output>;
-  }
-
-  if (markersQuery.isError) {
-    return (
-      <output role="alert">
-        The map data couldn&apos;t load. Please try again later.
-      </output>
-    );
-  }
-
-  const selectedMarker = findSelectedMarker(markersQuery.data, record);
+  const selectedMarker = findSelectedMarker(markersQuery.data ?? [], record);
 
   /** Writes the selected marker ID to the URL search state. */
   function handleMarkerSelect(id: string) {
-    void navigate({ to: "/", search: { record: id } });
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: prev.view ?? "planting",
+        expanded: prev.expanded ?? false,
+        ...(prev.record !== undefined ? { record: prev.record } : {}),
+        record: id,
+      }),
+    });
+  }
+
+  /** Updates the view param while preserving other params. */
+  function handleViewChange(newView: "planting" | "pruning") {
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: newView,
+        expanded: prev.expanded ?? false,
+        ...(prev.record !== undefined ? { record: prev.record } : {}),
+      }),
+    });
+  }
+
+  /** Updates the expanded param while preserving other params. */
+  function handleExpandedChange(newExpanded: boolean) {
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: prev.view ?? "planting",
+        expanded: newExpanded,
+        ...(prev.record !== undefined ? { record: prev.record } : {}),
+      }),
+    });
   }
 
   return (
-    <main className="h-screen">
-      <MapView
+    <main className="h-screen flex flex-col">
+      {!expanded && (
+        <div className="flex-1 min-h-0">
+          <MapView
+            markers={markersQuery.data ?? []}
+            selectedId={selectedMarker?.id}
+            onMarkerSelect={handleMarkerSelect}
+            renderMarker={renderMarker}
+          >
+            <RecordCamera marker={selectedMarker} />
+            <MapOverlays />
+          </MapView>
+        </div>
+      )}
+      <TreeList
         markers={markersQuery.data}
+        isLoading={markersQuery.isPending}
+        isError={markersQuery.isError}
         selectedId={selectedMarker?.id}
-        onMarkerSelect={handleMarkerSelect}
-        renderMarker={renderMarker}
-      >
-        <RecordCamera marker={selectedMarker} />
-        <MapOverlays />
-      </MapView>
+        view={view}
+        expanded={expanded}
+        onViewChange={handleViewChange}
+        onExpandedChange={handleExpandedChange}
+      />
     </main>
   );
 }

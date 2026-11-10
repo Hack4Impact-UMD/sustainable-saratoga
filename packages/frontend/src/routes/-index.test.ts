@@ -1,6 +1,7 @@
 import type { MapMarker } from "@repo/common";
 import { describe, expect, it } from "vitest";
 import { findSelectedMarker, validateSearch } from "@frontend/routes/index.tsx";
+import { treeLabel } from "@frontend/components/landing/treeLabel.ts";
 
 const base = {
   address: "1 Broadway",
@@ -18,7 +19,7 @@ const markers: MapMarker[] = [
 
 describe("home map route selection", () => {
   it("accepts a non-empty record search parameter", () => {
-    expect(validateSearch({ record: "tree-1" })).toEqual({
+    expect(validateSearch({ record: "tree-1" })).toMatchObject({
       record: "tree-1",
     });
   });
@@ -26,7 +27,7 @@ describe("home map route selection", () => {
   it.each([{}, { record: "" }, { record: 123 }, { record: null }])(
     "drops an invalid record search value: %j",
     (search) => {
-      expect(validateSearch(search)).toEqual({});
+      expect(validateSearch(search)).not.toHaveProperty("record");
     },
   );
 
@@ -36,5 +37,71 @@ describe("home map route selection", () => {
 
   it("returns no marker for an unknown record", () => {
     expect(findSelectedMarker(markers, "missing")).toBeUndefined();
+  });
+});
+
+describe("treeLabel", () => {
+  it("returns just the address when treeCount is 1", () => {
+    expect(
+      treeLabel({
+        ...base,
+        id: "t",
+        lat: 0,
+        lng: 0,
+        status: "planted",
+        treeCount: 1,
+        treeNumber: 1,
+      }),
+    ).toBe("1 Broadway");
+  });
+  it("includes the tree number when treeCount is greater than 1", () => {
+    expect(
+      treeLabel({
+        ...base,
+        id: "t",
+        lat: 0,
+        lng: 0,
+        status: "planted",
+        treeCount: 3,
+        treeNumber: 2,
+      }),
+    ).toBe("1 Broadway · Tree #2");
+  });
+});
+
+describe("validateSearch view param", () => {
+  it("defaults view to 'planting' when absent", () => {
+    expect(validateSearch({})).toMatchObject({ view: "planting" });
+  });
+  it("accepts 'planting'", () => {
+    expect(validateSearch({ view: "planting" })).toMatchObject({
+      view: "planting",
+    });
+  });
+  it("accepts 'pruning'", () => {
+    expect(validateSearch({ view: "pruning" })).toMatchObject({
+      view: "pruning",
+    });
+  });
+  it("drops invalid view values back to 'planting'", () => {
+    expect(validateSearch({ view: "invalid" })).toMatchObject({
+      view: "planting",
+    });
+  });
+});
+
+describe("validateSearch expanded param", () => {
+  it("defaults expanded to false when absent", () => {
+    expect(validateSearch({})).toMatchObject({ expanded: false });
+  });
+  it("accepts true", () => {
+    expect(validateSearch({ expanded: true })).toMatchObject({
+      expanded: true,
+    });
+  });
+  it("defaults to false for non-boolean values", () => {
+    expect(validateSearch({ expanded: "yes" })).toMatchObject({
+      expanded: false,
+    });
   });
 });
