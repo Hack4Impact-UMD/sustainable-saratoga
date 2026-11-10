@@ -47,7 +47,7 @@ export function TreeRow({ marker, selectedId }: TreeRowProps) {
       <StatusMarker status={marker.status} size={24} selected={isSelected} />
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Address label — 17px/24px medium sans (type-h3) */}
-        <span className="type-h3 truncate text-heading">
+        <span className="type-h3 break-words text-heading">
           {treeLabel(marker)}
         </span>
         {/* Status · Name — 16px/22px regular sans, muted (type-supporting) */}

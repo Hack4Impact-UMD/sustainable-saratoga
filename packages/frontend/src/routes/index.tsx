@@ -56,8 +56,11 @@ function Home() {
   const navigate = useNavigate();
   const { record, view = "planting", sheet = "partial" } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
+  const markers = (markersQuery.data ?? []).filter(
+    (marker) => marker.recordType === view,
+  );
 
-  const selectedMarker = findSelectedMarker(markersQuery.data ?? [], record);
+  const selectedMarker = findSelectedMarker(markers, record);
 
   /** Writes the selected marker ID to the URL search state. */
   function handleMarkerSelect(id: string) {
@@ -96,11 +99,13 @@ function Home() {
   }
 
   return (
-    <main className="h-screen flex flex-col">
+    <main
+      className={`h-dvh flex flex-col ${sheet === "expanded" ? "pt-16" : ""}`}
+    >
       {sheet !== "expanded" && (
         <div className="flex-1 min-h-0">
           <MapView
-            markers={markersQuery.data ?? []}
+            markers={markers}
             selectedId={selectedMarker?.id}
             onMarkerSelect={handleMarkerSelect}
             renderMarker={renderMarker}
@@ -111,7 +116,7 @@ function Home() {
         </div>
       )}
       <TreeList
-        markers={markersQuery.data}
+        markers={markers}
         isLoading={markersQuery.isPending}
         isError={markersQuery.isError}
         selectedId={selectedMarker?.id}
