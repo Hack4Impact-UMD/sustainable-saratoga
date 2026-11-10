@@ -2,7 +2,7 @@ import type { MapMarker } from "@repo/common";
 import { ChevronRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
-import { treeLabel } from "./treeLabel.ts";
+import { treeLabel } from "@frontend/components/landing/treeLabel.ts";
 
 const statusLabels: Record<MapMarker["status"], string> = {
   requested: "Requested",

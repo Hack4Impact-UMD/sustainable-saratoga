@@ -2,7 +2,7 @@ import type { MapMarker } from "@repo/common";
 import { Plus } from "lucide-react";
 import { useRef } from "react";
 import type { PointerEvent } from "react";
-import { TreeRow } from "./TreeRow.tsx";
+import { TreeRow } from "@frontend/components/landing/TreeRow.tsx";
 
 export type SheetState = "collapsed" | "partial" | "expanded";
 
@@ -32,12 +32,12 @@ export function TreeList({
   // Drag-to-snap: track the Y position where the drag started.
   const dragStartY = useRef<number | null>(null);
 
-  function handleDragStart(e: PointerEvent<HTMLDivElement>) {
+  function handleDragStart(e: PointerEvent<HTMLButtonElement>) {
     dragStartY.current = e.clientY;
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
-  function handleDragEnd(e: PointerEvent<HTMLDivElement>) {
+  function handleDragEnd(e: PointerEvent<HTMLButtonElement>) {
     if (dragStartY.current === null) return;
     const delta = dragStartY.current - e.clientY; // positive = dragged up
     dragStartY.current = null;
@@ -62,12 +62,11 @@ export function TreeList({
     <div
       className={`flex flex-col bg-surface border-t border-line-subtle${isExpanded ? " flex-1 min-h-0" : ""}`}
     >
-      {/* Drag handle */}
-      <div
+      {/* Drag handle — drag up to expand, drag down to collapse */}
+      <button
+        type="button"
         className="mx-auto mt-2 mb-1 h-1 w-10 cursor-row-resize rounded-full bg-line-subtle touch-none"
-        role="button"
         aria-label="Resize sheet"
-        tabIndex={0}
         onPointerDown={handleDragStart}
         onPointerUp={handleDragEnd}
         onPointerCancel={() => {
@@ -133,41 +132,38 @@ export function TreeList({
       </div>
 
       {/* List content — hidden when collapsed */}
-      {!isCollapsed && (
-        <>
-          {isLoading ? (
-            <p className="type-body-sm px-4 py-8 text-center text-body-muted">
-              Loading...
+      {!isCollapsed &&
+        (isLoading ? (
+          <p className="type-body-sm px-4 py-8 text-center text-body-muted">
+            Loading...
+          </p>
+        ) : isError ? (
+          <p className="type-body-sm px-4 py-8 text-center text-error">
+            The records couldn&apos;t load.
+          </p>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+            <p className="type-body-strong">No records match</p>
+            <p className="type-body-sm text-body-muted">
+              Nothing matches the search and filters together.
             </p>
-          ) : isError ? (
-            <p className="type-body-sm px-4 py-8 text-center text-error">
-              The records couldn&apos;t load.
-            </p>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-              <p className="type-body-strong">No records match</p>
-              <p className="type-body-sm text-body-muted">
-                Nothing matches the search and filters together.
-              </p>
-              <button
-                type="button"
-                onClick={() => onViewChange("planting")}
-                className="type-link mt-2"
-              >
-                Clear filters
-              </button>
-            </div>
-          ) : (
-            <ul className="flex-1 overflow-y-auto" role="list">
-              {filtered.map((marker) => (
-                <li key={marker.id}>
-                  <TreeRow marker={marker} selectedId={selectedId} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+            <button
+              type="button"
+              onClick={() => onViewChange("planting")}
+              className="type-link mt-2"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <ul className="flex-1 overflow-y-auto">
+            {filtered.map((marker) => (
+              <li key={marker.id}>
+                <TreeRow marker={marker} selectedId={selectedId} />
+              </li>
+            ))}
+          </ul>
+        ))}
 
       {/* Add record — layout stub; full action is the TL's responsibility */}
       <div

@@ -62,7 +62,6 @@ function Home() {
       search: (prev) => ({
         view: prev.view ?? "planting",
         sheet: prev.sheet ?? "partial",
-        ...(prev.record !== undefined ? { record: prev.record } : {}),
         record: id,
       }),
     });
@@ -75,7 +74,7 @@ function Home() {
       search: (prev) => ({
         view: newView,
         sheet: prev.sheet ?? "partial",
-        ...(prev.record !== undefined ? { record: prev.record } : {}),
+        ...(prev.record === undefined ? {} : { record: prev.record }),
       }),
     });
   }
@@ -87,7 +86,7 @@ function Home() {
       search: (prev) => ({
         view: prev.view ?? "planting",
         sheet: newSheet,
-        ...(prev.record !== undefined ? { record: prev.record } : {}),
+        ...(prev.record === undefined ? {} : { record: prev.record }),
       }),
     });
   }
