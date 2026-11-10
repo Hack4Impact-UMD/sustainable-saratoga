@@ -31,8 +31,8 @@ export function validateSearch(search: Record<string, unknown>): {
 
   return {
     ...(typeof record === "string" && record.length > 0 ? { record } : {}),
-    ...(view !== undefined ? { view } : {}),
-    ...(sheet !== undefined ? { sheet } : {}),
+    ...(view === undefined ? {} : { view }),
+    ...(sheet === undefined ? {} : { sheet }),
   };
 }
 
