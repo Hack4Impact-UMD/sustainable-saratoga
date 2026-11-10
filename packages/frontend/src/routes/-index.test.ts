@@ -70,8 +70,8 @@ describe("treeLabel", () => {
 });
 
 describe("validateSearch view param", () => {
-  it("defaults view to 'planting' when absent", () => {
-    expect(validateSearch({})).toMatchObject({ view: "planting" });
+  it("omits view when absent", () => {
+    expect(validateSearch({})).not.toHaveProperty("view");
   });
   it("accepts 'planting'", () => {
     expect(validateSearch({ view: "planting" })).toMatchObject({
@@ -83,16 +83,14 @@ describe("validateSearch view param", () => {
       view: "pruning",
     });
   });
-  it("drops invalid view values back to 'planting'", () => {
-    expect(validateSearch({ view: "invalid" })).toMatchObject({
-      view: "planting",
-    });
+  it("drops invalid view values", () => {
+    expect(validateSearch({ view: "invalid" })).not.toHaveProperty("view");
   });
 });
 
 describe("validateSearch sheet param", () => {
-  it("defaults sheet to 'partial' when absent", () => {
-    expect(validateSearch({})).toMatchObject({ sheet: "partial" });
+  it("omits sheet when absent", () => {
+    expect(validateSearch({})).not.toHaveProperty("sheet");
   });
   it("accepts 'collapsed'", () => {
     expect(validateSearch({ sheet: "collapsed" })).toMatchObject({
@@ -104,14 +102,12 @@ describe("validateSearch sheet param", () => {
       sheet: "expanded",
     });
   });
-  it("defaults to 'partial' for 'partial' value", () => {
+  it("accepts 'partial'", () => {
     expect(validateSearch({ sheet: "partial" })).toMatchObject({
       sheet: "partial",
     });
   });
-  it("defaults to 'partial' for invalid values", () => {
-    expect(validateSearch({ sheet: "open" })).toMatchObject({
-      sheet: "partial",
-    });
+  it("drops invalid sheet values", () => {
+    expect(validateSearch({ sheet: "open" })).not.toHaveProperty("sheet");
   });
 });

@@ -13,22 +13,26 @@ import { useEffect } from "react";
 /** Keeps only a non-empty record ID from the root route's search params. */
 export function validateSearch(search: Record<string, unknown>): {
   record?: string;
-  view: "planting" | "pruning";
-  sheet: SheetState;
+  view?: "planting" | "pruning";
+  sheet?: SheetState;
 } {
   const record = search["record"];
   const rawView = search["view"];
   const rawSheet = search["sheet"];
 
-  const view: "planting" | "pruning" =
-    rawView === "planting" || rawView === "pruning" ? rawView : "planting";
-  const sheet: SheetState =
-    rawSheet === "collapsed" || rawSheet === "expanded" ? rawSheet : "partial";
+  const view: "planting" | "pruning" | undefined =
+    rawView === "planting" || rawView === "pruning" ? rawView : undefined;
+  const sheet: SheetState | undefined =
+    rawSheet === "collapsed" ||
+    rawSheet === "expanded" ||
+    rawSheet === "partial"
+      ? rawSheet
+      : undefined;
 
   return {
     ...(typeof record === "string" && record.length > 0 ? { record } : {}),
-    view,
-    sheet,
+    ...(view !== undefined ? { view } : {}),
+    ...(sheet !== undefined ? { sheet } : {}),
   };
 }
 
@@ -50,7 +54,7 @@ export const Route = createFileRoute("/")({
 /** Loads map records and composes the map with its overlay controls. */
 function Home() {
   const navigate = useNavigate();
-  const { record, view, sheet } = Route.useSearch();
+  const { record, view = "planting", sheet = "partial" } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
 
   const selectedMarker = findSelectedMarker(markersQuery.data ?? [], record);
