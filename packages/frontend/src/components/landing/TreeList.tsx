@@ -1,7 +1,7 @@
 import type { MapMarker } from "@repo/common";
 import { Plus } from "lucide-react";
 import { useRef } from "react";
-import type { PointerEvent } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import { TreeRow } from "@frontend/components/landing/TreeRow.tsx";
 
 export type SheetState = "collapsed" | "partial" | "expanded";
@@ -31,16 +31,19 @@ export function TreeList({
 
   // Drag-to-snap: track the Y position where the drag started.
   const dragStartY = useRef<number | null>(null);
+  const didDrag = useRef(false);
 
   function handleDragStart(e: PointerEvent<HTMLButtonElement>) {
+    didDrag.current = false;
     dragStartY.current = e.clientY;
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   function handleDragEnd(e: PointerEvent<HTMLButtonElement>) {
     if (dragStartY.current === null) return;
-    const delta = dragStartY.current - e.clientY; // positive = dragged up
+    const delta = dragStartY.current - e.clientY;
     dragStartY.current = null;
+    didDrag.current = Math.abs(delta) > 40;
 
     if (sheet === "collapsed" && delta > 40) onSheetChange("partial");
     else if (sheet === "partial" && delta > 40) onSheetChange("expanded");
@@ -48,8 +51,11 @@ export function TreeList({
     else if (sheet === "expanded" && delta < -40) onSheetChange("partial");
   }
 
-  // Tap the handle to cycle: collapsed → partial → expanded → partial → …
-  function handleHandleTap() {
+  // Tap the handle to cycle states. e.detail === 0 means keyboard-triggered.
+  function handleHandleTap(e: MouseEvent<HTMLButtonElement>) {
+    const skipClick = didDrag.current && e.detail !== 0;
+    didDrag.current = false;
+    if (skipClick) return;
     if (sheet === "collapsed") onSheetChange("partial");
     else if (sheet === "partial") onSheetChange("expanded");
     else onSheetChange("partial");
@@ -147,13 +153,15 @@ export function TreeList({
             <p className="type-body-sm text-body-muted">
               Nothing matches the search and filters together.
             </p>
-            <button
-              type="button"
-              onClick={() => onViewChange("planting")}
-              className="type-link mt-2"
-            >
-              Clear filters
-            </button>
+            {view !== "planting" && (
+              <button
+                type="button"
+                onClick={() => onViewChange("planting")}
+                className="type-link mt-2"
+              >
+                Show planting records
+              </button>
+            )}
           </div>
         ) : (
           <ul className="flex-1 overflow-y-auto">
