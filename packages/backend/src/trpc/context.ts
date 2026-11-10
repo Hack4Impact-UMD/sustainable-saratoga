@@ -15,6 +15,7 @@ export async function createContext({ req }: CreateExpressContextOptions) {
   return {
     session: await resolveSession(req.headers.authorization),
     db: getFirestore(),
+    auth: getAuth(),
   };
 }
 

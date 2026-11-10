@@ -44,7 +44,9 @@ describe("login navigation", () => {
         () => new Promise((resolve) => (finishLogin = resolve)),
       );
       const history = createMemoryHistory({
-        initialEntries: ["/login?redirect=%2Fdashboard%3Fyear%3D2026%23trees"],
+        initialEntries: [
+          "/login?redirect=%2Frecords%2Fmaple-ln%3Fyear%3D2026%23trees",
+        ],
       });
       const authState: AuthState = {
         isPending: false,
@@ -96,10 +98,12 @@ describe("login navigation", () => {
         await act(() => finishLogin({} as UserCredential));
       }
       await waitFor(() =>
-        expect(router.state.location.href).toBe("/dashboard?year=2026#trees"),
+        expect(router.state.location.href).toBe(
+          "/records/maple-ln?year=2026#trees",
+        ),
       );
       expect(router.state.matches.map((match) => match.routeId)).toContain(
-        "/_authenticated/dashboard",
+        "/_authenticated/records/$recordId",
       );
       queryClient.clear();
     },
