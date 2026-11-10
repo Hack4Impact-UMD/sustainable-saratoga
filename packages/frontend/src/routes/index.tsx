@@ -5,6 +5,7 @@ import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 import { TreeList } from "@frontend/components/landing/TreeList.tsx";
+import type { SheetState } from "@frontend/components/landing/TreeList.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useEffect } from "react";
@@ -13,20 +14,21 @@ import { useEffect } from "react";
 export function validateSearch(search: Record<string, unknown>): {
   record?: string;
   view: "planting" | "pruning";
-  expanded: boolean;
+  sheet: SheetState;
 } {
   const record = search["record"];
   const rawView = search["view"];
-  const rawExpanded = search["expanded"];
+  const rawSheet = search["sheet"];
 
   const view: "planting" | "pruning" =
     rawView === "planting" || rawView === "pruning" ? rawView : "planting";
-  const expanded = rawExpanded === true ? true : false;
+  const sheet: SheetState =
+    rawSheet === "collapsed" || rawSheet === "expanded" ? rawSheet : "partial";
 
   return {
     ...(typeof record === "string" && record.length > 0 ? { record } : {}),
     view,
-    expanded,
+    sheet,
   };
 }
 
@@ -48,7 +50,7 @@ export const Route = createFileRoute("/")({
 /** Loads map records and composes the map with its overlay controls. */
 function Home() {
   const navigate = useNavigate();
-  const { record, view, expanded } = Route.useSearch();
+  const { record, view, sheet } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
 
   const selectedMarker = findSelectedMarker(markersQuery.data ?? [], record);
@@ -59,7 +61,7 @@ function Home() {
       to: "/",
       search: (prev) => ({
         view: prev.view ?? "planting",
-        expanded: prev.expanded ?? false,
+        sheet: prev.sheet ?? "partial",
         ...(prev.record !== undefined ? { record: prev.record } : {}),
         record: id,
       }),
@@ -72,19 +74,19 @@ function Home() {
       to: "/",
       search: (prev) => ({
         view: newView,
-        expanded: prev.expanded ?? false,
+        sheet: prev.sheet ?? "partial",
         ...(prev.record !== undefined ? { record: prev.record } : {}),
       }),
     });
   }
 
-  /** Updates the expanded param while preserving other params. */
-  function handleExpandedChange(newExpanded: boolean) {
+  /** Updates the sheet state param while preserving other params. */
+  function handleSheetChange(newSheet: SheetState) {
     void navigate({
       to: "/",
       search: (prev) => ({
         view: prev.view ?? "planting",
-        expanded: newExpanded,
+        sheet: newSheet,
         ...(prev.record !== undefined ? { record: prev.record } : {}),
       }),
     });
@@ -92,7 +94,7 @@ function Home() {
 
   return (
     <main className="h-screen flex flex-col">
-      {!expanded && (
+      {sheet !== "expanded" && (
         <div className="flex-1 min-h-0">
           <MapView
             markers={markersQuery.data ?? []}
@@ -111,9 +113,9 @@ function Home() {
         isError={markersQuery.isError}
         selectedId={selectedMarker?.id}
         view={view}
-        expanded={expanded}
+        sheet={sheet}
         onViewChange={handleViewChange}
-        onExpandedChange={handleExpandedChange}
+        onSheetChange={handleSheetChange}
       />
     </main>
   );

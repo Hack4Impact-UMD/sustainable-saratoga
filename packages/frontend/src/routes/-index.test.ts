@@ -90,18 +90,28 @@ describe("validateSearch view param", () => {
   });
 });
 
-describe("validateSearch expanded param", () => {
-  it("defaults expanded to false when absent", () => {
-    expect(validateSearch({})).toMatchObject({ expanded: false });
+describe("validateSearch sheet param", () => {
+  it("defaults sheet to 'partial' when absent", () => {
+    expect(validateSearch({})).toMatchObject({ sheet: "partial" });
   });
-  it("accepts true", () => {
-    expect(validateSearch({ expanded: true })).toMatchObject({
-      expanded: true,
+  it("accepts 'collapsed'", () => {
+    expect(validateSearch({ sheet: "collapsed" })).toMatchObject({
+      sheet: "collapsed",
     });
   });
-  it("defaults to false for non-boolean values", () => {
-    expect(validateSearch({ expanded: "yes" })).toMatchObject({
-      expanded: false,
+  it("accepts 'expanded'", () => {
+    expect(validateSearch({ sheet: "expanded" })).toMatchObject({
+      sheet: "expanded",
+    });
+  });
+  it("defaults to 'partial' for 'partial' value", () => {
+    expect(validateSearch({ sheet: "partial" })).toMatchObject({
+      sheet: "partial",
+    });
+  });
+  it("defaults to 'partial' for invalid values", () => {
+    expect(validateSearch({ sheet: "open" })).toMatchObject({
+      sheet: "partial",
     });
   });
 });

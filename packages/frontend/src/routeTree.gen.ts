@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RecordsRecordIdRouteImport } from './routes/records/$recordId'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as NoAccessRouteImport } from './routes/no-access'
@@ -18,17 +17,13 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
+import { Route as RecordsRecordIdRouteImport } from './routes/records/$recordId'
 import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecordsRecordIdRoute = RecordsRecordIdRouteImport.update({
-  id: '/records/$recordId',
-  path: '/records/$recordId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -64,6 +59,11 @@ const GuestSignupRoute = GuestSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const RecordsRecordIdRoute = RecordsRecordIdRouteImport.update({
+  id: '/records/$recordId',
+  path: '/records/$recordId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuestLoginCheckMailRoute = GuestLoginCheckMailRouteImport.update({
   id: '/check-mail',
   path: '/check-mail',
@@ -83,9 +83,9 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
+  '/records/$recordId': typeof RecordsRecordIdRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/records/$recordId': typeof RecordsRecordIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,9 +94,9 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
+  '/records/$recordId': typeof RecordsRecordIdRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/records/$recordId': typeof RecordsRecordIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,9 +108,9 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_guest/login': typeof GuestLoginRouteWithChildren
   '/_guest/signup': typeof GuestSignupRoute
+  '/records/$recordId': typeof RecordsRecordIdRoute
   '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
-  '/records/$recordId': typeof RecordsRecordIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,9 +121,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/signup'
+    | '/records/$recordId'
     | '/login/check-mail'
     | '/login/forgot-password'
-    | '/records/$recordId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,9 +132,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/signup'
+    | '/records/$recordId'
     | '/login/check-mail'
     | '/login/forgot-password'
-    | '/records/$recordId'
   id:
     | '__root__'
     | '/'
@@ -145,9 +145,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_guest/login'
     | '/_guest/signup'
+    | '/records/$recordId'
     | '/_guest/login/check-mail'
     | '/_guest/login/forgot-password'
-    | '/records/$recordId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -217,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestSignupRouteImport
       parentRoute: typeof GuestRouteRoute
     }
+    '/records/$recordId': {
+      id: '/records/$recordId'
+      path: '/records/$recordId'
+      fullPath: '/records/$recordId'
+      preLoaderRoute: typeof RecordsRecordIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_guest/login/check-mail': {
       id: '/_guest/login/check-mail'
       path: '/check-mail'
@@ -230,13 +237,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/login/forgot-password'
       preLoaderRoute: typeof GuestLoginForgotPasswordRouteImport
       parentRoute: typeof GuestLoginRoute
-    }
-    '/records/$recordId': {
-      id: '/records/$recordId'
-      path: '/records/$recordId'
-      fullPath: '/records/$recordId'
-      preLoaderRoute: typeof RecordsRecordIdRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }

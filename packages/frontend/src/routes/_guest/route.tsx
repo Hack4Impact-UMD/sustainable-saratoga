@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_guest")({
     if (context.auth.isAuthed) {
       throw redirect({
         to: "/",
-        search: { view: "planting", expanded: false },
+        search: { view: "planting", sheet: "partial" as const },
       });
     }
   },

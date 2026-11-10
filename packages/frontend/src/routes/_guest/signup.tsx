@@ -43,7 +43,7 @@ function SignUpPage() {
       onSuccess={() =>
         void navigate({
           to: "/",
-          search: { view: "planting", expanded: false },
+          search: { view: "planting", sheet: "partial" as const },
         })
       }
       onAccountExists={() => setAccountExists(true)}

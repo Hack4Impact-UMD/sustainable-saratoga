@@ -11,6 +11,17 @@ const statusLabels: Record<MapMarker["status"], string> = {
   planted: "Planted",
 };
 
+/**
+ * Formats a kebab-case or slug ID into a proper name.
+ * "dana-ruiz" → "Dana Ruiz"
+ */
+function formatName(raw: string): string {
+  return raw
+    .split(/[-_]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 interface TreeRowProps {
   marker: MapMarker;
   selectedId?: string;
@@ -31,16 +42,21 @@ export function TreeRow({ marker, selectedId }: TreeRowProps) {
     <button
       type="button"
       onClick={handleClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left ${isSelected ? "bg-success-tint" : ""}`}
+      className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-hover${isSelected ? " bg-hover" : ""}`}
     >
       <StatusMarker status={marker.status} size={24} selected={isSelected} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="type-body-strong truncate">{treeLabel(marker)}</span>
-        <span className="type-body-sm text-secondary truncate">
-          {statusLabels[marker.status]} · {marker.issuedBy}
+        {/* Address label — 17px/24px medium sans (type-h3) */}
+        <span className="type-h3 truncate text-heading">
+          {treeLabel(marker)}
+        </span>
+        {/* Status · Name — 16px/22px regular sans, muted (type-supporting) */}
+        <span className="type-supporting truncate">
+          {statusLabels[marker.status]} · {formatName(marker.issuedBy)}
         </span>
       </div>
-      <ChevronRight size={20} className="text-secondary shrink-0" />
+      {/* Chevron — black */}
+      <ChevronRight size={20} className="shrink-0 text-heading" />
     </button>
   );
 }
