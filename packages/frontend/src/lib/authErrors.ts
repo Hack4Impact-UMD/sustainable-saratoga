@@ -90,6 +90,16 @@ export function authErrorMessage(
     return OFFLINE;
   }
 
+  // An admin removed this account, which disables it in Firebase
+  if (code === "auth/user-disabled") {
+    return {
+      variant: "error",
+      title: "This account no longer has access",
+      message: "Contact your administrator if you think this is a mistake.",
+      canRetry: false,
+    };
+  }
+
   if (method === "google") {
     return GOOGLE_FAILED;
   }

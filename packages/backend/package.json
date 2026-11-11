@@ -8,7 +8,8 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs && concurrently --names bundle,emulators --prefix-colors blue,yellow \"node scripts/build.mjs --watch\" \"pnpm -w run emulators\"",
+    "dev": "node scripts/build.mjs && concurrently --names bundle,emulators,seed --prefix-colors blue,yellow,green \"node scripts/build.mjs --watch\" \"pnpm -w run emulators\" \"node scripts/seed.mjs --wait\"",
+    "seed": "node scripts/seed.mjs",
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit -p ."
   },
