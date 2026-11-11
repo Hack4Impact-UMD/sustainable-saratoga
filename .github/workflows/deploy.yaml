@@ -9,9 +9,12 @@ env:
   GOOGLE_APPLICATION_CREDENTIALS: /tmp/credentials.json
 
 jobs:
+  # Both jobs use the `production` environment: its secrets/vars are only
+  # readable from jobs that name it, and its branch rule limits them to main.
   check-config:
     name: Check deploy secrets/vars
     runs-on: ubuntu-latest
+    environment: production
     outputs:
       ready: ${{ steps.check.outputs.ready }}
     steps:
@@ -42,6 +45,7 @@ jobs:
     needs: check-config
     if: needs.check-config.outputs.ready == 'true'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
