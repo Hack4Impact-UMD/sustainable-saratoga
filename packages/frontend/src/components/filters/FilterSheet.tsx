@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { TreeStatus } from "@repo/common";
 import { cn } from "cn";
 import { Button } from "@frontend/components/ui/button.tsx";
@@ -8,8 +8,6 @@ import { Checkbox } from "@frontend/components/ui/checkbox.tsx";
 import {
   Sheet,
   SheetContent,
-  SheetFooter,
-  SheetHeader,
   SheetTitle,
 } from "@frontend/components/ui/sheet.tsx";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
@@ -37,7 +35,12 @@ type FilterSheetProps = {
   onApply: (next: Filters) => void;
 };
 
-export function FilterSheet({ open, onClose, applied, onApply }: FilterSheetProps) {
+export function FilterSheet({
+  open,
+  onClose,
+  applied,
+  onApply,
+}: FilterSheetProps) {
   return (
     <Sheet
       open={open}
@@ -45,13 +48,18 @@ export function FilterSheet({ open, onClose, applied, onApply }: FilterSheetProp
         if (!isOpen) onClose();
       }}
     >
+      {/* The ! overrides beat the sheet's default auto height, gap and rounded top. */}
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="max-h-[90dvh] gap-0 p-0"
+        className="!h-dvh !max-h-dvh !gap-0 !rounded-none p-0"
       >
         {/* Unmounts when the sheet closes, so the draft resets on every open. */}
-        <FilterSheetBody applied={applied} onClose={onClose} onApply={onApply} />
+        <FilterSheetBody
+          applied={applied}
+          onClose={onClose}
+          onApply={onApply}
+        />
       </SheetContent>
     </Sheet>
   );
@@ -63,9 +71,12 @@ function FilterSheetBody({
   onApply,
 }: Omit<FilterSheetProps, "open">) {
   const [draft, setDraft] = useState<Filters>(applied);
+  const [statusOpen, setStatusOpen] = useState(true);
 
   // Count for the button = the same server query the map will run.
-  const draftQuery = useQuery(trpc.map.markers.queryOptions(toMarkerQueryInput(draft)));
+  const draftQuery = useQuery(
+    trpc.map.markers.queryOptions(toMarkerQueryInput(draft)),
+  );
   // Unfiltered list, only used to know which years exist.
   const allQuery = useQuery(trpc.map.markers.queryOptions({}));
   const availableYears = [
@@ -78,8 +89,7 @@ function FilterSheetBody({
   const isDefault = allYears && allStatuses;
 
   // The server treats an empty status list as "no filter", so handle it here.
-  // TODO: also apply matchesSearch(marker, draft.q) once lib/search.ts exists,
-  // so the count matches what the list shows when search text is present.
+  // TODO: also apply matchesSearch(marker, draft.q) once lib/search.ts exists.
   const count = noStatuses ? 0 : draftQuery.data?.length;
 
   function toggleYear(year: number) {
@@ -107,21 +117,31 @@ function FilterSheetBody({
 
   return (
     <>
-      <SheetHeader className="flex-row items-center justify-between px-margin py-4">
+      {/* Header: 64px, bottom divider. Right padding is 8px because the
+          Close button has its own 44px hit area. */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-divider bg-surface pr-2 pl-margin">
         <SheetTitle className="[font:var(--type-h2)]">Filters</SheetTitle>
-        <Button variant="ghost" onClick={onClose}>
-          <X aria-hidden /> Close
+        <Button
+          variant="ghost"
+          className="!h-touch gap-2 px-3"
+          onClick={onClose}
+        >
+          <X aria-hidden className="size-5" />
+          Close
         </Button>
-      </SheetHeader>
+      </header>
 
       {/* Only this part scrolls; the footer stays pinned. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-surface">
         <section>
           <SectionHeader
             title="Year"
             summary={allYears ? "All years" : `${draft.years.length} selected`}
+            onClear={
+              allYears ? undefined : () => setDraft((d) => ({ ...d, years: [] }))
+            }
           />
-          <div className="flex flex-wrap gap-2 px-margin py-4">
+          <div className="flex flex-wrap items-start gap-2 px-margin py-4">
             <YearChip
               selected={allYears}
               onClick={() => setDraft((d) => ({ ...d, years: [] }))}
@@ -143,39 +163,54 @@ function FilterSheetBody({
         <section>
           <SectionHeader
             title="Status"
-            summary={allStatuses ? "All statuses" : `${draft.statuses.length} selected`}
+            summary={
+              allStatuses ? "All statuses" : `${draft.statuses.length} selected`
+            }
             onClear={
               allStatuses
                 ? undefined
                 : () => setDraft((d) => ({ ...d, statuses: [...STATUSES] }))
             }
+            expanded={statusOpen}
+            onToggle={() => setStatusOpen((o) => !o)}
+            controlsId="status-list"
           />
-          <div className="flex flex-col gap-2 px-margin py-4">
-            <StatusRow
-              label="Select all"
-              strong
-              checked={allStatuses}
-              indeterminate={!allStatuses && !noStatuses}
-              onChange={(checked) =>
-                setDraft((d) => ({ ...d, statuses: checked ? [...STATUSES] : [] }))
-              }
-            />
-            {STATUSES.map((status) => (
+          {statusOpen && (
+            <div
+              id="status-list"
+              className="flex flex-col gap-1 px-margin py-4"
+            >
               <StatusRow
-                key={status}
-                label={STATUS_LABEL[status]}
-                icon={<StatusMarker status={status} size={24} />}
-                checked={draft.statuses.includes(status)}
-                onChange={() => toggleStatus(status)}
+                label="Select all"
+                strong
+                checked={allStatuses}
+                indeterminate={!allStatuses && !noStatuses}
+                onChange={(checked) =>
+                  setDraft((d) => ({
+                    ...d,
+                    statuses: checked ? [...STATUSES] : [],
+                  }))
+                }
               />
-            ))}
-          </div>
+              {STATUSES.map((status) => (
+                <StatusRow
+                  key={status}
+                  label={STATUS_LABEL[status]}
+                  icon={<StatusMarker status={status} size={24} />}
+                  checked={draft.statuses.includes(status)}
+                  onChange={() => toggleStatus(status)}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
-      <SheetFooter className="flex-row gap-3 border-t border-divider bg-surface px-margin py-4">
+      {/* Footer: top divider, 12/16 padding plus the phone's bottom safe area. */}
+      <footer className="flex shrink-0 items-center gap-3 border-t border-divider bg-surface px-margin pt-3 pb-[calc(var(--space-3)+env(safe-area-inset-bottom,0px))]">
         <Button
-          variant="outline"
+          variant="secondary"
+          className="!h-control px-6"
           disabled={isDefault}
           onClick={() =>
             setDraft((d) => ({ ...d, years: [], statuses: [...STATUSES] }))
@@ -183,10 +218,14 @@ function FilterSheetBody({
         >
           Reset
         </Button>
-        <Button className="flex-1" disabled={noStatuses} onClick={confirm}>
+        <Button
+          className="!h-control flex-1"
+          disabled={noStatuses}
+          onClick={confirm}
+        >
           Show {count ?? "…"} {count === 1 ? "record" : "records"}
         </Button>
-      </SheetFooter>
+      </footer>
     </>
   );
 }
@@ -195,22 +234,44 @@ function SectionHeader({
   title,
   summary,
   onClear,
+  expanded,
+  onToggle,
+  controlsId,
 }: {
   title: string;
   summary: string;
   onClear?: () => void;
+  expanded?: boolean;
+  onToggle?: () => void;
+  controlsId?: string;
 }) {
   return (
-    <div className="flex items-center justify-between bg-pressed px-margin py-3">
+    <div className="flex min-h-control items-center justify-between gap-3 bg-pressed px-margin py-2">
       <h3 className="type-h4">{title}</h3>
-      <span className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <span className="type-caption">{summary}</span>
         {onClear && (
           <button type="button" className="type-link" onClick={onClear}>
             Clear
           </button>
         )}
-      </span>
+        {onToggle && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={controlsId}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${title}`}
+            onClick={onToggle}
+            className="-mr-2 grid size-touch place-items-center text-icon-primary"
+          >
+            {expanded ? (
+              <ChevronUp aria-hidden className="size-5" />
+            ) : (
+              <ChevronDown aria-hidden className="size-5" />
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -230,10 +291,10 @@ function YearChip({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "type-chip flex min-h-touch items-center gap-2 rounded-pill border px-4",
+        "type-chip flex h-10 items-center gap-2 rounded-pill",
         selected
-          ? "border-primary bg-selected text-primary"
-          : "border-line bg-surface",
+          ? "border-2 border-primary bg-selected pr-4 pl-3 text-primary"
+          : "border border-line bg-surface px-4",
       )}
     >
       {selected && <Check aria-hidden className="size-4" />}
@@ -260,7 +321,7 @@ function StatusRow({
   return (
     <label
       className={cn(
-        "flex min-h-touch cursor-pointer items-center gap-3 rounded-sm px-3",
+        "flex h-control w-full cursor-pointer items-center gap-3 rounded-[4px] border-b border-divider px-4 py-3",
         checked && "bg-selected",
       )}
     >
