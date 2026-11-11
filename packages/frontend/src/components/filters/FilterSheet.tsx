@@ -13,11 +13,11 @@ import {
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
 import {
-  type Filters,
   STATUSES,
   allStatusesSelected,
   toMarkerQueryInput,
 } from "@frontend/lib/filters.ts";
+import type { Filters } from "@frontend/lib/filters.ts";
 
 const STATUS_LABEL: Record<TreeStatus, string> = {
   requested: "Requested",
@@ -48,11 +48,11 @@ export function FilterSheet({
         if (!isOpen) onClose();
       }}
     >
-      {/* The ! overrides beat the sheet's default auto height, gap and rounded top. */}
+      {/* Full screen: replaces the bottom sheet's auto height, gap and rounded top. */}
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="!h-dvh !max-h-dvh !gap-0 !rounded-none p-0"
+        className="max-h-dvh gap-0 p-0 data-[side=bottom]:h-dvh data-[side=bottom]:rounded-none"
       >
         {/* Unmounts when the sheet closes, so the draft resets on every open. */}
         <FilterSheetBody
@@ -123,7 +123,7 @@ function FilterSheetBody({
         <SheetTitle className="[font:var(--type-h2)]">Filters</SheetTitle>
         <Button
           variant="ghost"
-          className="!h-touch gap-2 px-3"
+          className="h-touch gap-2 px-3"
           onClick={onClose}
         >
           <X aria-hidden className="size-5" />
@@ -138,7 +138,9 @@ function FilterSheetBody({
             title="Year"
             summary={allYears ? "All years" : `${draft.years.length} selected`}
             onClear={
-              allYears ? undefined : () => setDraft((d) => ({ ...d, years: [] }))
+              allYears
+                ? undefined
+                : () => setDraft((d) => ({ ...d, years: [] }))
             }
           />
           <div className="flex flex-wrap items-start gap-2 px-margin py-4">
@@ -210,7 +212,7 @@ function FilterSheetBody({
       <footer className="flex shrink-0 items-center gap-3 border-t border-divider bg-surface px-margin pt-3 pb-[calc(var(--space-3)+env(safe-area-inset-bottom,0px))]">
         <Button
           variant="secondary"
-          className="!h-control px-6"
+          className="h-control px-6"
           disabled={isDefault}
           onClick={() =>
             setDraft((d) => ({ ...d, years: [], statuses: [...STATUSES] }))
@@ -219,7 +221,7 @@ function FilterSheetBody({
           Reset
         </Button>
         <Button
-          className="!h-control flex-1"
+          className="h-control flex-1"
           disabled={noStatuses}
           onClick={confirm}
         >
@@ -321,7 +323,7 @@ function StatusRow({
   return (
     <label
       className={cn(
-        "flex h-control w-full cursor-pointer items-center gap-3 rounded-[4px] border-b border-divider px-4 py-3",
+        "flex h-control w-full cursor-pointer items-center gap-3 rounded-sm border-b border-divider px-4 py-3",
         checked && "bg-selected",
       )}
     >

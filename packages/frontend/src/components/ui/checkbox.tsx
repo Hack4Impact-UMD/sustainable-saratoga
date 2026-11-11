@@ -21,7 +21,11 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current [&>svg]:size-4"
       >
-        {props.indeterminate ? <MinusIcon aria-hidden /> : <CheckIcon aria-hidden />}
+        {props.indeterminate ? (
+          <MinusIcon aria-hidden />
+        ) : (
+          <CheckIcon aria-hidden />
+        )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );
