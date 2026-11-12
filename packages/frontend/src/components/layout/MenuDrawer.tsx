@@ -4,10 +4,11 @@ import {
   Map,
   PanelLeftClose,
   Settings,
-  SlidersHorizontal,
+  Settings2,
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import {
@@ -31,8 +32,11 @@ export function MenuDrawer({
   signOutPending,
 }: MenuDrawerProps) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const { data, isError } = useQuery(trpc.users.me.queryOptions());
   const profile = data?.profile;
+  const recordsSelected = pathname === "/" || pathname.startsWith("/records/");
+  const peopleSelected = pathname === "/people";
   const fullName = profile
     ? `${profile.firstName} ${profile.lastName}`
     : user?.displayName || user?.email?.split("@")[0] || "Account";
@@ -100,13 +104,17 @@ export function MenuDrawer({
           />
         </header>
 
-        <nav aria-label="Main menu" className="flex-1 space-y-4 p-3">
+        <nav aria-label="Main menu" className="flex-1 pt-4 px-3 pb-2">
           <button
             type="button"
-            aria-current="page"
-            className="type-body-sm flex h-11 w-full items-center gap-3 rounded-md bg-selected px-4 text-left text-primary font-bold"
+            aria-current={recordsSelected ? "page" : undefined}
+            className={`flex h-12 w-full items-center gap-3 rounded-md p-4 ${
+              recordsSelected
+                ? "type-btn-primary bg-selected text-primary"
+                : "type-btn-secondary text-body hover:bg-hover"
+            }`}
           >
-            <Map aria-hidden="true" className="size-5 shrink-0" />
+            <Map aria-hidden="true" className="size-6 shrink-0" />
             Records
           </button>
 
@@ -114,27 +122,32 @@ export function MenuDrawer({
             <section aria-labelledby="administration-heading">
               <h2
                 id="administration-heading"
-                className="type-body-sm px-3 pb-2 font-bold tracking-wide text-body-muted"
+                className="px-4 pt-4 pb-1 font-bold text-[13px] leading-4.5 tracking-[0.04875rem] text-body-muted"
               >
-                Administration
+                ADMINISTRATION
               </h2>
               <div className="space-y-1">
-                <button
-                  type="button"
-                  disabled // Disable the button for now, as the feature is not implemented yet
-                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
+                <Link
+                  to="/people"
+                  onClick={onClose}
+                  aria-current={peopleSelected ? "page" : undefined}
+                  className={`flex h-12 w-full items-center gap-3 rounded-md p-4 ${
+                    peopleSelected
+                      ? "type-btn-primary bg-selected text-primary"
+                      : "type-btn-secondary text-body hover:bg-hover"
+                  }`}
                 >
-                  <UsersRound aria-hidden="true" className="size-5 shrink-0" />
+                  <UsersRound aria-hidden="true" className="size-6 shrink-0" />
                   People &amp; invitations
-                </button>
+                </Link>
                 <button
                   type="button"
                   disabled // Disable the button for now, as the feature is not implemented yet
-                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
+                  className="type-btn-secondary flex h-12 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
                 >
-                  <SlidersHorizontal
+                  <Settings2
                     aria-hidden="true"
-                    className="size-5 shrink-0"
+                    className="size-6 shrink-0"
                   />
                   Manage fields
                 </button>

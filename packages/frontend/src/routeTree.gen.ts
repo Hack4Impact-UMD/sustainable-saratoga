@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 import { Route as AuthenticatedRecordsRecordIdRouteImport } from './routes/_authenticated/records/$recordId'
@@ -42,6 +43,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const GuestLoginRoute = GuestLoginRouteImport.update({
   id: '/login',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/people': typeof AuthenticatedPeopleRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
   '/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/people': typeof AuthenticatedPeopleRoute
   '/login': typeof GuestLoginRouteWithChildren
   '/signup': typeof GuestSignupRoute
   '/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/_guest': typeof GuestRouteRouteWithChildren
   '/no-access': typeof NoAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_guest/login': typeof GuestLoginRouteWithChildren
   '/_guest/signup': typeof GuestSignupRoute
   '/_authenticated/records/$recordId': typeof AuthenticatedRecordsRecordIdRoute
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/'
     | '/no-access'
     | '/reset-password'
+    | '/people'
     | '/login'
     | '/signup'
     | '/records/$recordId'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/no-access'
     | '/reset-password'
+    | '/people'
     | '/login'
     | '/signup'
     | '/records/$recordId'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/_guest'
     | '/no-access'
     | '/reset-password'
+    | '/_authenticated/people'
     | '/_guest/login'
     | '/_guest/signup'
     | '/_authenticated/records/$recordId'
@@ -184,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/people': {
+      id: '/_authenticated/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AuthenticatedPeopleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_guest/login': {
       id: '/_guest/login'
       path: '/login'
@@ -223,10 +242,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedRecordsRecordIdRoute: typeof AuthenticatedRecordsRecordIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedRecordsRecordIdRoute: AuthenticatedRecordsRecordIdRoute,
 }
 
