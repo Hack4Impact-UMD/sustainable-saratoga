@@ -1,12 +1,15 @@
 import type { MapMarker as MapMarkerData } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { FilterSheet } from "@frontend/components/filters/FilterSheet.tsx";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
-import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
+import { SearchBar } from "@frontend/components/search/SearchBar.tsx";
+import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { DEFAULT_FILTERS, countActiveFilters } from "@frontend/lib/filters.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
-import { useEffect } from "react";
 
 /** Keeps only a non-empty record ID from the root route's search params. */
 export function validateSearch(search: Record<string, unknown>): {
@@ -36,6 +39,10 @@ function Home() {
   const navigate = useNavigate();
   const { record } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  // Local stand-in until search and filters are wired to the map and the URL.
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   if (markersQuery.isPending) {
     return <output>Loading map...</output>;
@@ -57,7 +64,7 @@ function Home() {
   }
 
   return (
-    <main className="h-screen">
+    <main className="relative h-screen">
       <MapView
         markers={markersQuery.data}
         selectedId={selectedMarker?.id}
@@ -67,6 +74,22 @@ function Home() {
         <RecordCamera marker={selectedMarker} />
         <MapOverlays />
       </MapView>
+
+      <div className="absolute top-4 right-4 left-20 z-50">
+        <SearchBar
+          query={query}
+          activeFilterCount={countActiveFilters(filters)}
+          onQueryChange={setQuery}
+          onFilterClick={() => setIsFilterOpen(true)}
+        />
+      </div>
+
+      <FilterSheet
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        applied={filters}
+        onApply={setFilters}
+      />
     </main>
   );
 }
