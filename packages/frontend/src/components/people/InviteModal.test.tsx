@@ -105,6 +105,81 @@ describe("InviteModal email chips", () => {
     ).toBeDisabled();
   });
 
+  it("only enables Admin when every chip is a valid organization email", () => {
+    const input = openInviteDialog();
+    const roleSelect = screen.getByRole("combobox", { name: "Role" });
+    const expectAdminDisabled = (disabled: boolean) => {
+      fireEvent.click(roleSelect);
+      const adminOption = screen.getByRole("option", { name: /^Admin/ });
+      expect(adminOption.getAttribute("aria-disabled")).toBe(
+        disabled ? "true" : null,
+      );
+      fireEvent.keyDown(roleSelect, { key: "Escape" });
+    };
+
+    expectAdminDisabled(true);
+
+    fireEvent.change(input, {
+      target: { value: "person@example.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expectAdminDisabled(true);
+
+    fireEvent.change(input, {
+      target: { value: "person@sustainablesaratoga.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expectAdminDisabled(true);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove person@example.org",
+      }),
+    );
+    expectAdminDisabled(false);
+  });
+
+  it("locks the dialog controls and shows a busy state while sending", () => {
+    const input = openInviteDialog();
+    fireEvent.change(input, {
+      target: { value: "person@example.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    const sendButton = screen.getByRole("button", { name: "Send 1 invite" });
+    sendButton.focus();
+    fireEvent.click(sendButton);
+
+    const sendingButton = screen.getByRole("button", { name: "Sending..." });
+    expect(sendingButton).toHaveAttribute("aria-disabled", "true");
+    expect(sendingButton).toHaveAttribute("aria-busy", "true");
+    expect(sendingButton).toHaveClass("bg-primary-pressed");
+    expect(sendingButton).toHaveFocus();
+    expect(
+      screen.getByRole("status", { name: "Sending invitations" }),
+    ).toBeInTheDocument();
+    expect(input).toBeDisabled();
+    expect(input).toHaveClass("disabled:text-disabled");
+    expect(input.parentElement).toHaveClass("bg-disabled-fill");
+    expect(screen.getByText("Email addresses")).toHaveClass("text-disabled");
+    const roleSelect = screen.getByRole("combobox", { name: "Role" });
+    expect(roleSelect).toBeDisabled();
+    expect(roleSelect).toHaveClass("!bg-disabled-fill", "!text-disabled");
+    expect(screen.getByText("Role")).toHaveClass("text-disabled");
+    expect(
+      screen.getByRole("button", { name: "Remove person@example.org" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Close invite members dialog" }),
+    ).toBeDisabled();
+    expect(
+      document.querySelector('button[aria-haspopup="dialog"]'),
+    ).toBeDisabled();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
   it("removes chips with their button or Backspace", () => {
     const input = openInviteDialog();
 

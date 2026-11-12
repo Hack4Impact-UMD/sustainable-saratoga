@@ -14,6 +14,7 @@ import {
 } from "@frontend/components/ui/dialog.tsx";
 import { Input } from "@frontend/components/ui/input.tsx";
 import { Label } from "@frontend/components/ui/label.tsx";
+import { Spinner } from "@frontend/components/ui/spinner.tsx";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,17 @@ type InviteEmail = {
 };
 
 const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function canInviteAsAdmin(emails: InviteEmail[]) {
+  return (
+    emails.length > 0 &&
+    emails.every(
+      ({ address }) =>
+        emailAddressPattern.test(address) &&
+        address.toLowerCase().endsWith("@sustainablesaratoga.org"),
+    )
+  );
+}
 
 function getEmailIssueCopy(issue: EmailIssue, email: string) {
   switch (issue) {
@@ -69,39 +81,49 @@ export function InviteModal() {
   const emailDescriptionId = useId();
   const [emails, setEmails] = useState<InviteEmail[]>([]);
   const [emailDraft, setEmailDraft] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"Volunteer" | "Admin">(
     "Volunteer",
   );
   const canSendInvites =
     emails.length > 0 &&
     emails.every(({ address }) => emailAddressPattern.test(address));
+  const canSelectAdmin = canInviteAsAdmin(emails);
+  const activeRole =
+    selectedRole === "Admin" && canSelectAdmin ? selectedRole : "Volunteer";
   const sendInviteLabel = `Send ${emails.length} ${
-    selectedRole === "Admin" ? "Admin " : ""
+    activeRole === "Admin" ? "Admin " : ""
   }invite${emails.length === 1 ? "" : "s"}`;
 
+  function updateEmails(nextEmails: InviteEmail[]) {
+    setEmails(nextEmails);
+    if (!canInviteAsAdmin(nextEmails)) {
+      setSelectedRole("Volunteer");
+    }
+  }
+
   function addEmails(values: string[]) {
-    setEmails((currentEmails) => {
-      const knownEmails = new Set(
-        currentEmails.map(({ address }) => address.toLowerCase()),
-      );
-      const newEmails = values
-        .map((email) => email.trim())
-        .flatMap((address) => {
-          const normalizedEmail = address.toLowerCase();
-          if (!address || knownEmails.has(normalizedEmail)) return [];
-          knownEmails.add(normalizedEmail);
+    const knownEmails = new Set(
+      emails.map(({ address }) => address.toLowerCase()),
+    );
+    const newEmails = values
+      .map((email) => email.trim())
+      .flatMap((address) => {
+        const normalizedEmail = address.toLowerCase();
+        if (!address || knownEmails.has(normalizedEmail)) return [];
+        knownEmails.add(normalizedEmail);
 
-          // TODO: Populate member/invitation status issues after invite API integration.
-          const issue = emailAddressPattern.test(address)
-            ? undefined
-            : "invalid-format";
-          const chip: InviteEmail = { address };
-          if (issue) chip.issue = issue;
-          return [chip];
-        });
+        // TODO: Populate member/invitation status issues after invite API integration.
+        const issue = emailAddressPattern.test(address)
+          ? undefined
+          : "invalid-format";
+        const chip: InviteEmail = { address };
+        if (issue) chip.issue = issue;
+        return [chip];
+      });
 
-      return [...currentEmails, ...newEmails];
-    });
+    updateEmails([...emails, ...newEmails]);
   }
 
   function commitEmailText(value: string) {
@@ -111,11 +133,17 @@ export function InviteModal() {
 
   return (
     <div className="flex justify-end">
-      <Dialog>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!isSending) setIsOpen(open);
+        }}
+      >
         <DialogTrigger
           render={
             <Button
               variant="secondary"
+              disabled={isSending}
               className="h-touch gap-2 rounded-pill px-4"
             />
           }
@@ -134,6 +162,7 @@ export function InviteModal() {
                 <Button
                   variant="ghost"
                   aria-label="Close invite members dialog"
+                  disabled={isSending}
                   className="size-touch shrink-0"
                 />
               }
@@ -146,19 +175,25 @@ export function InviteModal() {
             <div className="flex flex-col gap-2">
               <Label
                 htmlFor="invite-emails"
-                className="type-body-strong font-bold"
+                className={`type-body-strong font-bold ${
+                  isSending ? "text-disabled" : ""
+                }`}
               >
                 Email addresses
               </Label>
-              <div className="flex max-h-[180px] min-h-16 flex-wrap items-center gap-2 overflow-y-auto overscroll-contain rounded-input border border-line-strong bg-surface px-3 py-2 focus-within:border-focus focus-within:ring-3 focus-within:ring-ring/50">
+              <div
+                className={`flex max-h-[180px] min-h-16 flex-wrap items-center gap-2 overflow-y-auto overscroll-contain rounded-input border border-line-strong px-3 py-2 focus-within:border-focus focus-within:ring-3 focus-within:ring-ring/50 ${
+                  isSending ? "bg-disabled-fill" : "bg-surface"
+                }`}
+              >
                 {emails.map(({ address, issue }) => {
                   const tooltipId = `${emailDescriptionId}-${encodeURIComponent(address)}`;
                   const issueCopy = issue
                     ? getEmailIssueCopy(issue, address)
                     : undefined;
                   const removeEmail = () =>
-                    setEmails((currentEmails) =>
-                      currentEmails.filter(
+                    updateEmails(
+                      emails.filter(
                         (currentEmail) =>
                           currentEmail.address.toLowerCase() !==
                           address.toLowerCase(),
@@ -169,9 +204,11 @@ export function InviteModal() {
                     <Badge
                       key={address.toLowerCase()}
                       className={`h-auto min-h-touch max-w-full gap-1 rounded-pill py-0 pl-4 text-body ${
-                        issue
-                          ? "border-[1.5px] border-[--error] bg-error-tint text-error"
-                          : "border-line bg-pressed"
+                        isSending
+                          ? "border-line bg-pressed opacity-50"
+                          : issue
+                            ? "border-[1.5px] border-[--error] bg-error-tint text-error"
+                            : "border-line bg-pressed"
                       }`}
                     >
                       {issueCopy ? (
@@ -181,6 +218,7 @@ export function InviteModal() {
                             render={
                               <button
                                 type="button"
+                                disabled={isSending}
                                 aria-describedby={tooltipId}
                                 aria-label={`Invalid email address: ${address}`}
                                 className="flex min-w-0 items-center gap-2 rounded-pill bg-transparent p-0 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -218,6 +256,7 @@ export function InviteModal() {
                         type="button"
                         variant="ghost"
                         aria-label={`Remove ${address}`}
+                        disabled={isSending}
                         className="size-touch shrink-0 rounded-full"
                         onClick={removeEmail}
                       >
@@ -234,9 +273,14 @@ export function InviteModal() {
                   type="text"
                   autoComplete="email"
                   aria-label="Email addresses"
-                  placeholder="name@example.org, ..."
+                  disabled={isSending}
+                  placeholder={
+                    emails.length === 0 && !emailDraft
+                      ? "name@example.org, ..."
+                      : undefined
+                  }
                   value={emailDraft}
-                  className="h-10 min-w-32 flex-1 border-0 bg-transparent px-1 py-0 type-body text-primary placeholder:text-body-muted focus-visible:border-0 focus-visible:ring-0"
+                  className="h-10 min-w-32 flex-1 border-0 bg-transparent px-1 py-0 type-body text-primary placeholder:text-body-muted focus-visible:border-0 focus-visible:ring-0 disabled:text-disabled disabled:opacity-100"
                   onChange={(event) => setEmailDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (
@@ -251,7 +295,7 @@ export function InviteModal() {
                       !emailDraft &&
                       emails.length > 0
                     ) {
-                      setEmails((currentEmails) => currentEmails.slice(0, -1));
+                      updateEmails(emails.slice(0, -1));
                     }
                   }}
                   onPaste={(event) => {
@@ -265,21 +309,31 @@ export function InviteModal() {
             <div className="flex flex-col gap-2">
               <Label
                 htmlFor="invite-role"
-                className="type-body-strong font-bold"
+                className={`type-body-strong font-bold ${
+                  isSending ? "text-disabled" : ""
+                }`}
               >
                 Role
               </Label>
               <Select
-                value={selectedRole}
+                value={activeRole}
+                disabled={isSending}
                 onValueChange={(value) => {
-                  if (value === "Volunteer" || value === "Admin") {
+                  if (value === "Volunteer") {
+                    setSelectedRole(value);
+                  } else if (value === "Admin" && canSelectAdmin) {
                     setSelectedRole(value);
                   }
                 }}
               >
                 <SelectTrigger
                   id="invite-role"
-                  className="!min-h-[64px] w-full !rounded-input border-line-strong !bg-surface px-4 type-body"
+                  disabled={isSending}
+                  className={`!min-h-[64px] w-full !rounded-input border-line-strong px-4 type-body disabled:opacity-100 ${
+                    isSending
+                      ? "!bg-disabled-fill !text-disabled"
+                      : "!bg-surface"
+                  }`}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -292,12 +346,15 @@ export function InviteModal() {
                   <SelectItem
                     value="Volunteer"
                     description="Can view and edit all tree records, including contact info, photos and locations."
+                    className="cursor-pointer"
                   >
                     Volunteer
                   </SelectItem>
                   <SelectItem
                     value="Admin"
+                    disabled={!canSelectAdmin}
                     description="Everything a Volunteer can do, plus manage people, fields and picklists, and delete records."
+                    className="cursor-pointer"
                   >
                     Admin
                   </SelectItem>
@@ -314,19 +371,38 @@ export function InviteModal() {
           <Button
             type="button"
             disabled={!canSendInvites}
+            aria-disabled={isSending || undefined}
+            aria-busy={isSending}
+            aria-label={isSending ? "Sending..." : undefined}
+            onClick={() => {
+              if (isSending) return;
+              // TODO: Replace the frontend sending state with the invite API request.
+              setIsSending(true);
+            }}
             className={`h-14 w-full gap-3 type-body-strong ${
-              canSendInvites
-                ? "bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-pressed"
-                : "bg-disabled-fill text-disabled opacity-100 hover:bg-disabled-fill"
+              isSending
+                ? "bg-primary-pressed text-on-primary hover:bg-primary-pressed active:bg-primary-pressed"
+                : canSendInvites
+                  ? "bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-pressed"
+                  : "bg-disabled-fill text-disabled opacity-100 hover:bg-disabled-fill"
             }`}
           >
-            <Send
-              aria-hidden="true"
-              className={`size-5 ${
-                canSendInvites ? "!text-on-primary" : "!text-disabled"
-              }`}
-            />
-            {sendInviteLabel}
+            {isSending ? (
+              <>
+                <Spinner aria-label="Sending invitations" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send
+                  aria-hidden="true"
+                  className={`size-5 ${
+                    canSendInvites ? "!text-on-primary" : "!text-disabled"
+                  }`}
+                />
+                {sendInviteLabel}
+              </>
+            )}
           </Button>
         </DialogContent>
       </Dialog>
