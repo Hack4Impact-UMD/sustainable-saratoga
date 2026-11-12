@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   createRootRouteWithContext,
   Outlet,
+  useLocation,
   useRouter,
 } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
@@ -25,6 +26,8 @@ function RootLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { pathname } = useLocation();
+  const showMenu = isAuthed && pathname !== "/people";
 
   const signOut = useMutation({
     mutationFn: () => auth.signOut(),
@@ -36,14 +39,14 @@ function RootLayout() {
 
   return (
     <>
-      {isAuthed && (
+      {showMenu && (
         <>
           <button
             type="button"
             aria-label="Open menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
-            className="fixed top-4 left-4 z-40 grid size-10 place-items-center rounded-full border !border-line-subtle !bg-surface text-icon-primary shadow-1 hover:!bg-surface aria-expanded:!bg-surface"
+            className="fixed top-4 left-4 z-40 grid size-10 place-items-center rounded-full border border-line-subtle! bg-surface! text-icon-primary shadow-1 hover:bg-surface! aria-expanded:bg-surface!"
           >
             <Menu aria-hidden="true" className="size-5" />
           </button>
