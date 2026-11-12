@@ -15,6 +15,13 @@ export const invitation = type({
   createdAt: "string",
   expiresAt: "string",
   invitedBy: "string",
+  "tokenHash?": /^[a-f0-9]{64}$/,
+});
+
+// Older invites can still be listed. Every newly issued link needs a hash.
+export const issuedInvitation = invitation.merge({
+  email: type("string.email").narrow((email) => email === email.toLowerCase()),
+  tokenHash: /^[a-f0-9]{64}$/,
 });
 
 // what the people list shows. "expired" is derived from expiresAt, never stored
