@@ -1,5 +1,6 @@
-import { useId, useState } from "react";
-import { CircleAlert, Send, UserPlus, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { CircleAlert, CircleCheck, Send, UserPlus, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@frontend/components/ui/badge.tsx";
 import { Button } from "@frontend/components/ui/button.tsx";
@@ -83,6 +84,7 @@ export function InviteModal() {
   const [emailDraft, setEmailDraft] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [sendCount, setSendCount] = useState(0);
   const [selectedRole, setSelectedRole] = useState<"Volunteer" | "Admin">(
     "Volunteer",
   );
@@ -95,6 +97,31 @@ export function InviteModal() {
   const sendInviteLabel = `Send ${emails.length} ${
     activeRole === "Admin" ? "Admin " : ""
   }invite${emails.length === 1 ? "" : "s"}`;
+
+  useEffect(() => {
+    if (!isSending) return;
+
+    // Simulate the pending request until invite API integration is available.
+    const timeoutId = window.setTimeout(() => {
+      setIsSending(false);
+      setIsOpen(false);
+      setEmails([]);
+      setEmailDraft("");
+      setSelectedRole("Volunteer");
+      toast.success(`${sendCount} invite${sendCount === 1 ? "" : "s"} sent`, {
+        duration: 4000,
+        icon: <CircleCheck className="size-6 shrink-0 text-toast-success" />,
+        unstyled: true,
+        className:
+          "flex w-[min(27rem,calc(100vw-2rem))] items-center gap-4 rounded-md border-0 bg-heading px-5 py-4 text-on-primary shadow-2",
+        classNames: {
+          title: "type-body-strong !text-on-primary",
+        },
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isSending, sendCount]);
 
   function updateEmails(nextEmails: InviteEmail[]) {
     setEmails(nextEmails);
@@ -376,7 +403,7 @@ export function InviteModal() {
             aria-label={isSending ? "Sending..." : undefined}
             onClick={() => {
               if (isSending) return;
-              // TODO: Replace the frontend sending state with the invite API request.
+              setSendCount(emails.length);
               setIsSending(true);
             }}
             className={`h-14 w-full gap-3 type-body-strong ${

@@ -1,9 +1,15 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { Toaster } from "sonner";
 import { afterEach, describe, expect, it } from "vitest";
 import { InviteModal } from "@frontend/components/people/InviteModal.tsx";
 
 function openInviteDialog() {
-  render(<InviteModal />);
+  render(
+    <>
+      <InviteModal />
+      <Toaster position="bottom-center" offset={24} />
+    </>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Invite" }));
   return screen.getByRole("textbox", { name: "Email addresses" });
 }
@@ -178,6 +184,24 @@ describe("InviteModal email chips", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("shows a bottom success toast after the frontend send completes", async () => {
+    const input = openInviteDialog();
+    fireEvent.change(input, {
+      target: { value: "first@example.org, second@example.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Send 2 invites" }));
+
+    const toastMessage = await screen.findByText("2 invites sent");
+    expect(toastMessage).toHaveClass("type-body-strong", "!text-on-primary");
+    expect(toastMessage.closest("[data-sonner-toast]")).toHaveClass(
+      "bg-heading",
+      "shadow-2",
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Invite" })).toBeEnabled();
   });
 
   it("removes chips with their button or Backspace", () => {
