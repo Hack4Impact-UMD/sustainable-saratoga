@@ -21,6 +21,7 @@
     "test:e2e:ui": "playwright test --ui",
     "checks": "pnpm run \"/^(lint|format:check|typecheck|test)$/\"",
     "emulators": "firebase emulators:start --project demo-sustainable-saratoga --only auth,functions,firestore",
+    "seed": "pnpm --filter @repo/backend seed",
     "deploy": "turbo run build && firebase deploy"
   },
   "devDependencies": {

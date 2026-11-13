@@ -27,6 +27,7 @@ const profile: UserProfile = {
   ...input,
   email: "demo@example.com",
   role: "volunteer",
+  status: "active",
 };
 
 beforeEach(() => {

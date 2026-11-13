@@ -7,6 +7,8 @@ interface StatusMarkerProps {
   status: TreeStatus;
   size: StatusMarkerSize;
   selected?: boolean;
+  /** No shadow or selection glow (used in the status bar, not on the map). */
+  flat?: boolean;
 }
 
 const markerSizes: Record<
@@ -67,6 +69,7 @@ export function StatusMarker({
   status,
   size,
   selected = false,
+  flat = false,
 }: StatusMarkerProps) {
   const markerSize = markerSizes[size];
   const styles = markerStyles[status];
@@ -76,7 +79,7 @@ export function StatusMarker({
     <span
       role="img"
       aria-label={`${status} status${selected ? ", selected" : ""}`}
-      className={`relative grid ${markerSize.className} shrink-0 place-items-center ${styles.marker} ${styles.shape} ${selected ? "shadow-pin-selected" : "shadow-pin"}`}
+      className={`relative grid ${markerSize.className} shrink-0 place-items-center ${styles.marker} ${styles.shape} ${flat ? "" : selected ? "shadow-pin-selected" : "shadow-pin"}`}
     >
       {status === "requested" && (
         <svg

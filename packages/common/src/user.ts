@@ -18,10 +18,18 @@ export const volunteerTypes = volunteerType
 // admins are invite-only; everyone who signs up is a volunteer
 export const userRole = type("'admin' | 'volunteer'");
 
+// "removed" users are locked out but their profile stays, so records remain credited to them
+export const userStatus = type("'active' | 'removed'");
+
 const profileBase = {
   firstName: nonEmptyTrimmed,
   lastName: nonEmptyTrimmed,
   email: "string.email",
+  // profiles written before this field existed read back as active
+  status: userStatus.default("active"),
+  // ISO timestamp and the admin's uid, set only when status is "removed"
+  "removedAt?": "string",
+  "removedBy?": "string",
 } as const;
 
 // only volunteers carry volunteerTypes
@@ -40,6 +48,7 @@ export const getUserInput = type({
 });
 
 export type VolunteerType = typeof volunteerType.infer;
+export type UserStatus = typeof userStatus.infer;
 export type UserRole = typeof userRole.infer;
 export type UserProfile = typeof userProfile.infer;
 export type GetUserInput = typeof getUserInput.infer;
