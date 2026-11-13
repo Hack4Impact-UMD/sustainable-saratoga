@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertCircle } from "lucide-react";
 import { PeoplePage } from "@frontend/components/people/PeoplePage.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useEffect } from "react";
@@ -23,17 +24,34 @@ function PeopleRoute() {
 
   // Wait for the profile before deciding whether the user may enter.
   useEffect(() => {
-    if (!profileQuery.isPending && !isAdmin) {
+    if (profileQuery.isSuccess && !isAdmin) {
       void navigate({ to: "/" });
     }
-  }, [isAdmin, navigate, profileQuery.isPending]);
+  }, [isAdmin, navigate, profileQuery.isSuccess]);
 
   if (profileQuery.isPending) {
     return <output>Loading account...</output>;
   }
 
-  // The redirect runs in the effect above; render nothing while it completes.
-  if (profileQuery.isError || !isAdmin) {
+  if (profileQuery.isError) {
+    return (
+      <main className="mx-auto w-full max-w-md p-4">
+        <p role="alert" className="flex items-center gap-2 text-error">
+          <AlertCircle aria-hidden="true" className="size-5" />
+          Couldn&apos;t load your account.
+        </p>
+        <button
+          type="button"
+          className="type-link min-h-11 min-w-11"
+          onClick={() => void profileQuery.refetch()}
+        >
+          Retry
+        </button>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
     return null;
   }
 

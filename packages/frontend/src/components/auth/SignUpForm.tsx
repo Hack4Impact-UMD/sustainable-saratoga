@@ -1,3 +1,7 @@
+import { useMutation } from "@tanstack/react-query";
+import { signOut } from "firebase/auth";
+import { auth } from "@frontend/lib/firebase.ts";
+import { trpc } from "@frontend/lib/trpc.ts";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -42,11 +46,15 @@ const volunteerTypeOptions = [
 export function SignUpForm({
   email,
   token,
+  useExistingAccount = false,
+  onRestoring,
   onSuccess,
   onAccountExists,
 }: {
   email: string;
   token?: string;
+  useExistingAccount?: boolean;
+  onRestoring?: () => void;
   onSuccess: () => void;
   onAccountExists: () => void;
 }) {
@@ -64,7 +72,11 @@ export function SignUpForm({
   const formRef = useRef<HTMLFormElement>(null);
   const signUp = useSignUp();
   const googleSignUp = useGoogleSignUp();
-  const isSubmitting = signUp.isPending || googleSignUp.isPending;
+  const acceptInvite = useMutation(
+    trpc.invites.accept.mutationOptions({ networkMode: "always" }),
+  );
+  const isSubmitting =
+    signUp.isPending || googleSignUp.isPending || acceptInvite.isPending;
   const validationErrorCount = Object.keys(fieldErrors).length;
   const passwordChecks = signUpPasswordRequirements.map(({ test }) =>
     test(passwordValue),
@@ -85,6 +97,11 @@ export function SignUpForm({
     } else if (errors.volunteerTypes) {
       volunteerTypesInputRef.current?.focus();
     }
+  }
+
+  function finish(result: { status: "accepted" | "restoring" }) {
+    if (result.status === "restoring") onRestoring?.();
+    else onSuccess();
   }
 
   /**
@@ -110,12 +127,13 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await googleSignUp.mutateAsync({
-        ...validation.data,
-        email,
-        ...(token && { token }),
-      });
-      onSuccess();
+      finish(
+        await googleSignUp.mutateAsync({
+          ...validation.data,
+          email,
+          ...(token && { token }),
+        }),
+      );
     } catch (error) {
       if (error instanceof WrongGoogleAccountError) {
         setFormError(
@@ -136,6 +154,26 @@ export function SignUpForm({
     setHasSubmitted(true);
 
     const formData = new FormData(event.currentTarget);
+    if (token && useExistingAccount) {
+      const validation = validateForm(createUserInput, {
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
+        volunteerTypes: formData.getAll("volunteerTypes"),
+      });
+      if (!validation.ok) {
+        showErrors(validation.errors, validation.formError);
+        return;
+      }
+      setFieldErrors({});
+      try {
+        finish(await acceptInvite.mutateAsync({ token, ...validation.data }));
+      } catch {
+        setFormError(
+          "We couldn't accept the invitation. Try again or sign out.",
+        );
+      }
+      return;
+    }
     const validation = validateForm(signUpInput, {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -152,8 +190,12 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await signUp.mutateAsync({ ...validation.data, ...(token && { token }) });
-      onSuccess();
+      finish(
+        await signUp.mutateAsync({
+          ...validation.data,
+          ...(token && { token }),
+        }),
+      );
     } catch (error) {
       const code =
         typeof error === "object" && error !== null && "code" in error
@@ -282,128 +324,145 @@ export function SignUpForm({
                 </FieldError>
               )}
             </Field>
-            <Field>
-              <FieldLabel htmlFor="password">Create a Password</FieldLabel>
-              <div className="relative w-full">
-                <Input
-                  id="password"
-                  name="password"
-                  ref={passwordInputRef}
-                  type={isPasswordVisible ? "text" : "password"}
-                  placeholder=""
-                  className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
-                  required
-                  autoComplete="new-password"
-                  onChange={(event) => {
-                    setPasswordValue(event.currentTarget.value);
-                    setPasswordTouched(true);
-                    setFieldErrors(({ password: _password, ...rest }) => rest);
-                    setFormError(null);
-                  }}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={
-                    fieldErrors.password
-                      ? "password-error"
-                      : "password-requirements"
-                  }
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    isPasswordVisible ? "Hide password" : "Show password"
-                  }
-                  aria-pressed={isPasswordVisible}
-                  onClick={() => setIsPasswordVisible((visible) => !visible)}
-                  className="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-icon-secondary hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                >
-                  {isPasswordVisible ? (
-                    <EyeOff aria-hidden="true" className="size-5" />
-                  ) : (
-                    <Eye aria-hidden="true" className="size-5" />
-                  )}
-                </button>
-              </div>
-              {fieldErrors.password && (
-                <FieldError
-                  id="password-error"
-                  className="flex items-center gap-2"
-                >
-                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {fieldErrors.password}
-                </FieldError>
-              )}
-            </Field>
-
-            <div
-              id="password-requirements"
-              className="bg-pressed py-3 px-4 rounded-md"
-            >
-              <h2 className="font-bold">Your password needs</h2>
-              <ul className="mt-2">
-                {signUpPasswordRequirements.map(({ label }, index) => {
-                  const passed =
-                    passwordTouched || hasSubmitted
-                      ? passwordChecks[index]
-                      : undefined;
-
-                  return (
-                    <li
-                      key={label}
-                      className={`flex items-center gap-2 ${
-                        passed === true
-                          ? "text-success"
-                          : passed === false
-                            ? "text-destructive"
-                            : ""
-                      }`}
+            {!useExistingAccount && (
+              <>
+                <Field>
+                  <FieldLabel htmlFor="password">Create a Password</FieldLabel>
+                  <div className="relative w-full">
+                    <Input
+                      id="password"
+                      name="password"
+                      ref={passwordInputRef}
+                      type={isPasswordVisible ? "text" : "password"}
+                      placeholder=""
+                      className="h-12 rounded-input border border-line-strong bg-surface px-4 pr-12"
+                      required
+                      autoComplete="new-password"
+                      onChange={(event) => {
+                        setPasswordValue(event.currentTarget.value);
+                        setPasswordTouched(true);
+                        setFieldErrors(
+                          ({ password: _password, ...rest }) => rest,
+                        );
+                        setFormError(null);
+                      }}
+                      aria-invalid={Boolean(fieldErrors.password)}
+                      aria-describedby={
+                        fieldErrors.password
+                          ? "password-error"
+                          : "password-requirements"
+                      }
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        isPasswordVisible ? "Hide password" : "Show password"
+                      }
+                      aria-pressed={isPasswordVisible}
+                      onClick={() =>
+                        setIsPasswordVisible((visible) => !visible)
+                      }
+                      className="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-icon-secondary hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                     >
-                      {passed === true ? (
-                        <CircleCheck aria-hidden="true" className="size-5" />
-                      ) : passed === false ? (
-                        <CircleX aria-hidden="true" className="size-5" />
+                      {isPasswordVisible ? (
+                        <EyeOff aria-hidden="true" className="size-5" />
                       ) : (
-                        <Circle
-                          aria-hidden="true"
-                          className="size-5 text-icon-secondary"
-                        />
+                        <Eye aria-hidden="true" className="size-5" />
                       )}
-                      {label}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                    </button>
+                  </div>
+                  {fieldErrors.password && (
+                    <FieldError
+                      id="password-error"
+                      className="flex items-center gap-2"
+                    >
+                      <CircleAlert
+                        aria-hidden="true"
+                        className="size-5 shrink-0"
+                      />
+                      {fieldErrors.password}
+                    </FieldError>
+                  )}
+                </Field>
 
-            <Field>
-              <FieldLabel htmlFor="confirmPassword">
-                Confirm Password
-              </FieldLabel>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                ref={confirmPasswordInputRef}
-                type="password"
-                placeholder=""
-                className="h-12 rounded-input border border-line-strong bg-surface px-4"
-                required
-                autoComplete="new-password"
-                aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                aria-describedby={
-                  fieldErrors.confirmPassword
-                    ? "confirmPassword-error"
-                    : undefined
-                }
-              />
-              {fieldErrors.confirmPassword && (
-                <FieldError
-                  id="confirmPassword-error"
-                  className="flex items-center gap-2"
+                <div
+                  id="password-requirements"
+                  className="bg-pressed py-3 px-4 rounded-md"
                 >
-                  <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-                  {fieldErrors.confirmPassword}
-                </FieldError>
-              )}
-            </Field>
+                  <h2 className="font-bold">Your password needs</h2>
+                  <ul className="mt-2">
+                    {signUpPasswordRequirements.map(({ label }, index) => {
+                      const passed =
+                        passwordTouched || hasSubmitted
+                          ? passwordChecks[index]
+                          : undefined;
+
+                      return (
+                        <li
+                          key={label}
+                          className={`flex items-center gap-2 ${
+                            passed === true
+                              ? "text-success"
+                              : passed === false
+                                ? "text-destructive"
+                                : ""
+                          }`}
+                        >
+                          {passed === true ? (
+                            <CircleCheck
+                              aria-hidden="true"
+                              className="size-5"
+                            />
+                          ) : passed === false ? (
+                            <CircleX aria-hidden="true" className="size-5" />
+                          ) : (
+                            <Circle
+                              aria-hidden="true"
+                              className="size-5 text-icon-secondary"
+                            />
+                          )}
+                          {label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="confirmPassword">
+                    Confirm Password
+                  </FieldLabel>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    ref={confirmPasswordInputRef}
+                    type="password"
+                    placeholder=""
+                    className="h-12 rounded-input border border-line-strong bg-surface px-4"
+                    required
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                    aria-describedby={
+                      fieldErrors.confirmPassword
+                        ? "confirmPassword-error"
+                        : undefined
+                    }
+                  />
+                  {fieldErrors.confirmPassword && (
+                    <FieldError
+                      id="confirmPassword-error"
+                      className="flex items-center gap-2"
+                    >
+                      <CircleAlert
+                        aria-hidden="true"
+                        className="size-5 shrink-0"
+                      />
+                      {fieldErrors.confirmPassword}
+                    </FieldError>
+                  )}
+                </Field>
+              </>
+            )}
 
             <FieldSet
               aria-invalid={Boolean(fieldErrors.volunteerTypes)}
@@ -445,26 +504,43 @@ export function SignUpForm({
                 disabled={isSubmitting}
                 className="type-btn-primary h-control w-full rounded-full bg-primary px-5 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
               >
-                {signUp.isPending ? "Creating Account..." : "Create Account"}
-              </button>
-              <div className="flex items-center gap-6 py-4">
-                <Separator className="w-auto flex-1" />
-                <span className="type-body text-body-muted">or</span>
-                <Separator className="w-auto flex-1" />
-              </div>
-              <button
-                type="button"
-                onClick={() => void handleGoogleSignUp()}
-                disabled={isSubmitting}
-                className="type-btn-secondary flex h-control w-full items-center justify-center gap-3 rounded-full border border-primary bg-surface px-5 hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <GoogleIcon />
-                <span>
-                  {googleSignUp.isPending
+                {useExistingAccount
+                  ? "Continue with this account"
+                  : signUp.isPending
                     ? "Creating Account..."
-                    : "Continue with Google"}
-                </span>
+                    : "Create Account"}
               </button>
+              {useExistingAccount ? (
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  className="type-link mt-2 min-h-11"
+                  onClick={() => void signOut(auth)}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <>
+                  <div className="flex items-center gap-6 py-4">
+                    <Separator className="w-auto flex-1" />
+                    <span className="type-body text-body-muted">or</span>
+                    <Separator className="w-auto flex-1" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleGoogleSignUp()}
+                    disabled={isSubmitting}
+                    className="type-btn-secondary flex h-control w-full items-center justify-center gap-3 rounded-full border border-primary bg-surface px-5 hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <GoogleIcon />
+                    <span>
+                      {googleSignUp.isPending
+                        ? "Creating Account..."
+                        : "Continue with Google"}
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </form>
         </div>

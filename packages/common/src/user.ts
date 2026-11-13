@@ -30,6 +30,7 @@ const profileBase = {
   // ISO timestamp and the admin's uid, set only when status is "removed"
   "removedAt?": "string",
   "removedBy?": "string",
+  "restorationInviteId?": "string",
 } as const;
 
 // only volunteers carry volunteerTypes

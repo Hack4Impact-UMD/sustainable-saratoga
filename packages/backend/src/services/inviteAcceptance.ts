@@ -1,13 +1,19 @@
 import { TRPCError } from "@trpc/server";
 import type { Auth } from "firebase-admin/auth";
+import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
 import type { AcceptInviteInput, Invitation, UserProfile } from "@repo/common";
 import { hashInviteToken } from "@backend/services/inviteManagement.ts";
 
 export type CheckInviteResult =
-  | { status: "valid"; email: string; role: Invitation["role"] }
-  | { status: "expired" | "used" | "canceled"; email?: string };
+  | {
+      status: "valid";
+      email: string;
+      role: Invitation["role"];
+      canRestoreSignIn: boolean;
+    }
+  | { status: "expired" | "used" | "canceled" | "restoring"; email?: string };
 
 function getInviteStatus(invite: Invitation, now: Date): CheckInviteResult {
   if (invite.status === "canceled") {
@@ -26,6 +32,7 @@ function getInviteStatus(invite: Invitation, now: Date): CheckInviteResult {
     status: "valid",
     email: invite.email,
     role: invite.role,
+    canRestoreSignIn: false,
   };
 }
 
@@ -41,7 +48,87 @@ export async function checkInvite(
   }
 
   const invite = invitation.assert(snapshot.data());
-  return getInviteStatus(invite, now);
+  const result = getInviteStatus(invite, now);
+  if (result.status === "used" && snapshot.get("restorationProfile")) {
+    return { status: "restoring" };
+  }
+  if (result.status === "valid" && invite.tokenHash) {
+    const member = await findRemovedMember(db, invite);
+    result.canRestoreSignIn = Boolean(member);
+  }
+  return result;
+}
+
+async function findRemovedMember(db: Firestore, invite: Invitation) {
+  const matches = await db
+    .collection("users")
+    .where("email", "==", invite.email)
+    .get();
+  return matches.docs.find((member) => {
+    const profile = userProfile.assert(member.data());
+    return (
+      profile.status === "removed" &&
+      profile.removedAt !== undefined &&
+      Date.parse(invite.lastSentAt ?? invite.createdAt) >
+        Date.parse(profile.removedAt)
+    );
+  });
+}
+
+/** A replacement invite proves email possession and can unlock sign-in only.
+ * The profile stays removed until the matching signed-in user accepts it.
+ */
+export async function restoreInviteSignIn(
+  db: Firestore,
+  auth: Auth,
+  token: string,
+) {
+  const snapshot = await findInvite(db, token);
+  if (!snapshot)
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Invitation not found.",
+    });
+  const invite = invitation.assert(snapshot.data());
+  if (
+    !invite.tokenHash ||
+    getInviteStatus(invite, new Date()).status !== "valid"
+  ) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "A current replacement invitation is required.",
+    });
+  }
+  const member = await findRemovedMember(db, invite);
+  if (!member)
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "Sign-in restoration is not available.",
+    });
+  const user = await auth.getUser(member.id);
+  if (user.email?.toLowerCase() !== invite.email.toLowerCase()) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "The account email does not match the invitation.",
+    });
+  }
+  await auth.updateUser(member.id, { disabled: false });
+  const [currentInvite, currentMember] = await Promise.all([
+    snapshot.ref.get(),
+    member.ref.get(),
+  ]);
+  if (
+    currentMember.get("status") === "removed" &&
+    (currentMember.get("removedAt") !== member.get("removedAt") ||
+      currentInvite.get("status") !== "pending" ||
+      currentInvite.get("tokenHash") !== invite.tokenHash)
+  ) {
+    await auth.updateUser(member.id, { disabled: true });
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "The account or invitation changed. Try again.",
+    });
+  }
 }
 
 async function findInvite(db: Firestore, token: string) {
@@ -59,12 +146,11 @@ async function findInvite(db: Firestore, token: string) {
 
 export async function acceptInvite(
   db: Firestore,
-  auth: Auth,
   uid: string,
   email: string,
   input: AcceptInviteInput,
   now = new Date(),
-): Promise<void> {
+) {
   const snapshot = await findInvite(db, input.token);
   if (!snapshot) {
     throw new TRPCError({
@@ -75,9 +161,7 @@ export async function acceptInvite(
   const inviteRef = snapshot.ref;
   const userRef = db.collection("users").doc(uid);
 
-  let shouldEnableAccount = false;
-
-  await db.runTransaction(async (transaction) => {
+  return db.runTransaction(async (transaction) => {
     const [inviteSnapshot, userSnapshot] = await Promise.all([
       transaction.get(inviteRef),
       transaction.get(userRef),
@@ -106,7 +190,32 @@ export async function acceptInvite(
       });
     }
 
+    if (invite.email.toLowerCase() !== email.toLowerCase()) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "This invitation belongs to a different email address.",
+      });
+    }
+
+    const existing = userSnapshot.exists
+      ? userProfile.assert(userSnapshot.data())
+      : null;
+    if (existing && existing.email.toLowerCase() !== email.toLowerCase()) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "An account already exists with a different email.",
+      });
+    }
     if (invite.status === "accepted") {
+      if (invite.acceptedBy === uid && existing?.status === "active") {
+        return { status: "accepted" as const };
+      }
+      if (
+        invite.acceptedBy === uid &&
+        existing?.restorationInviteId === inviteRef.id
+      ) {
+        return { status: "restoring" as const };
+      }
       throw new TRPCError({
         code: "CONFLICT",
         message: "This invitation has already been used.",
@@ -120,10 +229,24 @@ export async function acceptInvite(
       });
     }
 
-    if (invite.email.toLowerCase() !== email.toLowerCase()) {
+    if (existing?.status === "active") {
+      if (existing.role !== invite.role) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This account already has a different role.",
+        });
+      }
+      transaction.update(inviteRef, {
+        status: "accepted",
+        acceptedBy: uid,
+        resendOperation: FieldValue.delete(),
+      });
+      return { status: "accepted" as const };
+    }
+    if (existing?.restorationInviteId) {
       throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "This invitation belongs to a different email address.",
+        code: "CONFLICT",
+        message: "Access restoration is already pending.",
       });
     }
 
@@ -145,38 +268,90 @@ export async function acceptInvite(
             volunteerTypes: input.volunteerTypes ?? ["planter"],
           };
 
-    if (userSnapshot.exists) {
-      const existingProfile = userProfile.assert({
-        uid,
-        ...userSnapshot.data(),
+    if (existing) {
+      if (
+        existing.removedAt &&
+        Date.parse(invite.lastSentAt ?? invite.createdAt) <=
+          Date.parse(existing.removedAt)
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This invite predates the removal. Ask for a new link.",
+        });
+      }
+      // Keep the profile removed until the Firebase Auth operation succeeds.
+      transaction.update(userRef, { restorationInviteId: inviteRef.id });
+      transaction.update(inviteRef, {
+        status: "accepted",
+        acceptedBy: uid,
+        restorationProfile: profile,
+        resendOperation: FieldValue.delete(),
       });
-
-      if (existingProfile.email.toLowerCase() !== invite.email.toLowerCase()) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "An account already exists with a different email.",
-        });
-      }
-
-      if (existingProfile.status !== "removed") {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "An account already exists for this user.",
-        });
-      }
-
-      shouldEnableAccount = true;
-      transaction.set(userRef, profile);
-    } else {
-      transaction.create(userRef, profile);
+      return { status: "restoring" as const };
     }
 
-    transaction.update(inviteRef, { status: "accepted" });
+    transaction.create(userRef, profile);
+    transaction.update(inviteRef, {
+      status: "accepted",
+      acceptedBy: uid,
+      resendOperation: FieldValue.delete(),
+    });
+    return { status: "accepted" as const };
   });
+}
 
-  // Firebase Auth is outside Firestore transactions.
-  // Re-enable only after the profile and invitation update succeeds.
-  if (shouldEnableAccount) {
-    await auth.updateUser(uid, { disabled: false });
+/** The Firestore trigger retries this operation without the member's session. */
+export async function finishInviteRestoration(
+  db: Firestore,
+  auth: Auth,
+  inviteId: string,
+) {
+  const inviteRef = db.collection("invitations").doc(inviteId);
+  const snapshot = await inviteRef.get();
+  const uid = snapshot.get("acceptedBy");
+  const restoration = snapshot.get("restorationProfile");
+  if (
+    snapshot.get("status") !== "accepted" ||
+    typeof uid !== "string" ||
+    !restoration
+  )
+    return;
+
+  const profile = userProfile.assert(restoration);
+  const userRef = db.collection("users").doc(uid);
+  const member = await userRef.get();
+  if (member.get("status") !== "removed") return;
+  if (member.get("restorationInviteId") !== inviteId) {
+    // A previous attempt may have enabled Auth just before removal won.
+    if (!member.get("restorationInviteId")) {
+      await auth.updateUser(uid, { disabled: true });
+    }
+    return;
   }
+
+  await auth.updateUser(uid, { disabled: false });
+  const result = await db.runTransaction(async (transaction) => {
+    const [currentInvite, currentMember] = await Promise.all([
+      transaction.get(inviteRef),
+      transaction.get(userRef),
+    ]);
+    if (
+      currentMember.get("status") === "removed" &&
+      currentMember.get("restorationInviteId") === inviteId
+    ) {
+      if (
+        currentInvite.get("acceptedBy") === uid &&
+        currentInvite.get("restorationProfile")
+      ) {
+        transaction.set(userRef, profile);
+        transaction.update(inviteRef, {
+          restorationProfile: FieldValue.delete(),
+        });
+        return "restored";
+      }
+    }
+    return currentMember.get("status") === "active" ? "active" : "removed";
+  });
+  // A later removal wins, including when it raced the Auth update above.
+  if (result === "removed") await auth.updateUser(uid, { disabled: true });
 }

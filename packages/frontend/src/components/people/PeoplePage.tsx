@@ -205,6 +205,9 @@ export function PeoplePage() {
       showToast("success", "New invite link sent.");
       void queryClient.invalidateQueries({ queryKey: listKey });
     } catch (error) {
+      if (document.activeElement === document.body) {
+        pendingFocus.current = person.id;
+      }
       const failure = classifyRowFailure(error);
       if (failure === "queued") {
         showToast(

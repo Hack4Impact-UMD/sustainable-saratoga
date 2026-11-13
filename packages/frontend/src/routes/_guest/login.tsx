@@ -64,6 +64,7 @@ function LoginPage() {
   return (
     <LoginForm
       sessionExpired={reason === "session-expired"}
+      inviteToken={redirect?.match(/^\/invite\/([A-Za-z0-9_-]{1,128})$/)?.[1]}
       onSuccess={handleSuccess}
       onForgotPassword={handleForgotPassword}
       onNoAccess={handleNoAccess}

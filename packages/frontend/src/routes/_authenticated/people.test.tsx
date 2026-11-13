@@ -4,13 +4,14 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { routeTree } from "@frontend/routeTree.gen.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 
 const profileState = vi.hoisted(() => ({
   role: "admin" as "admin" | "volunteer",
+  failOnce: false,
 }));
 
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
@@ -25,8 +26,12 @@ vi.mock("@frontend/lib/trpc.ts", () => ({
       me: {
         queryOptions: () => ({
           queryKey: ["users", "me"],
-          queryFn: () =>
-            Promise.resolve({
+          queryFn: () => {
+            if (profileState.failOnce) {
+              profileState.failOnce = false;
+              return Promise.reject(new Error("Profile unavailable"));
+            }
+            return Promise.resolve({
               session: { uid: "current-user" },
               profile: {
                 firstName: "Dana",
@@ -35,7 +40,8 @@ vi.mock("@frontend/lib/trpc.ts", () => ({
                 role: profileState.role,
                 status: "active",
               },
-            }),
+            });
+          },
         }),
       },
     },
@@ -103,6 +109,19 @@ describe("/people route", () => {
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/people");
+  });
+
+  it("keeps admins on the page when loading the profile fails and allows retry", async () => {
+    profileState.failOnce = true;
+    const router = renderRoute("admin");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't load your account",
+    );
+    expect(router.state.location.pathname).toBe("/people");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(
+      await screen.findByRole("heading", { name: "People & invitations" }),
+    ).toBeInTheDocument();
   });
 
   it("redirects volunteers to the records page", async () => {

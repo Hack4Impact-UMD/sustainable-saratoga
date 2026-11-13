@@ -3,7 +3,10 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import type { Firestore } from "firebase-admin/firestore";
 import type { Invitation } from "@repo/common";
 import { checkInvite } from "@backend/services/inviteAcceptance.ts";
-import { deliverInvite } from "@backend/services/inviteDelivery.ts";
+import {
+  deliverInvite,
+  InviteDeliveryRejected,
+} from "@backend/services/inviteDelivery.ts";
 import {
   cancelInvite,
   resendInvite,
@@ -21,12 +24,19 @@ const legacy: Invitation = {
   invitedBy: "admin",
 };
 type Record = Invitation & {
-  resendLease?: { tokenHash: string; expiresAt: number };
+  resendOperation?: {
+    token: string;
+    startedAt: number;
+    leaseUntil: number;
+    sentAt?: string;
+  };
 };
 
 function fixture() {
   let record: Record = { ...legacy };
   const ref = { id };
+  let failFinalization = false;
+  let failReceipt = false;
   function snapshot() {
     const data = record;
     return {
@@ -34,8 +44,6 @@ function fixture() {
       ref,
       data: () => data,
       get: (key: string) => {
-        if (key === "resendLease.tokenHash") return data.resendLease?.tokenHash;
-        if (key === "resendLease.expiresAt") return data.resendLease?.expiresAt;
         return data[key as keyof Record];
       },
     };
@@ -55,7 +63,10 @@ function fixture() {
     }),
   };
   const db = {
-    collection: () => collection,
+    collection: (name: string) =>
+      name === "users"
+        ? { where: () => ({ get: () => Promise.resolve({ docs: [] }) }) }
+        : collection,
     runTransaction: async (run: (tx: unknown) => Promise<unknown>) => {
       const updates: Partial<Record>[] = [];
       const result = await run({
@@ -63,16 +74,38 @@ function fixture() {
         update: (_ref: unknown, values: Partial<Record>) =>
           updates.push(values),
       });
-      for (const { resendLease, ...values } of updates) {
+      for (const update of updates) {
+        if (failFinalization && update.tokenHash) {
+          failFinalization = false;
+          throw new Error("Could not finalize");
+        }
+        if (
+          failReceipt &&
+          update.resendOperation?.sentAt &&
+          update.resendOperation.leaseUntil > 0
+        ) {
+          failReceipt = false;
+          throw new Error("Could not persist receipt");
+        }
+        const { resendOperation, ...values } = update;
         record = { ...record, ...values };
-        if (resendLease && "tokenHash" in resendLease)
-          record.resendLease = resendLease;
-        else delete record.resendLease;
+        if (resendOperation && "token" in resendOperation)
+          record.resendOperation = resendOperation;
+        else if ("resendOperation" in update) delete record.resendOperation;
       }
       return result;
     },
   } as unknown as Firestore;
-  return { db, record: () => record };
+  return {
+    db,
+    record: () => record,
+    failNextFinalization: () => {
+      failFinalization = true;
+    },
+    failNextReceipt: () => {
+      failReceipt = true;
+    },
+  };
 }
 
 beforeEach(() => {
@@ -121,7 +154,12 @@ it("rotates the legacy token, keeps the creation date, and invalidates the repla
 
 it("keeps the previous link and releases the resend lease after delivery fails", async () => {
   const { db, record } = fixture();
-  vi.mocked(deliverInvite).mockRejectedValueOnce(new Error("Email rejected"));
+  vi.mocked(deliverInvite).mockRejectedValueOnce(
+    new InviteDeliveryRejected({
+      code: "BAD_GATEWAY",
+      message: "Email rejected",
+    }),
+  );
   await expect(resendInvite(db, id)).rejects.toThrow("Email rejected");
   expect(record()).toEqual(legacy);
   await expect(checkInvite(db, id)).resolves.toHaveProperty("status", "valid");
@@ -144,4 +182,54 @@ it("rejects an overlapping resend before calling the provider twice", async () =
   finishDelivery();
   await expect(first).resolves.toHaveProperty("person.status", "pending");
   expect(deliverInvite).toHaveBeenCalledTimes(1);
+});
+
+it("finalizes the previously delivered link on retry without sending another email", async () => {
+  const { db, failNextFinalization } = fixture();
+  failNextFinalization();
+  await expect(resendInvite(db, id)).rejects.toThrow("Could not finalize");
+  const [delivery] = vi.mocked(deliverInvite).mock.calls;
+  if (!delivery) throw new Error("Expected delivery");
+  const [, token] = delivery;
+  await expect(checkInvite(db, id)).resolves.toHaveProperty("status", "valid");
+  await expect(checkInvite(db, token)).resolves.toHaveProperty(
+    "status",
+    "expired",
+  );
+  await resendInvite(db, id);
+  expect(deliverInvite).toHaveBeenCalledTimes(1);
+  await expect(checkInvite(db, token)).resolves.toHaveProperty(
+    "status",
+    "valid",
+  );
+});
+
+it("reuses the delivery payload and idempotency key when receipt persistence fails", async () => {
+  const { db, failNextReceipt } = fixture();
+  failNextReceipt();
+  await expect(resendInvite(db, id)).rejects.toThrow(
+    "Could not persist receipt",
+  );
+  await resendInvite(db, id);
+  const [first, second] = vi.mocked(deliverInvite).mock.calls;
+  expect(second).toEqual(first);
+  expect(deliverInvite).toHaveBeenCalledTimes(2);
+});
+
+it("keeps the replacement inactive when an administrator cancels during delivery", async () => {
+  const { db } = fixture();
+  vi.mocked(deliverInvite).mockImplementationOnce(async () => {
+    await cancelInvite(db, id);
+  });
+  await expect(resendInvite(db, id)).rejects.toThrow("invite changed");
+  await expect(checkInvite(db, id)).resolves.toHaveProperty(
+    "status",
+    "canceled",
+  );
+  const [delivery] = vi.mocked(deliverInvite).mock.calls;
+  if (!delivery) throw new Error("Expected delivery");
+  await expect(checkInvite(db, delivery[1])).resolves.toHaveProperty(
+    "status",
+    "expired",
+  );
 });

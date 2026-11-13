@@ -17,6 +17,8 @@ const SKIP_OFFLINE_QUEUE_PATHS = new Set([
   "people.removeAccess",
   "invites.resend",
   "invites.cancel",
+  "invites.accept",
+  "invites.restoreSignIn",
 ]);
 
 export function skipsOfflineQueue(path: string) {

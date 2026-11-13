@@ -31,13 +31,15 @@ vi.mock("firebase/auth", () => ({
 
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
+const accept = vi.hoisted(() => vi.fn<() => Promise<{ status: "accepted" }>>());
+
 const createProfile = vi.hoisted(() =>
   vi.fn<(input: CreateUserInput) => Promise<unknown>>(),
 );
 
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
-    invites: { accept: { mutationOptions: () => ({}) } },
+    invites: { accept: { mutationOptions: () => ({ mutationFn: accept }) } },
     users: {
       create: { mutationOptions: () => ({ mutationFn: createProfile }) },
     },
@@ -46,13 +48,15 @@ vi.mock("@frontend/lib/trpc.ts", () => ({
 
 const createdUser = { uid: "new-user" } as User;
 
-function renderSignUpForm() {
+function renderSignUpForm(invite = false) {
   const onSuccess = vi.fn<() => void>();
   const onAccountExists = vi.fn<() => void>();
   render(
     <QueryClientProvider client={new QueryClient()}>
       <SignUpForm
         email="invite@example.org"
+        token={invite ? "invite-token" : undefined}
+        useExistingAccount={invite}
         onSuccess={onSuccess}
         onAccountExists={onAccountExists}
       />
@@ -97,6 +101,35 @@ describe("SignUpForm", () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("continues with an existing invite account without requesting a password", async () => {
+    accept.mockResolvedValue({ status: "accepted" });
+    const { onSuccess } = renderSignUpForm(true);
+    expect(
+      screen.queryByLabelText("Create a Password"),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("First Name"), {
+      target: { value: "Ada" },
+    });
+    fireEvent.change(screen.getByLabelText("Last Name"), {
+      target: { value: "Example" },
+    });
+    fireEvent.click(screen.getByLabelText("Planter"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue with this account" }),
+    );
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+    expect(accept).toHaveBeenCalledWith(
+      {
+        token: "invite-token",
+        firstName: "Ada",
+        lastName: "Example",
+        volunteerTypes: ["planter"],
+      },
+      expect.anything(),
+    );
+    expect(firebase.createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
   it("shows shared schema errors and focuses the first invalid field", () => {

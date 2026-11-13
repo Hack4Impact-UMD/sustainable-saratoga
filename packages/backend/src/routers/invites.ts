@@ -8,6 +8,7 @@ import {
 import {
   acceptInvite,
   checkInvite,
+  restoreInviteSignIn,
 } from "@backend/services/inviteAcceptance.ts";
 import {
   adminProcedure,
@@ -28,6 +29,11 @@ export const invitesRouter = router({
   check: publicProcedure
     .input(checkInviteInput)
     .query(({ ctx, input }) => checkInvite(ctx.db, input.token)),
+  restoreSignIn: publicProcedure
+    .input(checkInviteInput)
+    .mutation(({ ctx, input }) =>
+      restoreInviteSignIn(ctx.db, ctx.auth, input.token),
+    ),
   accept: sessionProcedure
     .input(acceptInviteInput)
     .mutation(({ ctx, input }) => {
@@ -37,12 +43,6 @@ export const invitesRouter = router({
           message: "Your account does not have an email address.",
         });
       }
-      return acceptInvite(
-        ctx.db,
-        ctx.auth,
-        ctx.session.uid,
-        ctx.session.email,
-        input,
-      );
+      return acceptInvite(ctx.db, ctx.session.uid, ctx.session.email, input);
     }),
 });

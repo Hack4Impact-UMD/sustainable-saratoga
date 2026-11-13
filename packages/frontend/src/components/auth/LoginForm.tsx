@@ -18,6 +18,7 @@ import { GoogleIcon } from "@frontend/components/auth/GoogleIcon.tsx";
  */
 export interface LoginFormProps {
   sessionExpired?: boolean;
+  inviteToken?: string;
   onSuccess: () => void;
   onForgotPassword: () => void;
   /** Google sign-in worked, but the account was never set up. */
@@ -29,12 +30,13 @@ export interface LoginFormProps {
  */
 export function LoginForm({
   sessionExpired = false,
+  inviteToken,
   onSuccess,
   onForgotPassword,
   onNoAccess,
 }: LoginFormProps) {
   const login = useLogin();
-  const googleLogin = useGoogleLogin();
+  const googleLogin = useGoogleLogin(inviteToken);
   const isSigningIn =
     login.isPending ||
     login.isSuccess ||

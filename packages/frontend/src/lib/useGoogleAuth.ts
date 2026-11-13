@@ -44,10 +44,31 @@ export type GoogleLoginResult =
  * Signs in with Google. Only accounts that already have a profile get in;
  * anyone else is signed out again and told they have no access.
  */
-export function useGoogleLogin() {
+export function useGoogleLogin(inviteToken?: string) {
   return useMutation<GoogleLoginResult, Error>({
     mutationFn: async () => {
       const credential = await signInWithGoogle();
+      if (inviteToken) {
+        try {
+          const invitation = await queryClient.fetchQuery({
+            ...trpc.invites.check.queryOptions({ token: inviteToken }),
+            staleTime: 0,
+          });
+          if (
+            invitation.status === "valid" &&
+            invitation.email.toLowerCase() ===
+              credential.user.email?.toLowerCase()
+          ) {
+            return { status: "signed-in" };
+          }
+          throw new Error(
+            "Sign in with the email that received the invitation.",
+          );
+        } catch (error) {
+          await signOut(auth);
+          throw error;
+        }
+      }
       const { profile } = await queryClient.fetchQuery({
         ...trpc.users.me.queryOptions(),
         staleTime: 0,
@@ -91,11 +112,13 @@ function isConflict(error: unknown): boolean {
  * a profile, they're simply signed in.
  */
 export function useGoogleSignUp() {
-  const acceptInvite = useMutation(trpc.invites.accept.mutationOptions());
+  const acceptInvite = useMutation(
+    trpc.invites.accept.mutationOptions({ networkMode: "always" }),
+  );
   const createProfile = useMutation(trpc.users.create.mutationOptions());
 
   return useMutation<
-    void,
+    { status: "accepted" | "restoring" },
     Error,
     CreateUserInput & { email: string; token?: string }
   >({
@@ -108,18 +131,25 @@ export function useGoogleSignUp() {
       }
 
       if (token) {
-        await acceptInvite.mutateAsync({ ...profile, token });
-        return;
+        try {
+          return await acceptInvite.mutateAsync({ ...profile, token });
+        } catch (error) {
+          // A lost response can follow a committed acceptance. Keep the
+          // Firebase account so the invitee can safely sign in and retry.
+          await signOut(auth);
+          throw error;
+        }
       }
 
       try {
         await createProfile.mutateAsync(profile);
       } catch (error) {
         // they already have a profile, so this was really a sign-in
-        if (isConflict(error)) return;
+        if (isConflict(error)) return { status: "accepted" };
         await discardSignIn(credential);
         throw error;
       }
+      return { status: "accepted" };
     },
   });
 }

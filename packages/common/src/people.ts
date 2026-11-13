@@ -27,6 +27,7 @@ export const invitation = type({
   createdAt: "string",
   "lastSentAt?": "string",
   "tokenHash?": /^[a-f0-9]{64}$/,
+  "acceptedBy?": "string",
   expiresAt: "string",
   invitedBy: "string",
 });

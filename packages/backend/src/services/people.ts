@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { Auth } from "firebase-admin/auth";
+import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
 import type { Person } from "@repo/common";
@@ -87,11 +88,15 @@ export async function removeAccess(
     throw new TRPCError({ code: "NOT_FOUND", message: "No such member." });
   }
 
-  if (userProfile.assert(snapshot.data()).status !== "removed") {
+  const profile = userProfile.assert(snapshot.data());
+  if (profile.status !== "removed" || profile.restorationInviteId) {
     await ref.update({
       status: "removed",
       removedAt: now.toISOString(),
       removedBy: actorUid,
+      ...(profile.restorationInviteId && {
+        restorationInviteId: FieldValue.delete(),
+      }),
     });
   }
 
