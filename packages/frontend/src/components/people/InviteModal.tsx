@@ -332,6 +332,7 @@ export function InviteModal() {
                   value={emailDraft}
                   className="h-10 min-w-32 flex-1 border-0 bg-transparent px-1 py-0 type-body text-primary placeholder:text-body-muted focus-visible:border-0 focus-visible:ring-0 disabled:text-disabled disabled:opacity-100"
                   onChange={(event) => setEmailDraft(event.target.value)}
+                  onBlur={() => commitEmailText(emailDraft)}
                   onKeyDown={(event) => {
                     if (
                       event.key === "Enter" ||

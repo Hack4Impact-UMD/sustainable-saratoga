@@ -36,6 +36,18 @@ describe("InviteModal email chips", () => {
     ).toBeInTheDocument();
   });
 
+  it("commits an address when the input loses focus", () => {
+    const input = openInviteDialog();
+    fireEvent.change(input, { target: { value: "draft@example.org" } });
+
+    fireEvent.blur(input);
+
+    expect(
+      screen.getByRole("button", { name: "Remove draft@example.org" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send 1 invite" })).toBeEnabled();
+  });
+
   it("restores the placeholder after the draft and all chips are removed", () => {
     const input = openInviteDialog();
 

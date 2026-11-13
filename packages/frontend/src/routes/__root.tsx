@@ -11,7 +11,6 @@ import { MenuDrawer } from "@frontend/components/layout/MenuDrawer.tsx";
 import { auth } from "@frontend/lib/firebase.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
-import { InviteModal } from "@frontend/components/people/InviteModal.tsx";
 
 interface RouterContext {
   auth: AuthState;
@@ -37,7 +36,6 @@ function RootLayout() {
 
   return (
     <>
-      <InviteModal />
       {isAuthed && (
         <>
           <button
