@@ -1,5 +1,21 @@
 import { type } from "arktype";
-import { userRole } from "@common/user.ts";
+import { nonEmptyTrimmed } from "@common/fields.ts";
+import { userRole, volunteerTypes } from "@common/user.ts";
+
+// Inputs for accepting an invitation.
+export const checkInviteInput = type({
+  token: "string > 0",
+});
+
+export const acceptInviteInput = type({
+  token: "string > 0",
+  firstName: nonEmptyTrimmed,
+  lastName: nonEmptyTrimmed,
+  "volunteerTypes?": volunteerTypes,
+});
+
+export type CheckInviteInput = typeof checkInviteInput.infer;
+export type AcceptInviteInput = typeof acceptInviteInput.infer;
 
 // An invite document at invitations/{id}. The invitations backend creates
 // these; people.list only reads them.

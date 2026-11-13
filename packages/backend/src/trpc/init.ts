@@ -17,6 +17,19 @@ export const createCallerFactory = t.createCallerFactory;
 /** Callable by anyone. `ctx.session` may be null. */
 export const publicProcedure = t.procedure;
 
+export const sessionProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.session) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+    },
+  });
+});
+
 /**
  * Callable with a valid Firebase ID token, even before the user has a profile.
  * Downstream resolvers see `ctx.session` narrowed to a non-null `Session`, and
