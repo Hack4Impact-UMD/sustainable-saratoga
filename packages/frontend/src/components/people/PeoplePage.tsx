@@ -1,9 +1,19 @@
 import type { Person } from "@repo/common";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AlertCircle, ChevronLeft, Clock3, MoreVertical } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, ChevronLeft, Clock3 } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { PersonActionsMenu } from "@frontend/components/people/PersonActionsMenu.tsx";
+import type { PersonMenuAction } from "@frontend/components/people/PersonActionsMenu.tsx";
+import { RemoveAccessDialog } from "@frontend/components/people/RemoveAccessDialog.tsx";
+import type { RemoveDialogError } from "@frontend/components/people/RemoveAccessDialog.tsx";
+import {
+  classifyRowFailure,
+  nextActionableId,
+  withoutPerson,
+} from "@frontend/components/people/inviteMutations.ts";
 import { PeopleSearchInput } from "@frontend/components/ui/PeopleSearchInput.tsx";
+import { Toast } from "@frontend/components/ui/Toast.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
 
 const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -12,6 +22,16 @@ const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 const emptyPeople: Person[] = [];
+const JUST_INVITED_MS = 4000;
+
+type ToastState = {
+  id: number;
+  message: string;
+  variant: "success" | "error";
+};
+
+type RemoveTarget = { uid: string; name: string };
+type FocusRequest = string | "list" | "title";
 
 /**
  * Displays the admin's people list. The API supplies the invite-first ordering;
@@ -19,8 +39,33 @@ const emptyPeople: Person[] = [];
  */
 export function PeoplePage() {
   const [search, setSearch] = useState("");
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [removeError, setRemoveError] = useState<RemoveDialogError | null>(
+    null,
+  );
+  const [removePending, setRemovePending] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
+  const [justInvitedId, setJustInvitedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const triggers = useRef(new Map<string, HTMLButtonElement>());
+  const pendingFocus = useRef<FocusRequest | null>(null);
+  const skipDialogRestore = useRef(false);
+  const [dialogCopy, setDialogCopy] = useState<RemoveTarget | null>(null);
+  const inFlight = useRef(false);
+  const toastId = useRef(0);
+  const queryClient = useQueryClient();
   const peopleQuery = useQuery(trpc.people.list.queryOptions());
+  const removeAccess = useMutation(
+    trpc.people.removeAccess.mutationOptions({ networkMode: "always" }),
+  );
+  const resendInvite = useMutation(
+    trpc.invites.resend.mutationOptions({ networkMode: "always" }),
+  );
+  const cancelInvite = useMutation(
+    trpc.invites.cancel.mutationOptions({ networkMode: "always" }),
+  );
   const allPeople = peopleQuery.data ?? emptyPeople;
   const normalizedSearch = search.trim().toLowerCase();
   const people = useMemo(
@@ -37,12 +82,164 @@ export function PeoplePage() {
   ).length;
   const inviteCount = allPeople.length - memberCount;
   const matchingPeopleCount = people.length;
+  const listKey = trpc.people.list.queryKey();
 
   useEffect(() => {
     if (!peopleQuery.isPending) {
       titleRef.current?.focus();
     }
   }, [peopleQuery.isPending]);
+
+  useEffect(() => {
+    if (!justInvitedId) return;
+    const timeout = window.setTimeout(
+      () => setJustInvitedId(null),
+      JUST_INVITED_MS,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [justInvitedId]);
+
+  useLayoutEffect(() => {
+    const request = pendingFocus.current;
+    if (!request) return;
+    pendingFocus.current = null;
+    if (request === "title") titleRef.current?.focus();
+    else if (request === "list") listRef.current?.focus();
+    else
+      (
+        triggers.current.get(request) ??
+        listRef.current ??
+        titleRef.current
+      )?.focus();
+  });
+
+  function showToast(variant: ToastState["variant"], message: string) {
+    toastId.current += 1;
+    setToast({ id: toastId.current, variant, message });
+  }
+
+  function focusAfterRemoval(visible: Person[], removedId: string) {
+    const nextId = nextActionableId(visible, removedId);
+    const remaining = withoutPerson(visible, removedId);
+    pendingFocus.current = nextId
+      ? nextId
+      : remaining.length > 0
+        ? "list"
+        : "title";
+  }
+
+  async function dropRow(id: string) {
+    await queryClient.cancelQueries({ queryKey: listKey });
+    queryClient.setQueryData<Person[]>(listKey, (current) =>
+      withoutPerson(current ?? [], id),
+    );
+    void queryClient.invalidateQueries({ queryKey: listKey });
+  }
+
+  async function confirmRemove() {
+    if (!removeTarget || inFlight.current) return;
+    inFlight.current = true;
+    if (navigator.onLine === false) {
+      inFlight.current = false;
+      setRemoveError("offline");
+      return;
+    }
+    const target = removeTarget;
+    const visible = people;
+    setRemovePending(true);
+    setRemoveError(null);
+    try {
+      await removeAccess.mutateAsync({ uid: target.uid });
+      await dropRow(target.uid);
+      focusAfterRemoval(visible, target.uid);
+      skipDialogRestore.current = true;
+      setRemoveTarget(null);
+      showToast("success", `${target.name}'s access was removed.`);
+    } catch (error) {
+      const failure = classifyRowFailure(error);
+      setRemoveError(failure === "server" ? "failed" : failure);
+      if (failure !== "queued") {
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      }
+    } finally {
+      inFlight.current = false;
+      setRemovePending(false);
+    }
+  }
+
+  async function runInviteAction(
+    action: Exclude<PersonMenuAction, "remove">,
+    person: Person,
+  ) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    if (navigator.onLine === false) {
+      inFlight.current = false;
+      showToast("error", "You're offline. Nothing was changed.");
+      return;
+    }
+    setActionPending(true);
+    try {
+      if (action === "cancel") {
+        await cancelInvite.mutateAsync({ inviteId: person.id });
+        await dropRow(person.id);
+        focusAfterRemoval(people, person.id);
+        showToast("success", "Invite canceled.");
+        return;
+      }
+      const { person: updated } = await resendInvite.mutateAsync({
+        inviteId: person.id,
+      });
+      await queryClient.cancelQueries({ queryKey: listKey });
+      queryClient.setQueryData<Person[]>(listKey, (current) => {
+        if (
+          !current?.some(
+            (row) => row.id === updated.id && row.status !== "active",
+          )
+        )
+          return current;
+        return [updated, ...withoutPerson(current, updated.id)];
+      });
+      setJustInvitedId(person.id);
+      pendingFocus.current = person.id;
+      showToast("success", "New invite link sent.");
+      void queryClient.invalidateQueries({ queryKey: listKey });
+    } catch (error) {
+      const failure = classifyRowFailure(error);
+      if (failure === "queued") {
+        showToast(
+          "error",
+          "Saved offline. It will be sent when the device is back online.",
+        );
+      } else if (failure === "unknown") {
+        showToast(
+          "error",
+          "Couldn't confirm the result. Check the refreshed list.",
+        );
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      } else if (action === "cancel") {
+        showToast("error", "Couldn't cancel the invite. Try again.");
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      } else {
+        showToast("error", "Couldn't resend the invite. Try again.");
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      }
+    } finally {
+      inFlight.current = false;
+      setActionPending(false);
+    }
+  }
+
+  function onRowAction(person: Person, action: PersonMenuAction) {
+    if (action === "remove") {
+      setRemoveError(null);
+      const target = { uid: person.id, name: person.name || person.email };
+      setDialogCopy(target);
+      setRemoveTarget(target);
+      return;
+    }
+    void runInviteAction(action, person);
+  }
 
   if (peopleQuery.isPending) {
     return (
@@ -54,28 +251,40 @@ export function PeoplePage() {
     );
   }
 
-  if (peopleQuery.isError) {
+  if (peopleQuery.isError && peopleQuery.data === undefined) {
     return (
       <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
-        <p role="alert" className="type-body p-4 text-error">
-          The people list couldn&apos;t load. Please try again later.
-        </p>
+        <div className="flex items-start gap-2 p-4 text-error">
+          <AlertCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+          <p role="alert" className="type-body">
+            The people list couldn&apos;t load.
+          </p>
+          <button
+            type="button"
+            className="type-link min-h-11 min-w-11 shrink-0"
+            onClick={() => void peopleQuery.refetch()}
+          >
+            Retry
+          </button>
+        </div>
       </main>
     );
   }
+
+  const busy = removePending || actionPending;
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
       <header className="border-b border-divider">
         <div className="flex h-14 items-center gap-2 px-1">
-          <Link // Back button to Records page
+          <Link
             to="/"
             aria-label="Back to records"
             className="grid size-11 shrink-0 place-items-center rounded-pill text-icon-primary hover:bg-hover"
           >
             <ChevronLeft aria-hidden="true" className="size-5" />
           </Link>
-          <h1 // Page Title
+          <h1
             ref={titleRef}
             tabIndex={-1}
             className="type-h2 overflow-hidden text-ellipsis"
@@ -86,7 +295,6 @@ export function PeoplePage() {
       </header>
 
       <div className="px-4">
-        {/* Search bar for searching members */}
         <label htmlFor="people-search" className="mt-3 mb-2 block">
           <PeopleSearchInput
             id="people-search"
@@ -99,10 +307,11 @@ export function PeoplePage() {
           />
         </label>
 
-        {/* Display amount of members, invites, search results */}
-        <p className="type-caption mt-1 mb-2 text-body-muted">
+        <p
+          aria-live="polite"
+          className="type-caption mt-1 mb-2 text-body-muted"
+        >
           {normalizedSearch ? (
-            // Number of matching members (from search)
             <>
               Showing{" "}
               <strong className="font-bold text-heading">
@@ -112,31 +321,90 @@ export function PeoplePage() {
             </>
           ) : (
             <>
-              {/* Number of active members */}
               <strong className="font-bold text-heading">
                 {formatCount(memberCount, "member")}
               </strong>
-              {/* and number of invites (if any) */}
               {inviteCount > 0 && <> · {formatCount(inviteCount, "invite")}</>}
             </>
           )}
         </p>
+        {peopleQuery.isError && (
+          <div className="mb-2 flex items-center gap-2 text-error">
+            <AlertCircle aria-hidden="true" className="size-5 shrink-0" />
+            <p role="alert" className="type-body">
+              The people list couldn&apos;t refresh.
+            </p>
+            <button
+              type="button"
+              className="type-link min-h-11 min-w-11"
+              onClick={() => void peopleQuery.refetch()}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* STUB CODE FOR SEARCH FUNCTION :D */}
       {people.length > 0 ? (
         <ul
+          ref={listRef}
+          tabIndex={-1}
           aria-label="People and invitations"
-          className="divide-y divide-divider"
+          className="divide-y divide-divider outline-none"
         >
           {people.map((person) => (
-            <PersonRow key={person.id} person={person} />
+            <PersonRow
+              key={person.id}
+              person={person}
+              justInvited={person.id === justInvitedId}
+              menuDisabled={busy}
+              triggerRef={(node) => {
+                if (node) triggers.current.set(person.id, node);
+                else triggers.current.delete(person.id);
+              }}
+              onAction={(action) => onRowAction(person, action)}
+            />
           ))}
         </ul>
       ) : (
         <p className="type-body p-4 text-body-muted">
           No people match your search.
         </p>
+      )}
+
+      <RemoveAccessDialog
+        name={dialogCopy?.name ?? ""}
+        open={removeTarget !== null}
+        pending={removePending}
+        error={removeError}
+        onDismiss={() => {
+          if (removePending) return;
+          setRemoveTarget(null);
+          setRemoveError(null);
+        }}
+        onConfirm={() => void confirmRemove()}
+        finalFocus={() => {
+          if (skipDialogRestore.current) {
+            skipDialogRestore.current = false;
+            return false;
+          }
+          const uid = dialogCopy?.uid;
+          return (
+            (uid && triggers.current.get(uid)) ||
+            listRef.current ||
+            titleRef.current
+          );
+        }}
+      />
+
+      {toast && (
+        <Toast
+          key={toast.id}
+          data-toast-id={toast.id}
+          variant={toast.variant}
+          message={toast.message}
+          className="w-auto"
+        />
       )}
     </main>
   );
@@ -146,7 +414,19 @@ function formatCount(count: number, singular: string) {
   return `${count} ${count === 1 ? singular : `${singular}s`}`;
 }
 
-function PersonRow({ person }: { person: Person }) {
+function PersonRow({
+  person,
+  justInvited,
+  menuDisabled,
+  triggerRef,
+  onAction,
+}: {
+  person: Person;
+  justInvited: boolean;
+  menuDisabled: boolean;
+  triggerRef: (node: HTMLButtonElement | null) => void;
+  onAction: (action: PersonMenuAction) => void;
+}) {
   const displayName = person.name || person.email;
   const statusLabel =
     person.status === "pending"
@@ -156,22 +436,24 @@ function PersonRow({ person }: { person: Person }) {
         : null;
 
   return (
-    <li className="flex min-h-18 items-center gap-2 px-4 py-2.5">
+    <li
+      className={`flex min-h-18 items-center gap-2 px-4 py-2.5 ${
+        justInvited ? "bg-selected" : ""
+      }`}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          {/* Displays email or member name */}
           <p className="type-body-strong truncate text-heading">
             {displayName}
             {person.isSelf && " (you)"}
           </p>
 
-          {/* Pill that shows either "Pending" or "Expired" */}
           {statusLabel && (
             <span
-              className={`type-badge inline-flex items-center gap-1 w-22 rounded-pill border pl-1.5 pr-2 py-0.5 ${
+              className={`type-badge inline-flex w-22 items-center gap-1 rounded-pill border py-0.5 pr-2 pl-1.5 ${
                 person.status === "expired"
                   ? "border-line-error bg-error-tint text-error"
-                  : "bg-status-requested-tint text-status-requested-text border-line-warning"
+                  : "border-line-warning bg-status-requested-tint text-status-requested-text"
               }`}
             >
               {person.status === "expired" ? (
@@ -184,43 +466,40 @@ function PersonRow({ person }: { person: Person }) {
           )}
         </div>
 
-        {/* Shows email for active member */}
         {person.status === "active" && (
           <p className="type-caption truncate text-body-muted">
             {person.email}
           </p>
         )}
 
-        {/* Shows invite info for not-yet-active-members */}
         {person.status !== "active" && (
           <p className="type-caption truncate text-body-muted">
-            {/* "Sent <Month> <Day>" OR "Invited <Month> <Day>" */}
-            {person.status === "expired" ? "Sent" : "Invited"}{" "}
-            {formatInviteDate(person.invitedAt)}
-            {/* "link expired" if status is expired */}
-            {person.status === "expired" && " · link expired"}
+            {justInvited ? (
+              "Invited just now"
+            ) : (
+              <>
+                {person.status === "expired" ? "Sent" : "Invited"}{" "}
+                {formatInviteDate(person.invitedAt)}
+                {person.status === "expired" && " · link expired"}
+              </>
+            )}
           </p>
         )}
       </div>
 
-      {/* Display role - Admin or Volunteer */}
       <span className="type-body-sm w-19 text-right capitalize">
         {person.role}
       </span>
 
-      {/* Show ⋮ for users that aren't you */}
       {person.isSelf ? (
         <div aria-hidden="true" className="size-11 shrink-0" />
       ) : (
-        <button
-          // INSERT ⋮ FUNCTIONALITY HERE!
-          type="button"
-          aria-label={`More actions for ${displayName}`}
-          aria-haspopup="menu"
-          className="flex justify-center items-center rounded-pill size-11"
-        >
-          <MoreVertical className="size-5 text-icon-primary" />
-        </button>
+        <PersonActionsMenu
+          person={person}
+          disabled={menuDisabled}
+          triggerRef={triggerRef}
+          onAction={onAction}
+        />
       )}
     </li>
   );

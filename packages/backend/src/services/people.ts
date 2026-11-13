@@ -31,7 +31,7 @@ export async function listPeople(
         email: invite.email,
         role: invite.role,
         status: new Date(invite.expiresAt) <= now ? "expired" : "pending",
-        invitedAt: invite.createdAt,
+        invitedAt: invite.lastSentAt ?? invite.createdAt,
         expiresAt: invite.expiresAt,
         isSelf: false,
       };

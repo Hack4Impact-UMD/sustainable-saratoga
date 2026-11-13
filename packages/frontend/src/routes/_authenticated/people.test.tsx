@@ -17,6 +17,10 @@ vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
+    invites: {
+      resend: { mutationOptions: () => ({}) },
+      cancel: { mutationOptions: () => ({}) },
+    },
     users: {
       me: {
         queryOptions: () => ({
@@ -37,9 +41,15 @@ vi.mock("@frontend/lib/trpc.ts", () => ({
     },
     people: {
       list: {
+        queryKey: () => ["people", "list"],
         queryOptions: () => ({
           queryKey: ["people", "list"],
           queryFn: () => Promise.resolve([]),
+        }),
+      },
+      removeAccess: {
+        mutationOptions: () => ({
+          mutationFn: () => Promise.resolve({ uid: "unused" }),
         }),
       },
     },

@@ -37,6 +37,7 @@ const createProfile = vi.hoisted(() =>
 
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
+    invites: { accept: { mutationOptions: () => ({}) } },
     users: {
       create: { mutationOptions: () => ({ mutationFn: createProfile }) },
     },

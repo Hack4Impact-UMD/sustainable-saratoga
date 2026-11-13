@@ -115,7 +115,10 @@ export function MenuDrawer({
                 : "type-btn-secondary text-body hover:bg-hover"
             }`}
           >
-            <Map aria-hidden="true" className="size-5 shrink-0 text-icon-primary" />
+            <Map
+              aria-hidden="true"
+              className="size-5 shrink-0 text-icon-primary"
+            />
             Records
           </Link>
 
@@ -138,7 +141,10 @@ export function MenuDrawer({
                       : "type-btn-secondary text-body hover:bg-hover"
                   }`}
                 >
-                  <Users aria-hidden="true" className="size-5 shrink-0 text-icon-primary" />
+                  <Users
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-icon-primary"
+                  />
                   People &amp; invitations
                 </Link>
                 <button
@@ -169,7 +175,10 @@ export function MenuDrawer({
             disabled={signOutPending}
             className="type-btn-secondary flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-body hover:bg-hover disabled:cursor-not-allowed disabled:text-disabled"
           >
-            <LogOut aria-hidden="true" className="size-5 shrink-0 text-icon-primary" />
+            <LogOut
+              aria-hidden="true"
+              className="size-5 shrink-0 text-icon-primary"
+            />
             Sign out
           </button>
         </footer>

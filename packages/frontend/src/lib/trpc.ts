@@ -8,6 +8,10 @@ import {
 } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { auth } from "@frontend/lib/firebase.ts";
+import {
+  SKIP_OFFLINE_QUEUE_HEADER,
+  skipsOfflineQueue,
+} from "@frontend/lib/offlineSync.ts";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +30,7 @@ export const queryClient = new QueryClient({
 // Hosting rewrite handles it in production.
 const url = "/api/trpc";
 
-async function headers() {
+async function authHeaders() {
   const user = auth.currentUser;
   const token = await user?.getIdToken();
   return {
@@ -41,8 +45,19 @@ const client = createTRPCClient<AppRouter>({
       // One request per mutation, so a write made offline is queued and
       // replayed on its own rather than as part of a batch.
       condition: (op) => op.type === "mutation",
-      true: httpLink({ url, headers }),
-      false: httpBatchLink({ url, headers }),
+      true: httpLink({
+        url,
+        headers: async ({ op }) => ({
+          ...(await authHeaders()),
+          ...(skipsOfflineQueue(op.path)
+            ? { [SKIP_OFFLINE_QUEUE_HEADER]: "1" }
+            : {}),
+        }),
+      }),
+      false: httpBatchLink({
+        url,
+        headers: () => authHeaders(),
+      }),
     }),
   ],
 });

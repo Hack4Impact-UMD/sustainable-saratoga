@@ -1,4 +1,5 @@
 import type { Queue } from "workbox-background-sync";
+import { SKIP_OFFLINE_QUEUE_HEADER } from "@frontend/lib/offlineSync.ts";
 import type {
   RejectedSyncItem,
   SyncMessage,
@@ -84,7 +85,11 @@ export async function handleMutation(
   const backup = request.clone();
   try {
     return await deps.fetch(request);
-  } catch {
+  } catch (error) {
+    // Row actions report uncertain delivery and must not be replayed.
+    if (backup.headers.get(SKIP_OFFLINE_QUEUE_HEADER) === "1") {
+      throw error;
+    }
     const url = new URL(request.url);
     const metadata: EntryMetadata = {
       uid: ownerFromHeader(backup.headers.get(QUEUE_OWNER_HEADER)),
