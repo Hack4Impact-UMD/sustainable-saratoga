@@ -94,14 +94,16 @@ export class WrongGoogleAccountError extends Error {
 
 // when signing in with google and accepts the inivite, the google account must match that invited email
 export function useGoogleSignUp() {
-  const acceptInvitation = useMutation(
-    trpc.invites.accept.mutationOptions(),
-  );
+  const acceptInvitation = useMutation(trpc.invites.accept.mutationOptions());
 
-  return useMutation<void, Error, CreateUserInput & {
-    email: string;
-    token: string;
-  }>({
+  return useMutation<
+    void,
+    Error,
+    CreateUserInput & {
+      email: string;
+      token: string;
+    }
+  >({
     mutationFn: async ({ email, token, ...profile }) => {
       const credential = await signInWithGoogle(email);
 

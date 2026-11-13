@@ -110,7 +110,7 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await googleSignUp.mutateAsync({ ...validation.data, email, token});
+      await googleSignUp.mutateAsync({ ...validation.data, email, token });
       onSuccess();
     } catch (error) {
       if (error instanceof WrongGoogleAccountError) {
@@ -148,7 +148,7 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await signUp.mutateAsync({...validation.data, token});
+      await signUp.mutateAsync({ ...validation.data, token });
       onSuccess();
     } catch (error) {
       const code =

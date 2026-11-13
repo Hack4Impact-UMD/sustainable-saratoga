@@ -20,7 +20,7 @@ export function useSignUp() {
       lastName,
       volunteerTypes,
       token,
-    }: SignUpInput & {token: string}) => {
+    }: SignUpInput & { token: string }) => {
       const { user } = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -36,7 +36,12 @@ export function useSignUp() {
 
       // users.create reads the new user's ID token, which the tRPC client
       // picks up from auth.currentUser
-      await acceptInvitation.mutateAsync({ token, firstName, lastName, volunteerTypes });
+      await acceptInvitation.mutateAsync({
+        token,
+        firstName,
+        lastName,
+        volunteerTypes,
+      });
 
       return user;
     },

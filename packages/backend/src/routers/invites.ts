@@ -1,24 +1,16 @@
 import { TRPCError } from "@trpc/server";
-import {
-  acceptInviteInput,
-  checkInviteInput,
-} from "@repo/common";
+import { acceptInviteInput, checkInviteInput } from "@repo/common";
 import {
   router,
   publicProcedure,
   sessionProcedure,
 } from "@backend/trpc/init.ts";
-import {
-  acceptInvite,
-  checkInvite,
-} from "@backend/services/invites.ts";
+import { acceptInvite, checkInvite } from "@backend/services/invites.ts";
 
 export const invitesRouter = router({
-  check: publicProcedure
-    .input(checkInviteInput)
-    .query(({ ctx, input }) => {
-      return checkInvite(ctx.db, input.token);
-    }),
+  check: publicProcedure.input(checkInviteInput).query(({ ctx, input }) => {
+    return checkInvite(ctx.db, input.token);
+  }),
 
   accept: sessionProcedure
     .input(acceptInviteInput)
