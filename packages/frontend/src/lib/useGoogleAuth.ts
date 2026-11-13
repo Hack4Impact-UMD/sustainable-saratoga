@@ -91,15 +91,25 @@ function isConflict(error: unknown): boolean {
  * a profile, they're simply signed in.
  */
 export function useGoogleSignUp() {
+  const acceptInvite = useMutation(trpc.invites.accept.mutationOptions());
   const createProfile = useMutation(trpc.users.create.mutationOptions());
 
-  return useMutation<void, Error, CreateUserInput & { email: string }>({
-    mutationFn: async ({ email, ...profile }) => {
+  return useMutation<
+    void,
+    Error,
+    CreateUserInput & { email: string; token?: string }
+  >({
+    mutationFn: async ({ email, token, ...profile }) => {
       const credential = await signInWithGoogle(email);
 
       if (credential.user.email?.toLowerCase() !== email.toLowerCase()) {
         await discardSignIn(credential);
         throw new WrongGoogleAccountError(email);
+      }
+
+      if (token) {
+        await acceptInvite.mutateAsync({ ...profile, token });
+        return;
       }
 
       try {

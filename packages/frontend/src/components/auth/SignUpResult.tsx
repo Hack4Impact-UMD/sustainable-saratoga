@@ -4,6 +4,8 @@ import icon from "@frontend/assets/Leaf logo.svg";
 export type SignUpResultState =
   | "success"
   | "expired"
+  | "used"
+  | "canceled"
   | "account-exists"
   | "no-access";
 
@@ -27,8 +29,23 @@ const resultContent: Record<
   },
   expired: {
     title: "This invitation has expired",
+    message: "Ask your administrator to send a new invitation.",
+    tone: "warning",
+    icon: Clock3,
+    action: "Back to sign in",
+  },
+  used: {
+    title: "This invitation has already been used",
     message:
-      "Ask your administrator to send a new invitation to jordan.lee@example.org.",
+      "This invitation link has already been used. Sign in to access your account.",
+    tone: "info",
+    icon: Info,
+    action: "Back to sign in",
+  },
+  canceled: {
+    title: "This invitation has been canceled",
+    message:
+      "This invitation is no longer valid. Contact your administrator for a new invitation.",
     tone: "warning",
     icon: Clock3,
     action: "Back to sign in",
@@ -60,9 +77,11 @@ const noticeStyles = {
 
 export function SignUpResult({
   state,
+  email,
   onAction,
 }: {
   state: SignUpResultState;
+  email?: string;
   onAction: () => void;
 }) {
   const result = resultContent[state];
@@ -96,7 +115,10 @@ export function SignUpResult({
                 {state === "expired" && (
                   <>
                     <h2 className="font-bold">Invitations work for 7 days</h2>
-                    <p className="type-caption">{result.message}</p>
+                    <p className="type-caption">
+                      Ask your administrator to send a new invitation to{" "}
+                      {email ?? "your email address"}.
+                    </p>
                   </>
                 )}
                 {state === "account-exists" && (
@@ -106,6 +128,12 @@ export function SignUpResult({
                     </h2>
                     <p className="type-caption">{result.message}</p>
                   </>
+                )}
+                {state === "used" && (
+                  <p className="type-caption">{result.message}</p>
+                )}
+                {state === "canceled" && (
+                  <p className="type-caption">{result.message}</p>
                 )}
                 {state === "success" && (
                   <p className="type-caption">{result.message}</p>

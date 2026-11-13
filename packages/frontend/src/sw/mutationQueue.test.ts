@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { createTRPCUntypedClient, httpLink } from "@trpc/client";
 import { describe, expect, it, vi } from "vitest";
-import { isQueuedOffline } from "@frontend/lib/offlineSync.ts";
+import {
+  SKIP_OFFLINE_QUEUE_HEADER,
+  isQueuedOffline,
+  skipsOfflineQueue,
+} from "@frontend/lib/offlineSync.ts";
 import type {
   RejectedSyncItem,
   SyncMessage,
@@ -150,6 +154,24 @@ describe("handleMutation", () => {
 
     expect(await response.json()).toEqual({ result: { data: "ok" } });
     expect(queue.entries).toHaveLength(0);
+  });
+
+  it("does not queue a row action that opts out of replay", async () => {
+    const { queue, deps } = setup();
+    const request = mutation("people.removeAccess", { uid: "u2" }, "alice");
+    request.headers.set(SKIP_OFFLINE_QUEUE_HEADER, "1");
+
+    await expect(handleMutation(request, queue, deps)).rejects.toThrow(
+      /Failed to fetch/,
+    );
+    expect(queue.entries).toHaveLength(0);
+  });
+
+  it("opts out only the people row actions", () => {
+    expect(skipsOfflineQueue("people.removeAccess")).toBe(true);
+    expect(skipsOfflineQueue("invites.resend")).toBe(true);
+    expect(skipsOfflineQueue("invites.cancel")).toBe(true);
+    expect(skipsOfflineQueue("trees.create")).toBe(false);
   });
 
   it("queues the write without its token when offline", async () => {

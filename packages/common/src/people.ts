@@ -1,8 +1,20 @@
 import { type } from "arktype";
-import { userRole } from "@common/user.ts";
+import { nonEmptyTrimmed } from "@common/fields.ts";
+import { userRole, volunteerTypes } from "@common/user.ts";
 
 // An invite document at invitations/{id}. The invitations backend creates
 // these; people.list only reads them.
+const inviteToken = type(/^[A-Za-z0-9_-]{1,128}$/);
+export const checkInviteInput = type({ token: inviteToken });
+export const acceptInviteInput = type({
+  token: inviteToken,
+  firstName: nonEmptyTrimmed,
+  lastName: nonEmptyTrimmed,
+  "volunteerTypes?": volunteerTypes,
+});
+
+export type AcceptInviteInput = typeof acceptInviteInput.infer;
+
 export const invitationStatus = type("'pending' | 'accepted' | 'canceled'");
 
 export const invitation = type({
@@ -13,6 +25,8 @@ export const invitation = type({
   status: invitationStatus,
   // ISO timestamps; field names match the Invite spec in the invitations task
   createdAt: "string",
+  "lastSentAt?": "string",
+  "tokenHash?": /^[a-f0-9]{64}$/,
   expiresAt: "string",
   invitedBy: "string",
 });

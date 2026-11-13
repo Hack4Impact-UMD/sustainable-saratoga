@@ -7,6 +7,22 @@
 /** Workbox Background Sync queue that holds tRPC mutations made offline. */
 export const MUTATION_QUEUE_NAME = "trpc-mutations";
 
+/**
+ * Set on row-management mutations so a dropped connection is not replayed.
+ * An administrator can reconcile an uncertain response with the live list.
+ */
+export const SKIP_OFFLINE_QUEUE_HEADER = "x-skip-offline-queue";
+
+const SKIP_OFFLINE_QUEUE_PATHS = new Set([
+  "people.removeAccess",
+  "invites.resend",
+  "invites.cancel",
+]);
+
+export function skipsOfflineQueue(path: string) {
+  return SKIP_OFFLINE_QUEUE_PATHS.has(path);
+}
+
 /** A queued offline write the server permanently refused. */
 export interface RejectedSyncItem {
   id: string;

@@ -4,10 +4,11 @@ import {
   Map,
   PanelLeftClose,
   Settings,
-  SlidersHorizontal,
+  Settings2,
   UserRound,
-  UsersRound,
+  Users,
 } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import {
@@ -31,8 +32,11 @@ export function MenuDrawer({
   signOutPending,
 }: MenuDrawerProps) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const { data, isError } = useQuery(trpc.users.me.queryOptions());
   const profile = data?.profile;
+  const recordsSelected = pathname === "/" || pathname.startsWith("/records/");
+  const peopleSelected = pathname === "/people";
   const fullName = profile
     ? `${profile.firstName} ${profile.lastName}`
     : user?.displayName || user?.email?.split("@")[0] || "Account";
@@ -61,7 +65,7 @@ export function MenuDrawer({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="!w-[min(18rem,85vw)] !max-w-none gap-0 overflow-y-auto border-r border-line-subtle bg-surface p-0 text-body shadow-2"
+        className="w-79 gap-0 overflow-y-auto border-r border-line-subtle bg-surface p-0 text-body shadow-2"
       >
         <header className="flex min-h-24 items-center gap-3 border-b border-line-subtle px-4 py-4">
           <SheetTitle className="sr-only">User Menu</SheetTitle>
@@ -92,7 +96,7 @@ export function MenuDrawer({
               <button
                 type="button"
                 aria-label="Close menu"
-                className="grid size-11 shrink-0 place-items-center rounded-input text-icon-primary hover:bg-hover"
+                className="size-11 place-items-center rounded-pill text-icon-secondary hover:bg-hover"
               >
                 <PanelLeftClose aria-hidden="true" className="size-5" />
               </button>
@@ -100,42 +104,55 @@ export function MenuDrawer({
           />
         </header>
 
-        <nav aria-label="Main menu" className="flex-1 space-y-4 p-3">
-          <button
-            type="button"
-            aria-current="page"
-            className="type-body-sm flex h-11 w-full items-center gap-3 rounded-md bg-selected px-4 text-left text-primary font-bold"
+        <nav aria-label="Main menu" className="flex-1 pt-4 px-3 pb-2">
+          <Link
+            to="/"
+            onClick={onClose}
+            aria-current={recordsSelected ? "page" : undefined}
+            className={`flex h-12 w-full items-center gap-3 rounded-md p-4 ${
+              recordsSelected
+                ? "type-btn-primary bg-selected text-primary"
+                : "type-btn-secondary text-body hover:bg-hover"
+            }`}
           >
-            <Map aria-hidden="true" className="size-5 shrink-0" />
+            <Map
+              aria-hidden="true"
+              className="size-5 shrink-0 text-icon-primary"
+            />
             Records
-          </button>
+          </Link>
 
           {profile?.role === "admin" && (
             <section aria-labelledby="administration-heading">
               <h2
                 id="administration-heading"
-                className="type-body-sm px-3 pb-2 font-bold tracking-wide text-body-muted"
+                className="px-4 pt-4 pb-1 font-bold text-[13px] leading-4.5 tracking-[0.04875rem] text-body-muted"
               >
-                Administration
+                ADMINISTRATION
               </h2>
               <div className="space-y-1">
-                <button
-                  type="button"
-                  disabled // Disable the button for now, as the feature is not implemented yet
-                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
+                <Link
+                  to="/people"
+                  onClick={onClose}
+                  aria-current={peopleSelected ? "page" : undefined}
+                  className={`flex h-12 w-full items-center gap-3 rounded-md p-4 ${
+                    peopleSelected
+                      ? "type-btn-primary bg-selected text-body"
+                      : "type-btn-secondary text-body hover:bg-hover"
+                  }`}
                 >
-                  <UsersRound aria-hidden="true" className="size-5 shrink-0" />
-                  People &amp; invitations
-                </button>
-                <button
-                  type="button"
-                  disabled // Disable the button for now, as the feature is not implemented yet
-                  className="type-btn-secondary flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
-                >
-                  <SlidersHorizontal
+                  <Users
                     aria-hidden="true"
-                    className="size-5 shrink-0"
+                    className="size-5 shrink-0 text-icon-primary"
                   />
+                  People &amp; invitations
+                </Link>
+                <button
+                  type="button"
+                  disabled // Disable the button for now, as the feature is not implemented yet
+                  className="type-btn-secondary flex h-12 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-left text-body-muted"
+                >
+                  <Settings2 aria-hidden="true" className="size-5 shrink-0" />
                   Manage fields
                 </button>
               </div>
@@ -158,7 +175,10 @@ export function MenuDrawer({
             disabled={signOutPending}
             className="type-btn-secondary flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-body hover:bg-hover disabled:cursor-not-allowed disabled:text-disabled"
           >
-            <LogOut aria-hidden="true" className="size-5 shrink-0" />
+            <LogOut
+              aria-hidden="true"
+              className="size-5 shrink-0 text-icon-primary"
+            />
             Sign out
           </button>
         </footer>
