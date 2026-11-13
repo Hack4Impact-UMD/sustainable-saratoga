@@ -1,5 +1,12 @@
-import { useEffect, useId, useState } from "react";
-import { CircleAlert, CircleCheck, Send, UserPlus, X } from "lucide-react";
+import { useId, useState } from "react";
+import {
+  CircleAlert,
+  CircleCheck,
+  RefreshCw,
+  Send,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@frontend/components/ui/badge.tsx";
@@ -40,6 +47,17 @@ type InviteEmail = {
 };
 
 const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type SendInvitesResult = { ok: true } | { ok: false };
+
+async function mockSendInvites(): Promise<SendInvitesResult> {
+  // TODO: Replace this mock with the invite API and its all-or-nothing result.
+  await new Promise((resolve) => window.setTimeout(resolve, 700));
+
+  return { ok: false };
+  // To preview the success toast, swap the active result:
+  // return { ok: true };
+}
 
 function canInviteAsAdmin(emails: InviteEmail[]) {
   return (
@@ -84,7 +102,7 @@ export function InviteModal() {
   const [emailDraft, setEmailDraft] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [sendCount, setSendCount] = useState(0);
+  const [isSendFailed, setIsSendFailed] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"Volunteer" | "Admin">(
     "Volunteer",
   );
@@ -97,31 +115,6 @@ export function InviteModal() {
   const sendInviteLabel = `Send ${emails.length} ${
     activeRole === "Admin" ? "Admin " : ""
   }invite${emails.length === 1 ? "" : "s"}`;
-
-  useEffect(() => {
-    if (!isSending) return;
-
-    // Simulate the pending request until invite API integration is available.
-    const timeoutId = window.setTimeout(() => {
-      setIsSending(false);
-      setIsOpen(false);
-      setEmails([]);
-      setEmailDraft("");
-      setSelectedRole("Volunteer");
-      toast.success(`${sendCount} invite${sendCount === 1 ? "" : "s"} sent`, {
-        duration: 4000,
-        icon: <CircleCheck className="size-6 shrink-0 text-toast-success" />,
-        unstyled: true,
-        className:
-          "flex w-[min(27rem,calc(100vw-2rem))] items-center gap-4 rounded-md border-0 bg-heading px-5 py-4 text-on-primary shadow-2",
-        classNames: {
-          title: "type-body-strong !text-on-primary",
-        },
-      });
-    }, 700);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isSending, sendCount]);
 
   function updateEmails(nextEmails: InviteEmail[]) {
     setEmails(nextEmails);
@@ -158,6 +151,36 @@ export function InviteModal() {
     setEmailDraft("");
   }
 
+  async function handleSendInvites() {
+    if (isSending) return;
+
+    setIsSendFailed(false);
+    setIsSending(true);
+    const result = await mockSendInvites();
+    setIsSending(false);
+
+    if (!result.ok) {
+      setIsSendFailed(true);
+      return;
+    }
+
+    const sentCount = emails.length;
+    setIsOpen(false);
+    setEmails([]);
+    setEmailDraft("");
+    setSelectedRole("Volunteer");
+    toast.success(`${sentCount} invite${sentCount === 1 ? "" : "s"} sent`, {
+      duration: 4000,
+      icon: <CircleCheck className="size-6 shrink-0 text-toast-success" />,
+      unstyled: true,
+      className:
+        "flex w-[min(27rem,calc(100vw-2rem))] items-center gap-4 rounded-md border-0 bg-heading px-5 py-4 text-on-primary shadow-2",
+      classNames: {
+        title: "type-body-strong !text-on-primary",
+      },
+    });
+  }
+
   return (
     <div className="flex justify-end">
       <Dialog
@@ -180,7 +203,7 @@ export function InviteModal() {
         </DialogTrigger>
         <DialogContent
           showCloseButton={false}
-          className="w-[calc(100%-2rem)] max-w-[432px] gap-6 rounded-lg border-0 bg-surface p-7 shadow-2 sm:p-7"
+          className="min-w-0 w-[calc(100%-2rem)] max-w-[432px] gap-6 rounded-lg border-0 bg-surface p-7 shadow-2 sm:p-7"
         >
           <DialogHeader className="flex-row items-center justify-between gap-4">
             <DialogTitle className="type-h2">Invite members</DialogTitle>
@@ -198,7 +221,7 @@ export function InviteModal() {
             </DialogClose>
           </DialogHeader>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-6">
             <div className="flex flex-col gap-2">
               <Label
                 htmlFor="invite-emails"
@@ -209,7 +232,7 @@ export function InviteModal() {
                 Email addresses
               </Label>
               <div
-                className={`flex max-h-[180px] min-h-16 flex-wrap items-center gap-2 overflow-y-auto overscroll-contain rounded-input border border-line-strong px-3 py-2 focus-within:border-focus focus-within:ring-3 focus-within:ring-ring/50 ${
+                className={`flex w-full min-w-0 max-h-[180px] min-h-16 flex-wrap items-center gap-2 overflow-y-auto overscroll-contain rounded-input border border-line-strong px-3 py-2 focus-within:border-focus focus-within:ring-3 focus-within:ring-ring/50 ${
                   isSending ? "bg-disabled-fill" : "bg-surface"
                 }`}
               >
@@ -230,7 +253,7 @@ export function InviteModal() {
                   return (
                     <Badge
                       key={address.toLowerCase()}
-                      className={`h-auto min-h-touch max-w-full gap-1 rounded-pill py-0 pl-4 text-body ${
+                      className={`h-auto min-w-0 min-h-touch max-w-full shrink whitespace-normal gap-1 rounded-pill py-0 pl-4 text-body ${
                         isSending
                           ? "border-line bg-pressed opacity-50"
                           : issue
@@ -248,7 +271,7 @@ export function InviteModal() {
                                 disabled={isSending}
                                 aria-describedby={tooltipId}
                                 aria-label={`Invalid email address: ${address}`}
-                                className="flex min-w-0 items-center gap-2 rounded-pill bg-transparent p-0 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                                className="flex min-w-0 max-w-full items-center gap-2 rounded-pill bg-transparent p-0 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                               />
                             }
                           >
@@ -263,12 +286,12 @@ export function InviteModal() {
                             role="tooltip"
                             side="bottom"
                             sideOffset={4}
-                            className="!flex !w-[min(18rem,calc(100vw-2rem))] !max-w-none !flex-col !items-start !gap-1 !rounded-md !bg-heading !px-3 !py-2 !text-left !text-on-primary shadow-2"
+                            className="!flex !w-[min(18rem,calc(100vw-2rem))] !min-w-0 !max-w-none !flex-col !items-start !gap-1 !rounded-md !bg-heading !px-3 !py-2 !text-left !text-on-primary shadow-2"
                           >
                             <strong className="type-body-strong block text-on-primary">
                               {issueCopy.title}
                             </strong>
-                            <span className="type-body block text-on-primary">
+                            <span className="type-body block min-w-0 max-w-full break-all text-on-primary">
                               {issueCopy.description}
                             </span>
                           </TooltipContent>
@@ -389,10 +412,30 @@ export function InviteModal() {
               </Select>
             </div>
 
-            <DialogDescription className="type-body-sm text-body-muted">
-              Invite links work for 7 days. Everyone in this send gets the same
-              role.
-            </DialogDescription>
+            {isSendFailed ? (
+              <div
+                role="alert"
+                className="flex gap-3 rounded-md border border-line-error bg-error-tint p-3"
+              >
+                <CircleAlert
+                  aria-hidden="true"
+                  className="mt-0.5 size-5 shrink-0 text-error"
+                />
+                <div className="flex flex-col gap-1">
+                  <p className="type-body-strong text-error">
+                    Couldn’t send the invites
+                  </p>
+                  <p className="type-body-sm">
+                    Check your connection and try again. Nothing was sent.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <DialogDescription className="type-body-sm text-body-muted">
+                Invite links work for 7 days. Everyone in this send gets the
+                same role.
+              </DialogDescription>
+            )}
           </div>
 
           <Button
@@ -401,11 +444,7 @@ export function InviteModal() {
             aria-disabled={isSending || undefined}
             aria-busy={isSending}
             aria-label={isSending ? "Sending..." : undefined}
-            onClick={() => {
-              if (isSending) return;
-              setSendCount(emails.length);
-              setIsSending(true);
-            }}
+            onClick={handleSendInvites}
             className={`h-14 w-full gap-3 type-body-strong ${
               isSending
                 ? "bg-primary-pressed text-on-primary hover:bg-primary-pressed active:bg-primary-pressed"
@@ -418,6 +457,11 @@ export function InviteModal() {
               <>
                 <Spinner aria-label="Sending invitations" />
                 Sending...
+              </>
+            ) : isSendFailed ? (
+              <>
+                <RefreshCw aria-hidden="true" className="size-5" />
+                Try again
               </>
             ) : (
               <>

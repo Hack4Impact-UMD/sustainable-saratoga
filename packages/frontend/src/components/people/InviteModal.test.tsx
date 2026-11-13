@@ -65,6 +65,24 @@ describe("InviteModal email chips", () => {
     ).toHaveLength(2);
   });
 
+  it("keeps long email chips constrained to the email field width", () => {
+    const input = openInviteDialog();
+    const longAddress = `${"long".repeat(20)}@example.org`;
+
+    fireEvent.change(input, { target: { value: longAddress } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    const chip = screen.getByText(longAddress).closest('[data-slot="badge"]');
+    expect(chip).toHaveClass(
+      "min-w-0",
+      "max-w-full",
+      "whitespace-normal",
+      "shrink",
+    );
+    expect(input.parentElement).toHaveClass("w-full", "min-w-0");
+    expect(screen.getByRole("dialog")).toHaveClass("min-w-0");
+  });
+
   it("marks invalid addresses and describes how to fix them", async () => {
     const input = openInviteDialog();
 
@@ -86,6 +104,25 @@ describe("InviteModal email chips", () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent(
       'Check "casey@example" for typos. It should look like name@example.org.',
     );
+  });
+
+  it("wraps long invalid email text inside the tooltip on narrow screens", async () => {
+    const input = openInviteDialog();
+    const longAddress = `${"long".repeat(30)}@example`;
+
+    fireEvent.change(input, { target: { value: longAddress } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: `Invalid email address: ${longAddress}`,
+      }),
+    );
+
+    const tooltip = await screen.findByRole("tooltip");
+    const description = tooltip.querySelector("span");
+    expect(tooltip).toHaveClass("!min-w-0");
+    expect(description).toHaveClass("min-w-0", "max-w-full", "break-all");
+    expect(description).toHaveTextContent(longAddress);
   });
 
   it("counts every chip and enables sending only when all addresses are valid", () => {
@@ -186,7 +223,7 @@ describe("InviteModal email chips", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("shows a bottom success toast after the frontend send completes", async () => {
+  it("keeps all chips and allows retry after a frontend send failure", async () => {
     const input = openInviteDialog();
     fireEvent.change(input, {
       target: { value: "first@example.org, second@example.org" },
@@ -194,14 +231,25 @@ describe("InviteModal email chips", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     fireEvent.click(screen.getByRole("button", { name: "Send 2 invites" }));
 
-    const toastMessage = await screen.findByText("2 invites sent");
-    expect(toastMessage).toHaveClass("type-body-strong", "!text-on-primary");
-    expect(toastMessage.closest("[data-sonner-toast]")).toHaveClass(
-      "bg-heading",
-      "shadow-2",
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn’t send the invites",
     );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Invite" })).toBeEnabled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Check your connection and try again. Nothing was sent.",
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove first@example.org" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove second@example.org" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByRole("button", { name: "Sending..." })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
   });
 
   it("removes chips with their button or Backspace", () => {
