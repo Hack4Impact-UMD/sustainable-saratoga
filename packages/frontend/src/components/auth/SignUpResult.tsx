@@ -131,6 +131,12 @@ export function SignUpResult({
                     <p className="type-caption">{result.message}</p>
                   </>
                 )}
+                {state === "used" && (
+                  <p className="type-caption">{result.message}</p>
+                )}
+                {state === "canceled" && (
+                  <p className="type-caption">{result.message}</p>
+                )}
                 {state === "success" && (
                   <p className="type-caption">{result.message}</p>
                 )}
