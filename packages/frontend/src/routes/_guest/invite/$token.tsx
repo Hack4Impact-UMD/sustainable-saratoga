@@ -12,9 +12,7 @@ function InvitePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
 
-  const inviteQuery = useQuery(
-    trpc.invites.check.queryOptions({ token }),
-  );
+  const inviteQuery = useQuery(trpc.invites.check.queryOptions({ token }));
 
   function goToLogin() {
     void navigate({ to: "/login" });
@@ -31,13 +29,14 @@ function InvitePage() {
   const invite = inviteQuery.data;
 
   if (invite.status !== "valid") {
-  return (
-    <SignUpResult
-      state={invite.status}
-      onAction={goToLogin}
-    />
-  );
-}
+    return (
+      <SignUpResult
+        state={invite.status}
+        email={invite.email}
+        onAction={goToLogin}
+      />
+    );
+  }
 
   return (
     <SignUpForm

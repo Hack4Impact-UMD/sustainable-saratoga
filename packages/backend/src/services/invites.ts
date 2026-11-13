@@ -2,27 +2,23 @@ import { TRPCError } from "@trpc/server";
 import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
-import type {
-  AcceptInviteInput,
-  Invitation,
-  UserProfile,
-} from "@repo/common";
+import type { AcceptInviteInput, Invitation, UserProfile } from "@repo/common";
 
 export type CheckInviteResult =
   | { status: "valid"; email: string; role: Invitation["role"] }
-  | { status: "expired" | "used" | "canceled" };
+  | { status: "expired" | "used" | "canceled"; email?: string };
 
 function getInviteStatus(invite: Invitation, now: Date): CheckInviteResult {
   if (invite.status === "canceled") {
-    return { status: "canceled" };
+    return { status: "canceled", email: invite.email };
   }
 
   if (invite.status === "accepted") {
-    return { status: "used" };
+    return { status: "used", email: invite.email };
   }
 
   if (new Date(invite.expiresAt).getTime() <= now.getTime()) {
-    return { status: "expired" };
+    return { status: "expired", email: invite.email };
   }
 
   return {
@@ -125,46 +121,44 @@ export async function acceptInvite(
         });
       }
 
-      if (invite.role === "admin") {
-        profile = {
-            firstName: input.firstName,
-            lastName: input.lastName,
-            email: invite.email,
-            role: "admin",
-            status: "active",
-        };
-    } else {
-        profile = {
-            firstName: input.firstName,
-            lastName: input.lastName,
-            email: invite.email,
-            role: "volunteer",
-            status: "active",
-            volunteerTypes: input.volunteerTypes ?? ["planter"],
-    };
-}
+      profile =
+        invite.role === "admin"
+          ? {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "admin",
+              status: "active",
+            }
+          : {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "volunteer",
+              status: "active",
+              volunteerTypes: input.volunteerTypes ?? ["planter"],
+            };
 
       shouldEnableAccount = true;
       transaction.set(userRef, profile);
     } else {
-        if (invite.role === "admin") {
-            profile = {
-                firstName: input.firstName,
-                lastName: input.lastName,
-                email: invite.email,
-                role: "admin",
-                status: "active",
+      profile =
+        invite.role === "admin"
+          ? {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "admin",
+              status: "active",
+            }
+          : {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "volunteer",
+              status: "active",
+              volunteerTypes: input.volunteerTypes ?? ["planter"],
             };
-        } else {
-            profile = {
-                firstName: input.firstName,
-                lastName: input.lastName,
-                email: invite.email,
-                role: "volunteer",
-                status: "active",
-                volunteerTypes: input.volunteerTypes ?? ["planter"],
-            };
-    }
 
       transaction.create(userRef, profile);
     }

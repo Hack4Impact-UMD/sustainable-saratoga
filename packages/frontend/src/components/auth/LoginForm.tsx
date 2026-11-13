@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "@tanstack/react-router";
 import { CircleAlert, CloudAlert, Eye, EyeOff, Info } from "lucide-react";
 import icon from "@frontend/assets/Leaf logo.svg";
 import {
@@ -293,17 +292,6 @@ export function LoginForm({
           <Info aria-hidden="true" size={16} />
           <strong>Need access?</strong> Contact your administrator.
         </p>
-
-        {/* Dev only: sign-up needs an invitation link, and invitations don't exist yet */}
-        {import.meta.env.DEV && (
-          <Link
-            to="/signup"
-            search={{ email: "dev@example.org" }}
-            className="type-caption pt-(--space-2) text-center underline"
-          >
-            Dev only: create a test account
-          </Link>
-        )}
       </section>
     </main>
   );

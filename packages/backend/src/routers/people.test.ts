@@ -7,7 +7,6 @@ import { listPeople, removeAccess } from "@backend/services/people.ts";
 import { getUserProfile } from "@backend/services/users.ts";
 
 vi.mock("@backend/services/users.ts", () => ({
-  createUserProfile: vi.fn<() => void>(),
   getUserProfile: vi.fn<typeof getUserProfile>(),
 }));
 vi.mock("@backend/services/people.ts", () => ({

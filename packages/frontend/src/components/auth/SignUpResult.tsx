@@ -29,38 +29,38 @@ const resultContent: Record<
   },
   expired: {
     title: "This invitation has expired",
-    message:
-      "Ask your administrator to send a new invitation to jordan.lee@example.org.",
+    message: "Ask your administrator to send a new invitation.",
     tone: "warning",
     icon: Clock3,
     action: "Back to sign in",
   },
   used: {
-  title: "This invitation has already been used",
-  message: "This invitation link has already been used. Sign in to access your account.",
-  tone: "info",
-  icon: Info,
-  action: "Back to sign in",
-},
-canceled: {
-  title: "This invitation has been canceled",
-  message: "This invitation is no longer valid. Contact your administrator for a new invitation.",
-  tone: "warning",
-  icon: Clock3,
-  action: "Back to sign in",
-},
+    title: "This invitation has already been used",
+    message:
+      "This invitation link has already been used. Sign in to access your account.",
+    tone: "info",
+    icon: Info,
+    action: "Back to sign in",
+  },
+  canceled: {
+    title: "This invitation has been canceled",
+    message:
+      "This invitation is no longer valid. Contact your administrator for a new invitation.",
+    tone: "warning",
+    icon: Clock3,
+    action: "Back to sign in",
+  },
   "account-exists": {
     title: "Account already exists",
     message:
-      "Sign in with your password or Google. If you’ve forgotten your password, reset it.",
+      "Sign in with your password or Google. If you've forgotten your password, reset it.",
     tone: "info",
     icon: Info,
     action: "Sign in",
   },
   "no-access": {
     title: "No access yet",
-    message:
-      "priya.personal@example.com isn’t set up for the tree tracker. Contact your administrator.",
+    message: "isn't set up for the tree tracker. Contact your administrator.",
     tone: "plain",
     icon: Leaf,
     action: "Use another account",
@@ -76,9 +76,11 @@ const noticeStyles = {
 
 export function SignUpResult({
   state,
+  email,
   onAction,
 }: {
   state: SignUpResultState;
+  email?: string;
   onAction: () => void;
 }) {
   const result = resultContent[state];
@@ -99,7 +101,10 @@ export function SignUpResult({
           </header>
 
           {isPlain ? (
-            <p className="type-supporting text-center">{result.message}</p>
+            <p className="type-supporting text-center">
+              {email ?? "Your account"} isn&apos;t set up for the tree tracker.
+              Contact your administrator.
+            </p>
           ) : (
             <div
               className={`flex items-start gap-2 rounded-md border px-3 py-3 ${noticeStyles[result.tone]}`}
@@ -112,13 +117,16 @@ export function SignUpResult({
                 {state === "expired" && (
                   <>
                     <h2 className="font-bold">Invitations work for 7 days</h2>
-                    <p className="type-caption">{result.message}</p>
+                    <p className="type-caption">
+                      Ask your administrator to send a new invitation to{" "}
+                      {email ?? "your email address"}.
+                    </p>
                   </>
                 )}
                 {state === "account-exists" && (
                   <>
                     <h2 className="font-bold">
-                      An account already exists for jordan.lee@example.org
+                      An account already exists for {email ?? "your email"}
                     </h2>
                     <p className="type-caption">{result.message}</p>
                   </>
