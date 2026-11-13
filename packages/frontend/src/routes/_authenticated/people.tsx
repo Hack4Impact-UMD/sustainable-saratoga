@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
 import { PeoplePage } from "@frontend/components/people/PeoplePage.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
+import { useAuth } from "@frontend/lib/useAuth.ts";
 import { useEffect } from "react";
 
 /**
@@ -19,8 +20,11 @@ export const Route = createFileRoute("/_authenticated/people")({
 /** Loads the current profile and redirects non-admin users away from the page. */
 function PeopleRoute() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const profileQuery = useQuery(trpc.users.me.queryOptions());
-  const isAdmin = profileQuery.data?.profile?.role === "admin";
+  const isAdmin =
+    profileQuery.data?.session.uid === user?.uid &&
+    profileQuery.data?.profile?.role === "admin";
 
   // Wait for the profile before deciding whether the user may enter.
   useEffect(() => {

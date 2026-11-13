@@ -99,6 +99,9 @@ function fixture() {
   return {
     db,
     record: () => record,
+    setRecord: (value: Record) => {
+      record = value;
+    },
     failNextFinalization: () => {
       failFinalization = true;
     },
@@ -216,6 +219,32 @@ it("reuses the delivery payload and idempotency key when receipt persistence fai
   expect(deliverInvite).toHaveBeenCalledTimes(2);
 });
 
+it.each([23 * 60 * 60 * 1000, 24 * 60 * 60 * 1000])(
+  "replaces an ambiguous operation after %i milliseconds",
+  async (age) => {
+    const { db } = fixture();
+    vi.mocked(deliverInvite).mockRejectedValueOnce(new Error("uncertain"));
+    await expect(resendInvite(db, id)).rejects.toThrow("uncertain");
+    const first = vi.mocked(deliverInvite).mock.calls[0];
+    vi.setSystemTime(Date.now() + age);
+    await expect(resendInvite(db, id)).resolves.toHaveProperty(
+      "person.status",
+      "pending",
+    );
+    const second = vi.mocked(deliverInvite).mock.calls[1];
+    if (!first || !second) throw new Error("Expected both deliveries");
+    expect(second[1]).not.toBe(first[1]);
+    await expect(checkInvite(db, first[1])).resolves.toHaveProperty(
+      "status",
+      "expired",
+    );
+    await expect(checkInvite(db, second[1])).resolves.toHaveProperty(
+      "status",
+      "valid",
+    );
+  },
+);
+
 it("keeps the replacement inactive when an administrator cancels during delivery", async () => {
   const { db } = fixture();
   vi.mocked(deliverInvite).mockImplementationOnce(async () => {
@@ -232,4 +261,59 @@ it("keeps the replacement inactive when an administrator cancels during delivery
     "status",
     "expired",
   );
+});
+
+it("reuses the same operation just before the retry cutoff", async () => {
+  const { db } = fixture();
+  vi.mocked(deliverInvite).mockRejectedValueOnce(new Error("uncertain"));
+  await expect(resendInvite(db, id)).rejects.toThrow("uncertain");
+  vi.setSystemTime(Date.now() + 23 * 60 * 60 * 1000 - 1);
+  await resendInvite(db, id);
+  expect(vi.mocked(deliverInvite).mock.calls[1]).toEqual(
+    vi.mocked(deliverInvite).mock.calls[0],
+  );
+});
+
+it("finalizes a persisted receipt after the cutoff without sending again", async () => {
+  const { db, failNextFinalization } = fixture();
+  failNextFinalization();
+  await expect(resendInvite(db, id)).rejects.toThrow("Could not finalize");
+  vi.setSystemTime(Date.now() + 24 * 60 * 60 * 1000);
+  await resendInvite(db, id);
+  expect(deliverInvite).toHaveBeenCalledTimes(1);
+});
+
+it("does not activate an invite accepted while delivery is in progress", async () => {
+  const { db, record, setRecord } = fixture();
+  vi.mocked(deliverInvite).mockImplementationOnce(() => {
+    setRecord({ ...record(), status: "accepted", acceptedBy: "member" });
+    return Promise.resolve();
+  });
+  await expect(resendInvite(db, id)).rejects.toThrow("invite changed");
+  expect(record().status).toBe("accepted");
+  expect(record().tokenHash).toBeUndefined();
+});
+
+it("a late obsolete delivery cannot overwrite a replacement", async () => {
+  const { db, record } = fixture();
+  let finish = () => {};
+  let started = () => {};
+  const begun = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const held = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  vi.mocked(deliverInvite).mockImplementationOnce(() => {
+    started();
+    return held;
+  });
+  const first = resendInvite(db, id);
+  await begun;
+  vi.setSystemTime(Date.now() + 23 * 60 * 60 * 1000);
+  await resendInvite(db, id);
+  const committed = record().tokenHash;
+  finish();
+  await expect(first).rejects.toThrow("invite changed");
+  expect(record().tokenHash).toBe(committed);
 });

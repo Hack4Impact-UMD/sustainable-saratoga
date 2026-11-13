@@ -7,6 +7,7 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { routeTree } from "@frontend/routeTree.gen.ts";
+import { AuthContext } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 
 const profileState = vi.hoisted(() => ({
@@ -75,7 +76,7 @@ function renderRoute(role: "admin" | "volunteer") {
   const auth: AuthState = {
     isPending: false,
     isAuthed: true,
-    user: null,
+    user: { uid: "current-user" } as AuthState["user"],
   };
   const router = createRouter({
     routeTree,
@@ -88,7 +89,9 @@ function renderRoute(role: "admin" | "volunteer") {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} context={{ auth }} />
+      <AuthContext.Provider value={auth}>
+        <RouterProvider router={router} context={{ auth }} />
+      </AuthContext.Provider>
     </QueryClientProvider>,
   );
 

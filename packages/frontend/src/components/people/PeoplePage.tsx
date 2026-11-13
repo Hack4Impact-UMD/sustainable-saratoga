@@ -15,6 +15,7 @@ import {
 import { PeopleSearchInput } from "@frontend/components/ui/PeopleSearchInput.tsx";
 import { Toast } from "@frontend/components/ui/Toast.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
+import { sessionGeneration } from "@frontend/lib/sessionCleanup.ts";
 
 const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -128,8 +129,9 @@ export function PeoplePage() {
         : "title";
   }
 
-  async function dropRow(id: string) {
+  async function dropRow(id: string, generation: number) {
     await queryClient.cancelQueries({ queryKey: listKey });
+    if (generation !== sessionGeneration()) return;
     queryClient.setQueryData<Person[]>(listKey, (current) =>
       withoutPerson(current ?? [], id),
     );
@@ -144,18 +146,22 @@ export function PeoplePage() {
       setRemoveError("offline");
       return;
     }
+    const generation = sessionGeneration();
     const target = removeTarget;
     const visible = people;
     setRemovePending(true);
     setRemoveError(null);
     try {
       await removeAccess.mutateAsync({ uid: target.uid });
-      await dropRow(target.uid);
+      if (generation !== sessionGeneration()) return;
+      await dropRow(target.uid, generation);
+      if (generation !== sessionGeneration()) return;
       focusAfterRemoval(visible, target.uid);
       skipDialogRestore.current = true;
       setRemoveTarget(null);
       showToast("success", `${target.name}'s access was removed.`);
     } catch (error) {
+      if (generation !== sessionGeneration()) return;
       const failure = classifyRowFailure(error);
       setRemoveError(failure === "server" ? "failed" : failure);
       if (failure !== "queued") {
@@ -178,11 +184,14 @@ export function PeoplePage() {
       showToast("error", "You're offline. Nothing was changed.");
       return;
     }
+    const generation = sessionGeneration();
     setActionPending(true);
     try {
       if (action === "cancel") {
         await cancelInvite.mutateAsync({ inviteId: person.id });
-        await dropRow(person.id);
+        if (generation !== sessionGeneration()) return;
+        await dropRow(person.id, generation);
+        if (generation !== sessionGeneration()) return;
         focusAfterRemoval(people, person.id);
         showToast("success", "Invite canceled.");
         return;
@@ -190,7 +199,9 @@ export function PeoplePage() {
       const { person: updated } = await resendInvite.mutateAsync({
         inviteId: person.id,
       });
+      if (generation !== sessionGeneration()) return;
       await queryClient.cancelQueries({ queryKey: listKey });
+      if (generation !== sessionGeneration()) return;
       queryClient.setQueryData<Person[]>(listKey, (current) => {
         if (
           !current?.some(
@@ -205,6 +216,7 @@ export function PeoplePage() {
       showToast("success", "New invite link sent.");
       void queryClient.invalidateQueries({ queryKey: listKey });
     } catch (error) {
+      if (generation !== sessionGeneration()) return;
       if (document.activeElement === document.body) {
         pendingFocus.current = person.id;
       }

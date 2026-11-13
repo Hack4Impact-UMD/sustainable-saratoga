@@ -9,7 +9,7 @@ import {
 import { Menu } from "lucide-react";
 import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
 import { MenuDrawer } from "@frontend/components/layout/MenuDrawer.tsx";
-import { auth } from "@frontend/lib/firebase.ts";
+import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 
@@ -31,9 +31,8 @@ function RootLayout() {
     isAuthed && pathname !== "/people" && !pathname.startsWith("/invite/");
 
   const signOut = useMutation({
-    mutationFn: () => auth.signOut(),
+    mutationFn: () => signOutAndClear(queryClient),
     onSuccess: async () => {
-      await queryClient.resetQueries();
       await router.invalidate();
     },
   });

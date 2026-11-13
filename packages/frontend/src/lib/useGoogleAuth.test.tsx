@@ -22,6 +22,10 @@ vi.mock("firebase/auth", () => ({
 }));
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 vi.mock("@frontend/lib/trpc.ts", () => ({
+  queryClient: {
+    cancelQueries: () => Promise.resolve(),
+    removeQueries: () => {},
+  },
   trpc: {
     invites: {
       accept: { mutationOptions: () => ({ mutationFn: state.accept }) },

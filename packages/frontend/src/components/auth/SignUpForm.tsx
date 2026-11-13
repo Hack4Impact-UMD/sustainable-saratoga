@@ -1,6 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
-import { signOut } from "firebase/auth";
-import { auth } from "@frontend/lib/firebase.ts";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -77,6 +76,7 @@ export function SignUpForm({
   );
   const isSubmitting =
     signUp.isPending || googleSignUp.isPending || acceptInvite.isPending;
+  const queryClient = useQueryClient();
   const validationErrorCount = Object.keys(fieldErrors).length;
   const passwordChecks = signUpPasswordRequirements.map(({ test }) =>
     test(passwordValue),
@@ -515,7 +515,7 @@ export function SignUpForm({
                   type="button"
                   disabled={isSubmitting}
                   className="type-link mt-2 min-h-11"
-                  onClick={() => void signOut(auth)}
+                  onClick={() => void signOutAndClear(queryClient)}
                 >
                   Sign out
                 </button>

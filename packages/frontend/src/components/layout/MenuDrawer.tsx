@@ -34,7 +34,7 @@ export function MenuDrawer({
   const { user } = useAuth();
   const { pathname } = useLocation();
   const { data, isError } = useQuery(trpc.users.me.queryOptions());
-  const profile = data?.profile;
+  const profile = data?.session.uid === user?.uid ? data?.profile : null;
   const recordsSelected = pathname === "/" || pathname.startsWith("/records/");
   const peopleSelected = pathname === "/people";
   const fullName = profile

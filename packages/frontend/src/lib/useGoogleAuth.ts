@@ -3,10 +3,10 @@ import {
   GoogleAuthProvider,
   getAdditionalUserInfo,
   signInWithPopup,
-  signOut,
 } from "firebase/auth";
 import type { UserCredential } from "firebase/auth";
 import type { CreateUserInput } from "@repo/common";
+import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { auth } from "@frontend/lib/firebase.ts";
 import { queryClient, trpc } from "@frontend/lib/trpc.ts";
 
@@ -32,7 +32,7 @@ async function discardSignIn(credential: UserCredential) {
       console.error("Could not delete the unused Google account", error);
     }
   }
-  await signOut(auth);
+  await signOutAndClear(queryClient);
 }
 
 export type GoogleLoginResult =
@@ -65,7 +65,7 @@ export function useGoogleLogin(inviteToken?: string) {
             "Sign in with the email that received the invitation.",
           );
         } catch (error) {
-          await signOut(auth);
+          await signOutAndClear(queryClient);
           throw error;
         }
       }
@@ -136,7 +136,7 @@ export function useGoogleSignUp() {
         } catch (error) {
           // A lost response can follow a committed acceptance. Keep the
           // Firebase account so the invitee can safely sign in and retry.
-          await signOut(auth);
+          await signOutAndClear(queryClient);
           throw error;
         }
       }

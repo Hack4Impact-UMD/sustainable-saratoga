@@ -4,6 +4,10 @@ import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
 import type { Person } from "@repo/common";
+import {
+  bumpedAuthRevision,
+  syncMemberAuth,
+} from "@backend/services/memberAuth.ts";
 
 const fullName = (first?: string, last?: string) =>
   [first, last].filter(Boolean).join(" ");
@@ -66,7 +70,9 @@ export async function listPeople(
  * Locks a member out. The profile is marked removed, never deleted, so their
  * records stay credited to them. The profile is written first: if a later Auth
  * step fails, the member is already refused by `protectedProcedure`, and
- * calling this again finishes the Auth steps.
+ * calling this again finishes the Auth steps. Auth itself is applied by
+ * `syncMemberAuth`, which repairs a disable that lands after a newer invite
+ * has already restored the account.
  */
 export async function removeAccess(
   db: Firestore,
@@ -83,23 +89,27 @@ export async function removeAccess(
   }
 
   const ref = db.collection("users").doc(targetUid);
-  const snapshot = await ref.get();
-  if (!snapshot.exists) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "No such member." });
-  }
-
-  const profile = userProfile.assert(snapshot.data());
-  if (profile.status !== "removed" || profile.restorationInviteId) {
-    await ref.update({
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "No such member." });
+    }
+    const raw = snapshot.data();
+    const profile = userProfile.assert(raw);
+    const previous = profile.removedAt ? Date.parse(profile.removedAt) : 0;
+    const removedAt = new Date(
+      Math.max(now.getTime(), Number.isFinite(previous) ? previous + 1 : 0),
+    ).toISOString();
+    transaction.update(ref, {
       status: "removed",
-      removedAt: now.toISOString(),
+      removedAt,
       removedBy: actorUid,
-      ...(profile.restorationInviteId && {
-        restorationInviteId: FieldValue.delete(),
-      }),
+      restorationInviteId: FieldValue.delete(),
+      desiredAuthDisabled: true,
+      authRevision: bumpedAuthRevision(raw),
     });
-  }
+  });
 
-  await auth.updateUser(targetUid, { disabled: true });
+  await syncMemberAuth(db, auth, targetUid);
   await auth.revokeRefreshTokens(targetUid);
 }

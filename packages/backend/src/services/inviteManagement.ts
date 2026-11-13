@@ -66,28 +66,23 @@ export async function resendInvite(db: Firestore, inviteId: string) {
           message: "This invite is already being resent.",
         });
       }
-      if (
+      const reuse =
         previous &&
-        !previous.sentAt &&
-        now - previous.startedAt >= DELIVERY_RETRY_MS
-      ) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Delivery could not be confirmed within the retry window.",
-        });
-      }
+        (previous.sentAt || now - previous.startedAt < DELIVERY_RETRY_MS)
+          ? previous
+          : undefined;
 
       // Firestore denies client access. Keep the token only until finalization
       // so a retry can send the same email under the same idempotency key.
       const operation: ResendOperation = {
-        ...(previous ?? {
+        ...(reuse ?? {
           token: randomBytes(32).toString("base64url"),
           startedAt: now,
         }),
         leaseUntil: now + 60_000,
       };
       transaction.update(ref, { resendOperation: operation });
-      return { invite: pending, operation, isFirstAttempt: !previous };
+      return { invite: pending, operation, isFirstAttempt: !reuse };
     },
   );
   const { token } = operation;

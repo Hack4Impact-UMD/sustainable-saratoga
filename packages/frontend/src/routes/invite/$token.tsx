@@ -2,11 +2,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
 import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
-import { signOut } from "firebase/auth";
-import { auth } from "@frontend/lib/firebase.ts";
+import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import { useState } from "react";
-import { trpc } from "@frontend/lib/trpc.ts";
+import { queryClient, trpc } from "@frontend/lib/trpc.ts";
 
 export const Route = createFileRoute("/invite/$token")({
   component: InvitePage,
@@ -69,7 +68,7 @@ function InvitePage() {
           type="button"
           className="type-link block min-h-11"
           onClick={async () => {
-            await signOut(auth);
+            await signOutAndClear(queryClient);
             goToLogin();
           }}
         >
@@ -98,7 +97,7 @@ function InvitePage() {
         <button
           type="button"
           className="type-link min-h-11"
-          onClick={() => void signOut(auth)}
+          onClick={() => void signOutAndClear(queryClient)}
         >
           Sign out
         </button>

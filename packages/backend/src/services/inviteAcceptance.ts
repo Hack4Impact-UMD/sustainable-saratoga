@@ -5,6 +5,11 @@ import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
 import type { AcceptInviteInput, Invitation, UserProfile } from "@repo/common";
 import { hashInviteToken } from "@backend/services/inviteManagement.ts";
+import {
+  bumpedAuthRevision,
+  setDesiredAuthDisabled,
+  syncMemberAuth,
+} from "@backend/services/memberAuth.ts";
 
 export type CheckInviteResult =
   | {
@@ -112,18 +117,54 @@ export async function restoreInviteSignIn(
       message: "The account email does not match the invitation.",
     });
   }
+  // Persist the unlock before Auth so a competing finalizer projects enabled
+  // instead of disabling this account again.
+  await db.runTransaction(async (tx) => {
+    const [latestInvite, latestMember] = await Promise.all([
+      tx.get(snapshot.ref),
+      tx.get(member.ref),
+    ]);
+    const current = invitation.assert(latestInvite.data());
+    if (
+      !latestMember.exists ||
+      latestMember.get("status") !== "removed" ||
+      latestMember.get("removedAt") !== member.get("removedAt") ||
+      current.tokenHash !== hashInviteToken(token) ||
+      getInviteStatus(current, new Date()).status !== "valid" ||
+      current.email !== invite.email ||
+      Date.parse(current.lastSentAt ?? current.createdAt) <=
+        Date.parse(latestMember.get("removedAt"))
+    ) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "The account or invitation changed. Try again.",
+      });
+    }
+    tx.update(member.ref, {
+      desiredAuthDisabled: false,
+      authRevision: bumpedAuthRevision(latestMember.data()),
+    });
+  });
   await auth.updateUser(member.id, { disabled: false });
-  const [currentInvite, currentMember] = await Promise.all([
-    snapshot.ref.get(),
-    member.ref.get(),
-  ]);
+  const [currentInvite, currentMember] = await db.runTransaction((tx) =>
+    Promise.all([tx.get(snapshot.ref), tx.get(member.ref)]),
+  );
+  const matchingRestoration =
+    currentMember.get("removedAt") === member.get("removedAt") &&
+    currentInvite.get("tokenHash") === invite.tokenHash &&
+    currentInvite.get("status") === "accepted" &&
+    currentInvite.get("acceptedBy") === member.id &&
+    currentInvite.get("restorationProfile") &&
+    currentMember.get("restorationInviteId") === snapshot.id;
   if (
     currentMember.get("status") === "removed" &&
+    !matchingRestoration &&
     (currentMember.get("removedAt") !== member.get("removedAt") ||
       currentInvite.get("status") !== "pending" ||
       currentInvite.get("tokenHash") !== invite.tokenHash)
   ) {
-    await auth.updateUser(member.id, { disabled: true });
+    await setDesiredAuthDisabled(db, member.ref, true);
+    await syncMemberAuth(db, auth, member.id);
     throw new TRPCError({
       code: "CONFLICT",
       message: "The account or invitation changed. Try again.",
@@ -310,21 +351,29 @@ export async function finishInviteRestoration(
   const snapshot = await inviteRef.get();
   const uid = snapshot.get("acceptedBy");
   const restoration = snapshot.get("restorationProfile");
-  if (
-    snapshot.get("status") !== "accepted" ||
-    typeof uid !== "string" ||
-    !restoration
-  )
+  if (snapshot.get("status") !== "accepted" || typeof uid !== "string") return;
+
+  // Retries must repair a late Auth write even after successful acceptance
+  // cleared its payload and a subsequent removal revoked access again.
+  if (!restoration) {
+    await syncMemberAuth(db, auth, uid);
     return;
+  }
 
   const profile = userProfile.assert(restoration);
   const userRef = db.collection("users").doc(uid);
   const member = await userRef.get();
-  if (member.get("status") !== "removed") return;
+  if (!member.exists || member.get("status") !== "removed") {
+    // A newer acceptance may already be active while this older Auth disable
+    // is still in flight. Project the current profile, then look again.
+    if (member.exists) await syncMemberAuth(db, auth, uid);
+    return;
+  }
   if (member.get("restorationInviteId") !== inviteId) {
-    // A previous attempt may have enabled Auth just before removal won.
+    // No marker means removal won, but a newer invite can restore the same
+    // account before a disable issued here reaches Firebase Auth.
     if (!member.get("restorationInviteId")) {
-      await auth.updateUser(uid, { disabled: true });
+      await syncMemberAuth(db, auth, uid);
     }
     return;
   }
@@ -353,5 +402,7 @@ export async function finishInviteRestoration(
     return currentMember.get("status") === "active" ? "active" : "removed";
   });
   // A later removal wins, including when it raced the Auth update above.
-  if (result === "removed") await auth.updateUser(uid, { disabled: true });
+  // Sync after that write so a delayed enable cannot outlive the removal.
+  if (result === "removed") await setDesiredAuthDisabled(db, userRef, true);
+  await syncMemberAuth(db, auth, uid);
 }
