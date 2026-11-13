@@ -1,5 +1,6 @@
 import type { Auth } from "firebase-admin/auth";
-import type { DocumentReference, Firestore } from "firebase-admin/firestore";
+import { FieldPath } from "firebase-admin/firestore";
+import type { Firestore } from "firebase-admin/firestore";
 
 const MAX_AUTH_SYNCS = 8;
 
@@ -15,41 +16,47 @@ function authRevision(value: unknown) {
     : 0;
 }
 
-/**
- * Auth disabled bit implied by the profile. Active wins over a stale flag.
- * A removed profile can still ask for sign-in (`desiredAuthDisabled: false`)
- * while acceptance is finishing or a replacement invite unlocked the account.
- * Profiles written before `status` existed stay active.
- */
-export function projectedAuthDisabled(data: unknown) {
-  const profile = record(data);
-  if (profile.status !== "removed") return false;
-  if (typeof profile.desiredAuthDisabled === "boolean") {
-    return profile.desiredAuthDisabled;
-  }
-  return true;
-}
-
 export function bumpedAuthRevision(data: unknown) {
   return authRevision(record(data).authRevision) + 1;
 }
 
-/** Records the Auth bit the next sync must project. Active profiles stay enabled. */
-export async function setDesiredAuthDisabled(
-  db: Firestore,
-  userRef: DocumentReference,
-  disabled: boolean,
-) {
-  await db.runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(userRef);
-    if (!snapshot.exists) return;
-    const data = record(snapshot.data());
-    if (data.status !== "removed") return;
-    if (data.desiredAuthDisabled === disabled) return;
-    transaction.update(userRef, {
-      desiredAuthDisabled: disabled,
-      authRevision: authRevision(data.authRevision) + 1,
-    });
+/** Resolve current intent with its invitation in the same transaction. */
+function currentIntent(db: Firestore, uid: string) {
+  const ref = db.collection("users").doc(uid);
+  return db.runTransaction(async (tx) => {
+    const member = await tx.get(ref);
+    if (!member.exists) return null;
+    const data = record(member.data());
+    let disabled = data.status === "removed";
+    const unlock = record(data.authUnlock);
+    const inviteId =
+      typeof data.restorationInviteId === "string"
+        ? data.restorationInviteId
+        : unlock.inviteId;
+    if (disabled && typeof inviteId === "string") {
+      const invite = await tx.get(db.collection("invitations").doc(inviteId));
+      const sent = Date.parse(
+        invite.get("lastSentAt") ?? invite.get("createdAt"),
+      );
+      const removed = Date.parse(String(data.removedAt));
+      const emailMatches =
+        typeof data.email === "string" &&
+        String(invite.get("email")).toLowerCase() === data.email.toLowerCase();
+      const accepted =
+        invite.get("status") === "accepted" &&
+        invite.get("acceptedBy") === uid &&
+        invite.get("restorationProfile") &&
+        data.restorationInviteId === inviteId;
+      const pending =
+        invite.get("status") === "pending" &&
+        unlock.inviteId === inviteId &&
+        unlock.removedAt === data.removedAt &&
+        typeof unlock.tokenHash === "string" &&
+        unlock.tokenHash === invite.get("tokenHash") &&
+        Date.parse(invite.get("expiresAt")) > Date.now();
+      disabled = !(emailMatches && sent > removed && (accepted || pending));
+    }
+    return { data, disabled, revision: authRevision(data.authRevision) };
   });
 }
 
@@ -70,16 +77,30 @@ export async function setDesiredAuthDisabled(
 export async function syncMemberAuth(db: Firestore, auth: Auth, uid: string) {
   const ref = db.collection("users").doc(uid);
   for (let attempt = 0; attempt < MAX_AUTH_SYNCS; attempt++) {
-    const before = await ref.get();
-    if (!before.exists) return;
-    const beforeData = record(before.data());
-    const disabled = projectedAuthDisabled(beforeData);
-    const revision = authRevision(beforeData.authRevision);
+    const before = await currentIntent(db, uid);
+    if (!before) return;
+    const { disabled, revision } = before;
     await auth.updateUser(uid, { disabled });
-    const after = await ref.get();
-    const afterData = record(after.data());
-    if (authRevision(afterData.authRevision) !== revision) continue;
-    if (projectedAuthDisabled(afterData) !== disabled) continue;
+    const removedAt = before.data.removedAt;
+    if (
+      before.data.status === "removed" &&
+      typeof removedAt === "string" &&
+      before.data.authRevokedRemoval !== removedAt
+    ) {
+      await auth.revokeRefreshTokens(uid);
+      await db.runTransaction(async (tx) => {
+        const latest = await tx.get(ref);
+        if (
+          record(latest.data()).removedAt === removedAt &&
+          record(latest.data()).status === "removed"
+        ) {
+          tx.update(ref, { authRevokedRemoval: removedAt });
+        }
+      });
+    }
+    const after = await currentIntent(db, uid);
+    if (!after) return;
+    if (after.revision !== revision || after.disabled !== disabled) continue;
     if (typeof auth.getUser === "function") {
       const account = await auth.getUser(uid);
       if (
@@ -92,4 +113,54 @@ export async function syncMemberAuth(db: Firestore, auth: Auth, uid: string) {
     return;
   }
   throw new Error("Firebase Auth did not match the member profile.");
+}
+
+/** Rechecks completed accounts too: an old Auth request may land after acknowledgement. */
+export async function reconcileMemberAuth(db: Firestore, auth: Auth) {
+  let cursor: string | undefined;
+  let failures = 0;
+  let checked = 0;
+  while (true) {
+    const query = db
+      .collection("users")
+      .orderBy(FieldPath.documentId())
+      .limit(100);
+    const page = await (cursor ? query.startAfter(cursor) : query).get();
+    for (let offset = 0; offset < page.docs.length; offset += 5) {
+      await Promise.all(
+        page.docs.slice(offset, offset + 5).map(async (snapshot) => {
+          if (
+            snapshot.get("authRevision") === undefined &&
+            snapshot.get("status") !== "removed" &&
+            !snapshot.get("restorationInviteId")
+          )
+            return;
+          try {
+            if (snapshot.get("restorationInviteId")) {
+              const { finishInviteRestoration } =
+                await import("@backend/services/inviteAcceptance.ts");
+              await finishInviteRestoration(
+                db,
+                auth,
+                snapshot.get("restorationInviteId"),
+              );
+            }
+            await syncMemberAuth(db, auth, snapshot.id);
+            checked++;
+          } catch (error) {
+            failures++;
+            const code =
+              error && typeof error === "object" && "code" in error
+                ? String(error.code)
+                : "unknown";
+            console.error("Member Auth reconciliation failed", { code });
+          }
+        }),
+      );
+    }
+    if (page.docs.length < 100) break;
+    cursor = page.docs.at(-1)?.id;
+  }
+  console.warn("Member Auth reconciliation", { checked, failures });
+  if (failures) throw new Error("Member Auth reconciliation incomplete.");
 }

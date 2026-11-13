@@ -144,11 +144,12 @@ describe("removeAccess", () => {
     await removeAccess(db, auth, "admin-1", "u1", now);
 
     expect(doc).toHaveBeenCalledWith("u1");
-    expect(update).toHaveBeenCalledExactlyOnceWith({
+    expect(update).toHaveBeenCalledWith({
       status: "removed",
       removedAt: now.toISOString(),
       removedBy: "admin-1",
       restorationInviteId: expect.anything(),
+      authUnlock: expect.anything(),
       desiredAuthDisabled: true,
       authRevision: 1,
     });
@@ -190,7 +191,7 @@ describe("removeAccess", () => {
 
     await removeAccess(db, auth, "admin-1", "u1", now);
 
-    expect(update).toHaveBeenCalledExactlyOnceWith(
+    expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "removed",
         removedBy: "admin-1",

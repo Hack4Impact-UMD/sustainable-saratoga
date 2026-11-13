@@ -3,7 +3,7 @@ import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { cn } from "cn";
 
 interface ToastProps extends Omit<
-  React.ComponentProps<"div">,
+  React.ComponentProps<"output">,
   "role" | "children"
 > {
   message: React.ReactNode;
@@ -41,9 +41,8 @@ function Toast({
   const isError = variant === "error";
 
   return (
-    <div
+    <output
       {...props}
-      role={isError ? "alert" : "status"}
       aria-atomic="true"
       className={cn(
         "pointer-events-auto fixed inset-x-4 bottom-4 z-50 mx-auto flex min-h-16 w-full max-w-sm items-center gap-3 rounded-input bg-body px-4 py-3 text-on-primary shadow-2",
@@ -74,7 +73,7 @@ function Toast({
           <X aria-hidden="true" className="size-5" />
         </button>
       )}
-    </div>
+    </output>
   );
 }
 

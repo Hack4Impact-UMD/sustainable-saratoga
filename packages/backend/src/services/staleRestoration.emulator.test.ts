@@ -12,6 +12,10 @@ import {
   restoreInviteSignIn,
 } from "@backend/services/inviteAcceptance.ts";
 import { hashInviteToken } from "@backend/services/inviteManagement.ts";
+import {
+  reconcileMemberAuth,
+  syncMemberAuth,
+} from "@backend/services/memberAuth.ts";
 import { removeAccess } from "@backend/services/people.ts";
 
 const emulators =
@@ -78,7 +82,7 @@ async function withMember(
   }) => Promise<void>,
 ) {
   const app = initializeApp(
-    { projectId: "demo-saratoga-review" },
+    { projectId: `demo-race-${randomUUID().slice(0, 8)}` },
     randomUUID(),
   );
   const db = getFirestore(app);
@@ -348,6 +352,7 @@ it.skipIf(!emulators)(
           return auth.updateUser(id, data);
         },
         getUser: (id: string) => auth.getUser(id),
+        revokeRefreshTokens: (id: string) => auth.revokeRefreshTokens(id),
       } as unknown as Auth;
       await expect(
         finishInviteRestoration(db, flaky, fresh.id),
@@ -449,6 +454,179 @@ it.skipIf(!emulators)(
       await finishInviteRestoration(db, auth, fresh.id);
       expect(await profileField(user, "status")).toBe("removed");
       expect(await authDisabled(auth, uid)).toBe(true);
+    });
+  },
+  20000,
+);
+
+it.skipIf(!emulators)(
+  "sweep repairs late writes after completed operations without a user retry",
+  async () => {
+    await withMember(false, async ({ db, auth, uid, email, user, invite }) => {
+      await user.set(profileFor(email));
+      await removeAccess(db, auth, "admin", uid);
+      // Simulate an orphaned enable landing after its caller died and removal completed.
+      await auth.updateUser(uid, { disabled: false });
+      await reconcileMemberAuth(db, auth);
+      expect(await authDisabled(auth, uid)).toBe(true);
+      const fresh = invite();
+      const now = Date.now();
+      await fresh.set({
+        email,
+        role: "volunteer",
+        status: "pending",
+        invitedBy: "admin",
+        createdAt: new Date(now + 1).toISOString(),
+        expiresAt: new Date(now + 86400000).toISOString(),
+      });
+      await acceptInvite(db, uid, email, {
+        token: fresh.id,
+        firstName: "Review",
+        lastName: "Race",
+      });
+      await reconcileMemberAuth(db, auth);
+      expect(await profileField(user, "status")).toBe("active");
+      expect(await profileField(fresh, "restorationProfile")).toBeUndefined();
+      expect(await profileField(user, "authRevision")).toBeGreaterThan(1);
+      // An orphaned old disable lands after all restoration callers completed.
+      await auth.updateUser(uid, { disabled: true });
+      await Promise.all([
+        reconcileMemberAuth(db, auth),
+        reconcileMemberAuth(db, auth),
+      ]);
+      expect(await authDisabled(auth, uid)).toBe(false);
+    });
+  },
+  20000,
+);
+
+it.skipIf(!emulators)(
+  "sweep never unlocks a removed account from an unbacked false flag",
+  async () => {
+    await withMember(false, async ({ db, auth, uid, email, user }) => {
+      await user.set({
+        ...profileFor(email),
+        status: "removed",
+        removedAt: new Date().toISOString(),
+        desiredAuthDisabled: false,
+        authRevision: 2,
+      });
+      await reconcileMemberAuth(db, auth);
+      expect(await authDisabled(auth, uid)).toBe(true);
+    });
+  },
+  20000,
+);
+
+it.skipIf(!emulators)(
+  "sweep retries failed token revocation and leaves unmanaged active accounts untouched",
+  async () => {
+    await withMember(true, async ({ db, auth, uid, email, user }) => {
+      await user.set(profileFor(email));
+      await reconcileMemberAuth(db, auth);
+      expect(await authDisabled(auth, uid)).toBe(true);
+      let fail = true;
+      const flaky = {
+        updateUser: (id: string, data: { disabled: boolean }) =>
+          auth.updateUser(id, data),
+        getUser: (id: string) => auth.getUser(id),
+        revokeRefreshTokens: (id: string) => {
+          if (fail) {
+            fail = false;
+            return Promise.reject(new Error("revocation unavailable"));
+          }
+          return auth.revokeRefreshTokens(id);
+        },
+      } as unknown as Auth;
+      await expect(removeAccess(db, flaky, "admin", uid)).rejects.toThrow(
+        "revocation unavailable",
+      );
+      expect(await profileField(user, "authRevokedRemoval")).toBeUndefined();
+      await reconcileMemberAuth(db, flaky);
+      expect(await profileField(user, "authRevokedRemoval")).toBe(
+        await profileField(user, "removedAt"),
+      );
+      expect(await authDisabled(auth, uid)).toBe(true);
+      await syncMemberAuth(db, flaky, uid);
+    });
+  },
+  20000,
+);
+
+it.skipIf(!emulators).each(["canceled", "expired", "replaced", "new-removal"])(
+  "sweep invalidates %s unlock intent",
+  async (change) => {
+    await withMember(true, async ({ db, auth, uid, email, user, invite }) => {
+      const fresh = invite();
+      const now = Date.now();
+      await user.set({
+        ...profileFor(email),
+        status: "removed",
+        removedAt: new Date(now - 60000).toISOString(),
+      });
+      await fresh.set({
+        email,
+        role: "volunteer",
+        status: "pending",
+        invitedBy: "admin",
+        tokenHash: hashInviteToken(fresh.id),
+        createdAt: new Date(now - 30000).toISOString(),
+        expiresAt: new Date(now + 86400000).toISOString(),
+      });
+      await restoreInviteSignIn(db, auth, fresh.id);
+      expect(await authDisabled(auth, uid)).toBe(false);
+      if (change === "canceled") await fresh.update({ status: "canceled" });
+      if (change === "expired")
+        await fresh.update({ expiresAt: new Date(now - 1).toISOString() });
+      if (change === "replaced")
+        await fresh.update({ tokenHash: hashInviteToken("replacement") });
+      if (change === "new-removal") await removeAccess(db, auth, "admin", uid);
+      await reconcileMemberAuth(db, auth);
+      expect(await authDisabled(auth, uid)).toBe(true);
+      expect(await profileField(user, "status")).toBe("removed");
+    });
+  },
+  20000,
+);
+
+it.skipIf(!emulators)(
+  "obsolete unlock caller cannot roll back a newer valid unlock",
+  async () => {
+    await withMember(true, async ({ db, auth, uid, email, user, invite }) => {
+      const old = invite(),
+        fresh = invite();
+      const now = Date.now();
+      await user.set({
+        ...profileFor(email),
+        status: "removed",
+        removedAt: new Date(now - 60000).toISOString(),
+      });
+      for (const ref of [old, fresh])
+        await ref.set({
+          email,
+          role: "volunteer",
+          status: "pending",
+          invitedBy: "admin",
+          tokenHash: hashInviteToken(ref.id),
+          createdAt: new Date(now - 30000).toISOString(),
+          expiresAt: new Date(now + 86400000).toISOString(),
+        });
+      const gate = holdAuth(auth, (disabled) => !disabled);
+      const stale = restoreInviteSignIn(db, gate.delayed, old.id).catch(
+        (error: unknown) => error,
+      );
+      await gate.entered;
+      try {
+        await old.update({ status: "canceled" });
+        await restoreInviteSignIn(db, auth, fresh.id);
+      } finally {
+        gate.release();
+      }
+      expect(await stale).toMatchObject({ code: "CONFLICT" });
+      expect(await profileField(user, "authUnlock")).toMatchObject({
+        inviteId: fresh.id,
+      });
+      expect(await authDisabled(auth, uid)).toBe(false);
     });
   },
   20000,

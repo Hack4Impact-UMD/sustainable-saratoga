@@ -105,11 +105,11 @@ export async function removeAccess(
       removedAt,
       removedBy: actorUid,
       restorationInviteId: FieldValue.delete(),
+      authUnlock: FieldValue.delete(),
       desiredAuthDisabled: true,
       authRevision: bumpedAuthRevision(raw),
     });
   });
 
   await syncMemberAuth(db, auth, targetUid);
-  await auth.revokeRefreshTokens(targetUid);
 }

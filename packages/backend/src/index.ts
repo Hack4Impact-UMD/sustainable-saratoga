@@ -1,3 +1,8 @@
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import {
+  reconcileMemberAuth,
+  syncMemberAuth,
+} from "@backend/services/memberAuth.ts";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
@@ -32,3 +37,22 @@ export const restoreInvitedMember = onDocumentUpdated(
 );
 
 export type { AppRouter } from "@backend/routers/index.ts";
+
+export const reconcileMemberAccounts = onSchedule(
+  "every 1 minutes",
+  async () => {
+    await reconcileMemberAuth(getFirestore(), getAuth());
+  },
+);
+
+export const syncMemberAccount = onDocumentUpdated(
+  { document: "users/{uid}", retry: true },
+  async (event) => {
+    if (
+      event.data?.before.get("authRevision") !==
+      event.data?.after.get("authRevision")
+    ) {
+      await syncMemberAuth(getFirestore(), getAuth(), event.params.uid);
+    }
+  },
+);

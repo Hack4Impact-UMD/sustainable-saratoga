@@ -539,7 +539,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Resend invite" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByRole("status")).toHaveTextContent(
       "Couldn't resend the invite. Try again.",
     );
     expect(screen.getByText("Sent Sep 2 · link expired")).toBeInTheDocument();
@@ -555,7 +555,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Cancel invite" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByRole("status")).toHaveTextContent(
       "Couldn't cancel the invite. Try again.",
     );
     expect(screen.getByText("New invite")).toBeInTheDocument();

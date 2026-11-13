@@ -7,7 +7,6 @@ import type { AcceptInviteInput, Invitation, UserProfile } from "@repo/common";
 import { hashInviteToken } from "@backend/services/inviteManagement.ts";
 import {
   bumpedAuthRevision,
-  setDesiredAuthDisabled,
   syncMemberAuth,
 } from "@backend/services/memberAuth.ts";
 
@@ -142,10 +141,16 @@ export async function restoreInviteSignIn(
     }
     tx.update(member.ref, {
       desiredAuthDisabled: false,
+      authUnlock: {
+        inviteId: snapshot.id,
+        tokenHash: current.tokenHash,
+        removedAt: latestMember.get("removedAt"),
+        expiresAt: current.expiresAt,
+      },
       authRevision: bumpedAuthRevision(latestMember.data()),
     });
   });
-  await auth.updateUser(member.id, { disabled: false });
+  await syncMemberAuth(db, auth, member.id);
   const [currentInvite, currentMember] = await db.runTransaction((tx) =>
     Promise.all([tx.get(snapshot.ref), tx.get(member.ref)]),
   );
@@ -163,7 +168,6 @@ export async function restoreInviteSignIn(
       currentInvite.get("status") !== "pending" ||
       currentInvite.get("tokenHash") !== invite.tokenHash)
   ) {
-    await setDesiredAuthDisabled(db, member.ref, true);
     await syncMemberAuth(db, auth, member.id);
     throw new TRPCError({
       code: "CONFLICT",
@@ -321,7 +325,11 @@ export async function acceptInvite(
         });
       }
       // Keep the profile removed until the Firebase Auth operation succeeds.
-      transaction.update(userRef, { restorationInviteId: inviteRef.id });
+      transaction.update(userRef, {
+        restorationInviteId: inviteRef.id,
+        desiredAuthDisabled: false,
+        authRevision: bumpedAuthRevision(userSnapshot.data()),
+      });
       transaction.update(inviteRef, {
         status: "accepted",
         acceptedBy: uid,
@@ -360,7 +368,7 @@ export async function finishInviteRestoration(
     return;
   }
 
-  const profile = userProfile.assert(restoration);
+  userProfile.assert(restoration);
   const userRef = db.collection("users").doc(uid);
   const member = await userRef.get();
   if (!member.exists || member.get("status") !== "removed") {
@@ -378,8 +386,8 @@ export async function finishInviteRestoration(
     return;
   }
 
-  await auth.updateUser(uid, { disabled: false });
-  const result = await db.runTransaction(async (transaction) => {
+  await syncMemberAuth(db, auth, uid);
+  await db.runTransaction(async (transaction) => {
     const [currentInvite, currentMember] = await Promise.all([
       transaction.get(inviteRef),
       transaction.get(userRef),
@@ -389,10 +397,24 @@ export async function finishInviteRestoration(
       currentMember.get("restorationInviteId") === inviteId
     ) {
       if (
+        currentInvite.get("status") === "accepted" &&
+        String(currentInvite.get("email")).toLowerCase() ===
+          String(currentMember.get("email")).toLowerCase() &&
         currentInvite.get("acceptedBy") === uid &&
+        currentMember.get("removedAt") === member.get("removedAt") &&
+        Date.parse(
+          currentInvite.get("lastSentAt") ?? currentInvite.get("createdAt"),
+        ) > Date.parse(currentMember.get("removedAt")) &&
         currentInvite.get("restorationProfile")
       ) {
-        transaction.set(userRef, profile);
+        transaction.set(userRef, {
+          ...userProfile.assert(currentInvite.get("restorationProfile")),
+          ...(currentMember.get("authRevokedRemoval")
+            ? { authRevokedRemoval: currentMember.get("authRevokedRemoval") }
+            : {}),
+          authRevision: bumpedAuthRevision(currentMember.data()),
+          desiredAuthDisabled: false,
+        });
         transaction.update(inviteRef, {
           restorationProfile: FieldValue.delete(),
         });
@@ -403,6 +425,5 @@ export async function finishInviteRestoration(
   });
   // A later removal wins, including when it raced the Auth update above.
   // Sync after that write so a delayed enable cannot outlive the removal.
-  if (result === "removed") await setDesiredAuthDisabled(db, userRef, true);
   await syncMemberAuth(db, auth, uid);
 }

@@ -27,8 +27,7 @@ function RootLayout() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { pathname } = useLocation();
-  const showMenu =
-    isAuthed && pathname !== "/people" && !pathname.startsWith("/invite/");
+  const showMenu = isAuthed && !pathname.startsWith("/invite/");
 
   const signOut = useMutation({
     mutationFn: () => signOutAndClear(queryClient),
@@ -63,7 +62,9 @@ function RootLayout() {
       )}
 
       <SyncStatus />
-      <Outlet />
+      <div className={pathname === "/people" ? "pt-16" : undefined}>
+        <Outlet />
+      </div>
     </>
   );
 }

@@ -87,6 +87,7 @@ function fixture(hashed = false) {
     member,
     auth: {
       updateUser,
+      revokeRefreshTokens: async () => {},
       getUser: () => Promise.resolve({ email }),
     } as unknown as Auth,
     updateUser,
@@ -130,6 +131,7 @@ it("keeps a newer removal when it races account re-enablement", async () => {
   expect(updateUser.mock.calls).toEqual([
     [uid, { disabled: false }],
     [uid, { disabled: true }],
+    [uid, { disabled: true }],
   ]);
   expect(member.status).toBe("removed");
   await expect(acceptInvite(db, uid, email, input, now)).rejects.toMatchObject({
@@ -156,7 +158,7 @@ it("does not disable sign-in when matching acceptance wins during restoration", 
   await acceptInvite(db, uid, email, input, now);
   release();
   await expect(restoring).resolves.toBeUndefined();
-  expect(updateUser).toHaveBeenCalledTimes(1);
+  expect(updateUser).toHaveBeenCalledTimes(2);
   await finishInviteRestoration(db, auth, token);
   expect(member.status).toBe("active");
   expect(updateUser.mock.calls).not.toContainEqual([uid, { disabled: true }]);
