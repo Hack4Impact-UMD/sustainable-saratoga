@@ -23,7 +23,24 @@ function InvitePage() {
   }
 
   if (inviteQuery.isError) {
-    return <SignUpResult state="expired" onAction={goToLogin} />;
+    return (
+      <div className="min-h-screen w-full pt-[60px] pb-[34px] px-4 md:px-8 max-w-7xl mx-auto text-heading">
+        <div className="grid grid-cols-4 md:grid-cols-12 gap-4 md:gap-6">
+          <div className="col-span-4 md:col-start-4 md:col-span-6 flex flex-col gap-4 rounded-md bg-page p-4">
+            <h1 className="type-h1 text-center">
+              Couldn&apos;t check your invitation
+            </h1>
+            <button
+              type="button"
+              onClick={() => void inviteQuery.refetch()}
+              className="type-btn-primary h-control w-full rounded-full bg-primary px-5"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const invite = inviteQuery.data;

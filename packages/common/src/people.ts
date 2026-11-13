@@ -1,4 +1,5 @@
 import { type } from "arktype";
+import { nonEmptyTrimmed } from "@common/fields.ts";
 import { userRole, volunteerTypes } from "@common/user.ts";
 
 // Inputs for accepting an invitation.
@@ -8,8 +9,8 @@ export const checkInviteInput = type({
 
 export const acceptInviteInput = type({
   token: "string > 0",
-  firstName: "string > 0",
-  lastName: "string > 0",
+  firstName: nonEmptyTrimmed,
+  lastName: nonEmptyTrimmed,
   "volunteerTypes?": volunteerTypes,
 });
 

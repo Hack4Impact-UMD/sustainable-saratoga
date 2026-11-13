@@ -112,19 +112,18 @@ export function useGoogleSignUp() {
         throw new WrongGoogleAccountError(email);
       }
 
-      try {
-        await acceptInvitation.mutateAsync({
-          token,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          volunteerTypes: profile.volunteerTypes,
-        });
-      } catch (error) {
-        // they already have a profile, so this was really a sign-in
-        // if (isConflict(error)) return;
-        await discardSignIn(credential);
-        throw error;
-      }
+      // acceptInvite commits the profile and the accepted invite status in one
+      // transaction. A failure here -- including a CONFLICT from a replayed
+      // request -- may have happened after that commit, so deleting the account
+      // would leave the invite accepted with no working login. Preserve the
+      // account and surface the error; CONFLICT is not treated as a successful
+      // sign-in, since a different account may have consumed the invite.
+      await acceptInvitation.mutateAsync({
+        token,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        volunteerTypes: profile.volunteerTypes,
+      });
     },
   });
 }
