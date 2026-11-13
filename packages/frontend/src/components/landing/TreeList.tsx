@@ -66,7 +66,7 @@ export function TreeList({
 
   return (
     <div
-      className={`flex flex-col bg-surface border-t border-line-subtle${isExpanded ? " flex-1 min-h-0" : ""}`}
+      className={`flex flex-col bg-surface border-t border-line-subtle${isExpanded ? " flex-1 min-h-0" : isCollapsed ? " shrink-0" : " h-[57%] min-h-0 shrink-0"}`}
     >
       {/* Drag handle — drag up to expand, drag down to collapse */}
       <button
