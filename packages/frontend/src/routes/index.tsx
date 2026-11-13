@@ -4,6 +4,8 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
 import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { TreeList } from "@frontend/components/landing/TreeList.tsx";
+import type { SheetState } from "@frontend/components/landing/TreeList.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { useEffect } from "react";
@@ -11,9 +13,27 @@ import { useEffect } from "react";
 /** Keeps only a non-empty record ID from the root route's search params. */
 export function validateSearch(search: Record<string, unknown>): {
   record?: string;
+  view?: "planting" | "pruning";
+  sheet?: SheetState;
 } {
   const record = search["record"];
-  return typeof record === "string" && record.length > 0 ? { record } : {};
+  const rawView = search["view"];
+  const rawSheet = search["sheet"];
+
+  const view: "planting" | "pruning" | undefined =
+    rawView === "planting" || rawView === "pruning" ? rawView : undefined;
+  const sheet: SheetState | undefined =
+    rawSheet === "collapsed" ||
+    rawSheet === "expanded" ||
+    rawSheet === "partial"
+      ? rawSheet
+      : undefined;
+
+  return {
+    ...(typeof record === "string" && record.length > 0 ? { record } : {}),
+    ...(view === undefined ? {} : { view }),
+    ...(sheet === undefined ? {} : { sheet }),
+  };
 }
 
 export const Route = createFileRoute("/")({
@@ -34,39 +54,77 @@ export const Route = createFileRoute("/")({
 /** Loads map records and composes the map with its overlay controls. */
 function Home() {
   const navigate = useNavigate();
-  const { record } = Route.useSearch();
+  const { record, view = "planting", sheet = "partial" } = Route.useSearch();
   const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
+  const markers = (markersQuery.data ?? []).filter(
+    (marker) => marker.recordType === view,
+  );
 
-  if (markersQuery.isPending) {
-    return <output>Loading map...</output>;
-  }
-
-  if (markersQuery.isError) {
-    return (
-      <output role="alert">
-        The map data couldn&apos;t load. Please try again later.
-      </output>
-    );
-  }
-
-  const selectedMarker = findSelectedMarker(markersQuery.data, record);
+  const selectedMarker = findSelectedMarker(markers, record);
 
   /** Writes the selected marker ID to the URL search state. */
   function handleMarkerSelect(id: string) {
-    void navigate({ to: "/", search: { record: id } });
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: prev.view ?? "planting",
+        sheet: prev.sheet ?? "partial",
+        record: id,
+      }),
+    });
+  }
+
+  /** Updates the view param while preserving other params. */
+  function handleViewChange(newView: "planting" | "pruning") {
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: newView,
+        sheet: prev.sheet ?? "partial",
+        ...(prev.record === undefined ? {} : { record: prev.record }),
+      }),
+    });
+  }
+
+  /** Updates the sheet state param while preserving other params. */
+  function handleSheetChange(newSheet: SheetState) {
+    void navigate({
+      to: "/",
+      search: (prev) => ({
+        view: prev.view ?? "planting",
+        sheet: newSheet,
+        ...(prev.record === undefined ? {} : { record: prev.record }),
+      }),
+    });
   }
 
   return (
-    <main className="h-screen">
-      <MapView
-        markers={markersQuery.data}
+    <main
+      className={`h-dvh flex flex-col ${sheet === "expanded" ? "pt-16" : ""}`}
+    >
+      {sheet !== "expanded" && (
+        <div className="flex-1 min-h-0">
+          <MapView
+            markers={markers}
+            selectedId={selectedMarker?.id}
+            onMarkerSelect={handleMarkerSelect}
+            renderMarker={renderMarker}
+          >
+            <RecordCamera marker={selectedMarker} />
+            <MapOverlays />
+          </MapView>
+        </div>
+      )}
+      <TreeList
+        markers={markers}
+        isLoading={markersQuery.isPending}
+        isError={markersQuery.isError}
         selectedId={selectedMarker?.id}
-        onMarkerSelect={handleMarkerSelect}
-        renderMarker={renderMarker}
-      >
-        <RecordCamera marker={selectedMarker} />
-        <MapOverlays />
-      </MapView>
+        view={view}
+        sheet={sheet}
+        onViewChange={handleViewChange}
+        onSheetChange={handleSheetChange}
+      />
     </main>
   );
 }

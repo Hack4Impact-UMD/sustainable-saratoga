@@ -40,7 +40,12 @@ function SignUpPage() {
   return (
     <SignUpForm
       email={email}
-      onSuccess={() => void navigate({ to: "/" })}
+      onSuccess={() =>
+        void navigate({
+          to: "/",
+          search: { view: "planting", sheet: "partial" as const },
+        })
+      }
       onAccountExists={() => setAccountExists(true)}
     />
   );
