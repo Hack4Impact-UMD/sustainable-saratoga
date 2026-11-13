@@ -10,7 +10,7 @@ import { trpc } from "@frontend/lib/trpc.ts";
  * loading, success, and error states.
  */
 export function useSignUp() {
-  const createProfile = useMutation(trpc.users.create.mutationOptions());
+  const acceptInvitation = useMutation(trpc.invites.accept.mutationOptions());
 
   return useMutation({
     mutationFn: async ({
@@ -19,7 +19,8 @@ export function useSignUp() {
       firstName,
       lastName,
       volunteerTypes,
-    }: SignUpInput) => {
+      token,
+    }: SignUpInput & {token: string}) => {
       const { user } = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -35,7 +36,7 @@ export function useSignUp() {
 
       // users.create reads the new user's ID token, which the tRPC client
       // picks up from auth.currentUser
-      await createProfile.mutateAsync({ firstName, lastName, volunteerTypes });
+      await acceptInvitation.mutateAsync({ token, firstName, lastName, volunteerTypes });
 
       return user;
     },

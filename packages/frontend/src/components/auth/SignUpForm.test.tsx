@@ -52,6 +52,7 @@ function renderSignUpForm() {
     <QueryClientProvider client={new QueryClient()}>
       <SignUpForm
         email="invite@example.org"
+        token="test-invite-token"
         onSuccess={onSuccess}
         onAccountExists={onAccountExists}
       />

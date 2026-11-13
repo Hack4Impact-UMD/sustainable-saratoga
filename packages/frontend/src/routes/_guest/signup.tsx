@@ -40,6 +40,7 @@ function SignUpPage() {
   return (
     <SignUpForm
       email={email}
+      token=""
       onSuccess={() => void navigate({ to: "/" })}
       onAccountExists={() => setAccountExists(true)}
     />

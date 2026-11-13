@@ -41,10 +41,12 @@ const volunteerTypeOptions = [
 
 export function SignUpForm({
   email,
+  token,
   onSuccess,
   onAccountExists,
 }: {
   email: string;
+  token: string;
   onSuccess: () => void;
   onAccountExists: () => void;
 }) {
@@ -108,7 +110,7 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await googleSignUp.mutateAsync({ ...validation.data, email });
+      await googleSignUp.mutateAsync({ ...validation.data, email, token});
       onSuccess();
     } catch (error) {
       if (error instanceof WrongGoogleAccountError) {
@@ -146,7 +148,7 @@ export function SignUpForm({
 
     setFieldErrors({});
     try {
-      await signUp.mutateAsync(validation.data);
+      await signUp.mutateAsync({...validation.data, token});
       onSuccess();
     } catch (error) {
       const code =

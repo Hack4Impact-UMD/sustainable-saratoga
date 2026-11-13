@@ -4,6 +4,8 @@ import icon from "@frontend/assets/Leaf logo.svg";
 export type SignUpResultState =
   | "success"
   | "expired"
+  | "used"
+  | "canceled"
   | "account-exists"
   | "no-access";
 
@@ -33,6 +35,20 @@ const resultContent: Record<
     icon: Clock3,
     action: "Back to sign in",
   },
+  used: {
+  title: "This invitation has already been used",
+  message: "This invitation link has already been used. Sign in to access your account.",
+  tone: "info",
+  icon: Info,
+  action: "Back to sign in",
+},
+canceled: {
+  title: "This invitation has been canceled",
+  message: "This invitation is no longer valid. Contact your administrator for a new invitation.",
+  tone: "warning",
+  icon: Clock3,
+  action: "Back to sign in",
+},
   "account-exists": {
     title: "Account already exists",
     message:
