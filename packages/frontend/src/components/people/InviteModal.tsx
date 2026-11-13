@@ -171,7 +171,7 @@ export function InviteModal() {
     setSelectedRole("Volunteer");
     toast.success(`${sentCount} invite${sentCount === 1 ? "" : "s"} sent`, {
       duration: 4000,
-      icon: <CircleCheck className="size-6 shrink-0 text-toast-success" />,
+      icon: <CircleCheck className="size-6 shrink-0 text-line-success" />,
       unstyled: true,
       className:
         "flex w-[min(27rem,calc(100vw-2rem))] items-center gap-4 rounded-md border-0 bg-heading px-5 py-4 text-on-primary shadow-2",
@@ -257,7 +257,7 @@ export function InviteModal() {
                         isSending
                           ? "border-line bg-pressed opacity-50"
                           : issue
-                            ? "border-[1.5px] border-[--error] bg-error-tint text-error"
+                            ? "border-[1.5px] border-error bg-error-tint text-error"
                             : "border-line bg-pressed"
                       }`}
                     >
@@ -291,7 +291,7 @@ export function InviteModal() {
                             <strong className="type-body-strong block text-on-primary">
                               {issueCopy.title}
                             </strong>
-                            <span className="type-body block min-w-0 max-w-full break-all text-on-primary">
+                            <span className="type-body block min-w-0 max-w-full break-words text-on-primary">
                               {issueCopy.description}
                             </span>
                           </TooltipContent>

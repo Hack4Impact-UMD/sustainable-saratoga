@@ -121,7 +121,7 @@ describe("InviteModal email chips", () => {
     const tooltip = await screen.findByRole("tooltip");
     const description = tooltip.querySelector("span");
     expect(tooltip).toHaveClass("!min-w-0");
-    expect(description).toHaveClass("min-w-0", "max-w-full", "break-all");
+    expect(description).toHaveClass("min-w-0", "max-w-full", "break-words");
     expect(description).toHaveTextContent(longAddress);
   });
 
