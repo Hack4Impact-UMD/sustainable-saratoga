@@ -73,19 +73,6 @@ export class WrongGoogleAccountError extends Error {
   }
 }
 
-// initavtion acceptance wouldn't need to treat an existing profil as a successful signup
-// function isConflict(error: unknown): boolean {
-//   return (
-//     typeof error === "object" &&
-//     error !== null &&
-//     "data" in error &&
-//     typeof error.data === "object" &&
-//     error.data !== null &&
-//     "code" in error.data &&
-//     error.data.code === "CONFLICT"
-//   );
-// }
-
 /**
  * Creates an account with Google for the invited `email`, then the profile.
  * The Google account must use the invited address. If the person already has
