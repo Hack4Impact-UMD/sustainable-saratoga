@@ -40,10 +40,12 @@ function Home() {
     id: `year-${year}`,
     label: String(year),
   })),
-  ...appliedFilters.statuses.map((status) => ({
-    id: `status-${status}`,
-    label: STATUS_LABEL[status],
-  })),
+  ...(appliedFilters.statuses.length > 0 && appliedFilters.statuses.length < 4
+    ? appliedFilters.statuses.map((status) => ({
+        id: `status-${status}`,
+        label: STATUS_LABEL[status],
+      }))
+    : []),
 ];
 
   function removeFilter(id: string) {
@@ -84,6 +86,7 @@ function Home() {
         onClose={() => setIsFilterOpen(false)}
         applied={appliedFilters}
         onApply={setAppliedFilters}
+        query={query}
       />
     </>
   );

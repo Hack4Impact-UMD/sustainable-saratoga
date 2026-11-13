@@ -1,3 +1,4 @@
+import { matchesSearch } from "@frontend/lib/search.ts";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
@@ -35,9 +36,10 @@ type FilterSheetProps = {
   applied: Filters;
   /** Called with the confirmed filters; the parent writes them to the URL. */
   onApply: (next: Filters) => void;
+  query: string;
 };
 
-export function FilterSheet({ open, onClose, applied, onApply }: FilterSheetProps) {
+export function FilterSheet({ open, onClose, applied, onApply, query}: FilterSheetProps) {
   return (
     <Sheet
       open={open}
@@ -51,7 +53,7 @@ export function FilterSheet({ open, onClose, applied, onApply }: FilterSheetProp
         className="max-h-[90dvh] gap-0 p-0"
       >
         {/* Unmounts when the sheet closes, so the draft resets on every open. */}
-        <FilterSheetBody applied={applied} onClose={onClose} onApply={onApply} />
+        <FilterSheetBody applied={applied} onClose={onClose} onApply={onApply} query={query} />
       </SheetContent>
     </Sheet>
   );
@@ -61,6 +63,7 @@ function FilterSheetBody({
   applied,
   onClose,
   onApply,
+  query
 }: Omit<FilterSheetProps, "open">) {
   const [draft, setDraft] = useState<Filters>(applied);
 
@@ -80,7 +83,15 @@ function FilterSheetBody({
   // The server treats an empty status list as "no filter", so handle it here.
   // TODO: also apply matchesSearch(marker, draft.q) once lib/search.ts exists,
   // so the count matches what the list shows when search text is present.
-  const count = noStatuses ? 0 : draftQuery.data?.length;
+  const matchingRecords = (draftQuery.data ?? []).filter((marker) =>
+  matchesSearch(marker, query),
+);
+
+const count = noStatuses
+  ? 0
+  : draftQuery.isPending
+    ? undefined
+    : matchingRecords.length;
 
   function toggleYear(year: number) {
     setDraft((d) => ({
