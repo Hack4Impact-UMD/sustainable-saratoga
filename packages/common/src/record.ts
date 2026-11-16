@@ -56,6 +56,7 @@ export const treeRecord = type({
   species: "string | null",
   scientificName: "string | null",
   cultivar: "string | null",
+  responsible: "string | null",
   lat: "number",
   lng: "number",
   latestPhotoDate: "string | null",

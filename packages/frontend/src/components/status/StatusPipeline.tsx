@@ -1,12 +1,20 @@
 import { recordPipelineState } from "@repo/common";
 import type { RecordPipelineState, TreeStatus } from "@repo/common";
-import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { StatusPin } from "@frontend/components/status/StatusPin.tsx";
 
 const labels: Record<TreeStatus, string> = {
   requested: "Requested",
   possible: "Possible",
   approved: "Approved",
   planted: "Planted",
+};
+
+/** Underline colour of the current step, matching its pin. */
+const underlineColors: Record<TreeStatus, string> = {
+  requested: "decoration-status-requested",
+  possible: "decoration-status-possible",
+  approved: "decoration-status-approved-ring",
+  planted: "decoration-status-planted",
 };
 
 export function StatusPipeline({ status, origin }: RecordPipelineState) {
@@ -39,9 +47,14 @@ export function StatusPipeline({ status, origin }: RecordPipelineState) {
                 className={`absolute -left-1/2 top-3 -z-10 h-0.5 w-full -translate-y-1/2 ${currentIndex >= index ? "bg-primary" : "bg-divider"}`}
               />
             )}
-            <StatusMarker status={step} selected={isCurrent} flat size={24} />
+            <StatusPin
+              status={step}
+              selected={isCurrent}
+              upcoming={index > currentIndex}
+              width={24}
+            />
             <span
-              className={`type-caption text-center ${isCurrent ? "font-bold text-heading" : ""}`}
+              className={`type-caption text-center ${isCurrent ? `font-bold text-heading underline decoration-[3px] underline-offset-4 ${underlineColors[step]}` : ""}`}
             >
               {labels[step]}
             </span>

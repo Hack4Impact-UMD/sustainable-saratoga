@@ -1,8 +1,8 @@
 import type { TreeRecord } from "@repo/common";
-import { Link } from "@tanstack/react-router";
-import { Map } from "lucide-react";
 import { Field, FieldList } from "@frontend/components/records/Field.tsx";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
 import { RecordHeader } from "@frontend/components/records/RecordHeader.tsx";
+import { RecordMapPreview } from "@frontend/components/records/RecordMapPreview.tsx";
 import { RecordPhotos } from "@frontend/components/records/RecordPhotos.tsx";
 import { RecordSection } from "@frontend/components/records/RecordSection.tsx";
 import { formatDate } from "@frontend/lib/formatDate.ts";
@@ -16,50 +16,94 @@ export function RecordDetails({ record }: { record: TreeRecord }) {
     <div>
       <RecordHeader record={record} />
 
-      <RecordSection title="Location">
+      <RecordSection title="Location" defaultOpen>
         <div className="flex flex-col gap-4">
           <FieldList>
             <Field
               label="Address"
+              info={g.address}
               value={`${record.address}, ${record.city}, ${record.state}`}
             />
-            <Field label="DPW or private" value={location.ownership} />
+            <Field
+              label="DPW or private"
+              info={g.ownership}
+              value={location.ownership}
+            />
             <Field
               label="Location description & landmarks"
+              info={g.locationDescription}
               value={location.description}
               wide
             />
           </FieldList>
-          <Link
-            to="/"
-            search={{ record: record.id }}
-            className="type-btn-secondary inline-flex h-12 w-full items-center justify-center gap-2 rounded-pill border border-primary bg-surface px-4 text-primary hover:bg-hover"
-          >
-            <Map aria-hidden="true" className="size-5" />
-            View on map
-          </Link>
+          <RecordMapPreview record={record} />
         </div>
+      </RecordSection>
+
+      <RecordSection title="Contacts">
+        <FieldList>
+          <Field
+            label="Tree host"
+            info={g.treeHost}
+            value={contacts.treeHost}
+          />
+          <Field
+            label="Property owner"
+            info={g.propertyOwner}
+            value={contacts.propertyOwner}
+          />
+          <Field
+            label="Email"
+            info={g.email}
+            value={contacts.email}
+            href={contacts.email ? `mailto:${contacts.email}` : undefined}
+            wide
+          />
+          <Field
+            label="Phone"
+            info={g.phone}
+            value={contacts.phone}
+            href={
+              contacts.phone
+                ? `tel:${contacts.phone.replace(/[^\d+]/g, "")}`
+                : undefined
+            }
+            wide
+          />
+        </FieldList>
       </RecordSection>
 
       <RecordSection title="Site assessment">
         <FieldList>
           <Field
             label="Tree lawn / ROW space"
+            info={g.treeLawnRowSpace}
             value={siteAssessment.treeLawnRowSpace}
           />
-          <Field label="If not in ROW" value={siteAssessment.ifNotInRow} />
           <Field
-            label="Energy direction"
+            label="If not in ROW"
+            info={g.ifNotInRow}
+            value={siteAssessment.ifNotInRow}
+          />
+          <Field
+            label="Exposure"
+            info={g.exposure}
             value={siteAssessment.energyDirection}
           />
-          <Field label="Wire conflict" value={siteAssessment.wireConflict} />
+          <Field
+            label="Wire conflict"
+            info={g.wireConflict}
+            value={siteAssessment.wireConflict}
+          />
           <Field
             label="Preparation required"
+            info={g.preparationRequired}
             value={siteAssessment.preparationRequired}
             wide
           />
           <Field
             label="Next steps / general notes"
+            info={g.notes}
             value={siteAssessment.notes}
             wide
           />
@@ -68,17 +112,24 @@ export function RecordDetails({ record }: { record: TreeRecord }) {
 
       <RecordSection title="Planting preparation">
         <FieldList>
-          <Field label="Spot flagged" value={plantingPreparation.spotFlagged} />
+          <Field
+            label="Spot flagged"
+            info={g.spotFlagged}
+            value={plantingPreparation.spotFlagged}
+          />
           <Field
             label="Coming Soon sign"
+            info={g.comingSoonSign}
             value={plantingPreparation.comingSoonSign}
           />
           <Field
             label="Utilities marked"
+            info={g.utilitiesMarked}
             value={plantingPreparation.utilityMarked}
           />
           <Field
             label="Ready to plant"
+            info={g.readyToPlant}
             value={plantingPreparation.readyToPlant}
           />
         </FieldList>
@@ -88,11 +139,13 @@ export function RecordDetails({ record }: { record: TreeRecord }) {
         <FieldList>
           <Field
             label="Species"
+            info={g.species}
             value={record.species}
             note={record.scientificName}
           />
           <Field
             label="Cultivar"
+            info={g.cultivar}
             value={record.cultivar ? `\u2018${record.cultivar}\u2019` : null}
           />
         </FieldList>
@@ -108,50 +161,33 @@ export function RecordDetails({ record }: { record: TreeRecord }) {
         <RecordPhotos photos={record.photos} />
       </RecordSection>
 
-      <RecordSection title="Contacts">
-        <FieldList>
-          <Field label="Tree host" value={contacts.treeHost} />
-          <Field label="Property owner" value={contacts.propertyOwner} />
-          <Field
-            label="Email"
-            value={contacts.email}
-            href={contacts.email ? `mailto:${contacts.email}` : undefined}
-            wide
-          />
-          <Field
-            label="Phone"
-            value={contacts.phone}
-            href={
-              contacts.phone
-                ? `tel:${contacts.phone.replace(/[^\d+]/g, "")}`
-                : undefined
-            }
-            wide
-          />
-        </FieldList>
-      </RecordSection>
-
       <RecordSection title="Event & planting details">
         <FieldList>
-          <Field label="Event" value={eventPlantingDetails.event} />
-          <Field label="Year" value={eventPlantingDetails.year} />
+          <Field
+            label="Event"
+            info={g.event}
+            value={eventPlantingDetails.event}
+          />
+          <Field
+            label="Event Year"
+            info={g.eventYear}
+            value={eventPlantingDetails.year}
+          />
           <Field
             label="Tree Toga number"
+            info={g.treeTogaNumber}
             value={eventPlantingDetails.treeTogaNumber}
             wide
           />
           <Field
             label="Planting date"
+            info={g.plantingDate}
             value={formatDate(eventPlantingDetails.plantingDate)}
           />
           <Field
-            label="Year planted"
-            value={eventPlantingDetails.yearPlanted}
-          />
-          <Field
             label="Planted by"
+            info={g.plantedBy}
             value={eventPlantingDetails.plantedBy}
-            wide
           />
         </FieldList>
       </RecordSection>
@@ -168,6 +204,7 @@ export function RecordDetails({ record }: { record: TreeRecord }) {
             value={formatDate(recordInformation.createdAt)}
             note={recordInformation.createdBy}
           />
+          <Field label="Record ID" value={record.id} wide />
         </FieldList>
       </RecordSection>
     </div>
