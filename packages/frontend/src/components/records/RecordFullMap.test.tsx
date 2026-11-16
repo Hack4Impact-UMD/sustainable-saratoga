@@ -17,9 +17,10 @@ import {
 } from "@frontend/components/map/stubCamera.ts";
 
 // Swap the Google map for the stub so the camera can be inspected.
-vi.mock("@frontend/components/map/MapView.tsx", async () => ({
-  MapView: (await import("@frontend/components/map/testing.ts")).MapView,
-}));
+vi.mock("@frontend/components/map/MapView.tsx", async () => {
+  const { MapView } = await import("@frontend/components/map/testing.ts");
+  return { MapView };
+});
 
 afterEach(cleanup);
 
