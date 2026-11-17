@@ -34,7 +34,7 @@ export function Field({ label, value, note, href, wide, info }: FieldProps) {
             >
               <Info aria-hidden="true" className="size-4" />
             </PopoverTrigger>
-            <PopoverContent>{info}</PopoverContent>
+            <PopoverContent aria-label={label}>{info}</PopoverContent>
           </Popover>
         )}
       </dt>

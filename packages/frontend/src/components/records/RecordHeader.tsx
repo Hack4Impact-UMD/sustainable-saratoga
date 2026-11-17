@@ -55,7 +55,10 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
   );
 
   return (
-    <header>
+    <>
+      {/* Outside <header>: a sticky element only sticks within its parent, and
+          the header ends before the sections, so inside it the bar would
+          scroll away. Here the parent is the whole record page. */}
       <div className="sticky top-0 z-20 grid h-14 grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-divider bg-surface px-4">
         <Link
           to="/"
@@ -80,7 +83,7 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
           Edit
         </button>
       </div>
-      <div className="flex flex-col gap-4 px-4 py-4">
+      <header className="flex flex-col gap-4 px-4 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
             <h1 ref={titleRef} className="type-h1 text-heading">
@@ -130,7 +133,7 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
             status: record.status,
           })}
         />
-      </div>
-    </header>
+      </header>
+    </>
   );
 }
