@@ -33,10 +33,12 @@ export function SearchBar({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search address or name"
           aria-label="Search trees"
-          className="h-10 w-full rounded-[9999px]! border border-line-subtle! bg-surface! pl-9 pr-20 text-lg text-[#555555] shadow-1 placeholder:text-[#A3A3A1] focus-visible:ring-2 focus-visible:ring-[#c8d8cd]"
+          // Leave room for the filter button, plus the clear button once there's text.
+          className={`type-body h-10 w-full rounded-pill border-line-subtle bg-surface pl-9 text-body shadow-1 placeholder:text-body-muted focus-visible:border-primary focus-visible:shadow-field-focus focus-visible:ring-0 ${query ? "pr-22" : "pr-14"}`}
         />
 
-        <div className="absolute inset-y-0 right-2 z-10 flex items-center gap-1">
+        {/* Positioned as a group so the buttons' pressed nudge doesn't fight the centring. */}
+        <div className="absolute inset-y-0 right-4 z-10 flex items-center">
           {query.length > 0 && (
             <Button
               type="button"
@@ -52,21 +54,15 @@ export function SearchBar({
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onFilterClick}
             aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
-            className="relative size-10 rounded-full text-[#929292] hover:bg-[#eaeae7]"
+            className="relative size-10"
           >
             <SlidersHorizontal className="size-6" />
 
             {activeFilterCount > 0 && (
-              <span
-                style={{
-                  backgroundColor: "rgb(46, 97, 59)",
-                  color: "#FFFFFF",
-                }}
-                className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full text-[10px] font-medium"
-              >
+              <span className="type-badge absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-pill bg-primary text-on-primary">
                 {activeFilterCount}
               </span>
             )}
@@ -82,11 +78,11 @@ export function SearchBar({
               key={filter.id}
               type="button"
               onClick={() => onRemoveFilter(filter.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-line-subtle bg-surface px-3 py-1 text-sm text-[#A3A3A1] shadow-sm hover:bg-[#eaeae7]"
+              className="type-chip inline-flex items-center gap-1.5 rounded-pill border border-line-subtle bg-surface px-3 py-1 text-body shadow-1 hover:bg-hover"
               aria-label={`Remove ${filter.label} filter`}
             >
               {filter.label}
-              <X aria-hidden="true" className="size-3" />
+              <X aria-hidden="true" className="size-3.5 text-icon-primary" />
             </button>
           ))}
         </div>

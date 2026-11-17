@@ -97,7 +97,12 @@ function FilterSheetBody({
     matchesSearch(marker, query),
   );
 
-  const count = noStatuses ? 0 : matchingRecords.length;
+  // Undefined while the draft query loads, so the button shows "…" not 0.
+  const count = noStatuses
+    ? 0
+    : draftQuery.isPending
+      ? undefined
+      : matchingRecords.length;
 
   function toggleYear(year: number) {
     setDraft((d) => ({
