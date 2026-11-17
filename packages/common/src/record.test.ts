@@ -13,6 +13,7 @@ const fixture = {
   species: "Red maple",
   scientificName: null,
   cultivar: null,
+  responsible: null,
   status: "requested",
   origin: "requested",
   lat: 43.0831,

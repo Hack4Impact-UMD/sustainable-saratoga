@@ -103,7 +103,7 @@ describe("login navigation", () => {
         ),
       );
       expect(router.state.matches.map((match) => match.routeId)).toContain(
-        "/_authenticated/records/$recordId",
+        "/_authenticated/records/$recordId/",
       );
       queryClient.clear();
     },

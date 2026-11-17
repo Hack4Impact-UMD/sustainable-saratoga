@@ -94,6 +94,17 @@
   --status-planted-tint: var(--bg-selected);
   --status-planted-text: #0f4a25;
 
+  /* Teardrop pins on the record page and its maps (Figma Flow 5). */
+  --pin-requested: #4a86c8;
+  --pin-requested-edge: #2f66a3;
+  --pin-approved: #8a63c8;
+  --pin-approved-edge: #6741a3;
+  --pin-planted: #86b73e;
+  --pin-planted-edge: #5f8a25;
+  --pin-possible: var(--status-possible);
+  --pin-possible-edge: var(--status-possible-text);
+  --pin-upcoming-edge: #9ca3af; /* white, not-yet-reached step */
+
   /* ------------------------------------------------------------------ Map
      Figma: map/* — only needed if we style our own basemap               */
   --map-land: #f2efe9;

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RecordDetails } from "@frontend/components/records/RecordDetails.tsx";
 import { getSampleRecord } from "@frontend/lib/sampleRecords.ts";
 
-export const Route = createFileRoute("/_authenticated/records/$recordId")({
+export const Route = createFileRoute("/_authenticated/records/$recordId/")({
   component: RecordPage,
 });
 
