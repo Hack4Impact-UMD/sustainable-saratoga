@@ -82,18 +82,11 @@ function FilterSheetBody({
   const noStatuses = draft.statuses.length === 0;
   const isDefault = allYears && allStatuses;
 
-  // The server treats an empty status list as "no filter", so handle it here.
-  // TODO: also apply matchesSearch(marker, draft.q) once lib/search.ts exists,
-  // so the count matches what the list shows when search text is present.
   const matchingRecords = (draftQuery.data ?? []).filter((marker) =>
   matchesSearch(marker, query),
 );
 
-const count = noStatuses
-  ? 0
-  : draftQuery.isPending
-    ? undefined
-    : matchingRecords.length;
+const count = noStatuses ? 0 : matchingRecords.length;
 
   function toggleYear(year: number) {
     setDraft((d) => ({

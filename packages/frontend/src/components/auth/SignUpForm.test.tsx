@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Auth, User } from "firebase/auth";
-import type { CreateUserInput } from "@repo/common";
+import type { AcceptInviteInput } from "@repo/common";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SignUpForm } from "@frontend/components/auth/SignUpForm.tsx";
 import { SignUpResult } from "@frontend/components/auth/SignUpResult.tsx";
@@ -32,13 +32,13 @@ vi.mock("firebase/auth", () => ({
 vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 
 const createProfile = vi.hoisted(() =>
-  vi.fn<(input: CreateUserInput) => Promise<unknown>>(),
+  vi.fn<(input: AcceptInviteInput) => Promise<unknown>>(),
 );
 
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
-    users: {
-      create: { mutationOptions: () => ({ mutationFn: createProfile }) },
+    invites: {
+      accept: { mutationOptions: () => ({ mutationFn: createProfile }) },
     },
   },
 }));
@@ -52,6 +52,7 @@ function renderSignUpForm() {
     <QueryClientProvider client={new QueryClient()}>
       <SignUpForm
         email="invite@example.org"
+        token="test-invite-token"
         onSuccess={onSuccess}
         onAccountExists={onAccountExists}
       />
@@ -227,6 +228,7 @@ describe("SignUpForm", () => {
     });
     expect(createProfile).toHaveBeenCalledWith(
       {
+        token: "test-invite-token",
         firstName: "Alex",
         lastName: "Doe",
         volunteerTypes: ["planter", "pruner"],
