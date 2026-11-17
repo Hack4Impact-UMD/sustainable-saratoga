@@ -1,6 +1,6 @@
 import type { MapMarker } from "@repo/common";
 
- // searches by address and species, ignoring capitalization and leading/trailing whitespace
+// searches by address and species, ignoring capitalization and leading/trailing whitespace
 export function matchesSearch(marker: MapMarker, query: string): boolean {
   const normalizedQuery = query.trim().toLowerCase();
 

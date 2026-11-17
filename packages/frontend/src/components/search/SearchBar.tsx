@@ -1,4 +1,3 @@
-
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@frontend/components/ui/button.tsx";
 import { Input } from "@frontend/components/ui/input.tsx";

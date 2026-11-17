@@ -37,7 +37,13 @@ type FilterSheetProps = {
   query: string;
 };
 
-export function FilterSheet({ open, onClose, applied, onApply, query}: FilterSheetProps) {
+export function FilterSheet({
+  open,
+  onClose,
+  applied,
+  onApply,
+  query,
+}: FilterSheetProps) {
   return (
     <Sheet
       open={open}
@@ -52,7 +58,12 @@ export function FilterSheet({ open, onClose, applied, onApply, query}: FilterShe
         className="max-h-dvh gap-0 p-0 data-[side=bottom]:h-dvh data-[side=bottom]:rounded-none"
       >
         {/* Unmounts when the sheet closes, so the draft resets on every open. */}
-        <FilterSheetBody applied={applied} onClose={onClose} onApply={onApply} query={query} />
+        <FilterSheetBody
+          applied={applied}
+          onClose={onClose}
+          onApply={onApply}
+          query={query}
+        />
       </SheetContent>
     </Sheet>
   );
@@ -62,7 +73,7 @@ function FilterSheetBody({
   applied,
   onClose,
   onApply,
-  query
+  query,
 }: Omit<FilterSheetProps, "open">) {
   const [draft, setDraft] = useState<Filters>(applied);
   const [statusOpen, setStatusOpen] = useState(true);
@@ -83,10 +94,10 @@ function FilterSheetBody({
   const isDefault = allYears && allStatuses;
 
   const matchingRecords = (draftQuery.data ?? []).filter((marker) =>
-  matchesSearch(marker, query),
-);
+    matchesSearch(marker, query),
+  );
 
-const count = noStatuses ? 0 : matchingRecords.length;
+  const count = noStatuses ? 0 : matchingRecords.length;
 
   function toggleYear(year: number) {
     setDraft((d) => ({

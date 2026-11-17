@@ -1,4 +1,3 @@
-
 import type { MapMarker as MapMarkerData, TreeStatus } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
@@ -72,52 +71,53 @@ function Home() {
   const navigate = useNavigate();
   const { record, view = "planting", sheet = "partial" } = Route.useSearch();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-const [query, setQuery] = useState("");
-const [appliedFilters, setAppliedFilters] = useState<Filters>(DEFAULT_FILTERS);
-const markersQuery = useQuery(
-  trpc.map.markers.queryOptions(toMarkerQueryInput(appliedFilters)),
-);
+  const [query, setQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] =
+    useState<Filters>(DEFAULT_FILTERS);
+  const markersQuery = useQuery(
+    trpc.map.markers.queryOptions(toMarkerQueryInput(appliedFilters)),
+  );
 
-const activeFilters = [
-  ...appliedFilters.years.map((year) => ({
-    id: `year-${year}`,
-    label: String(year),
-  })),
-  ...(allStatusesSelected(appliedFilters.statuses)
-    ? []
-    : appliedFilters.statuses.map((status) => ({
-        id: `status-${status}`,
-        label: STATUS_LABEL[status],
-      }))),
-];
+  const activeFilters = [
+    ...appliedFilters.years.map((year) => ({
+      id: `year-${year}`,
+      label: String(year),
+    })),
+    ...(allStatusesSelected(appliedFilters.statuses)
+      ? []
+      : appliedFilters.statuses.map((status) => ({
+          id: `status-${status}`,
+          label: STATUS_LABEL[status],
+        }))),
+  ];
 
-function removeFilter(id: string) {
-  if (id.startsWith("year-")) {
-    const year = Number(id.replace("year-", ""));
-    setAppliedFilters((current) => ({
-      ...current,
-      years: current.years.filter((y) => y !== year),
-    }));
-    return;
+  function removeFilter(id: string) {
+    if (id.startsWith("year-")) {
+      const year = Number(id.replace("year-", ""));
+      setAppliedFilters((current) => ({
+        ...current,
+        years: current.years.filter((y) => y !== year),
+      }));
+      return;
+    }
+
+    const status = id.replace("status-", "") as TreeStatus;
+    setAppliedFilters((current) => {
+      const remaining = current.statuses.filter((s) => s !== status);
+      return {
+        ...current,
+        statuses: remaining.length === 0 ? [...STATUSES] : remaining,
+      };
+    });
   }
 
-  const status = id.replace("status-", "") as TreeStatus;
-  setAppliedFilters((current) => {
-    const remaining = current.statuses.filter((s) => s !== status);
-    return {
-      ...current,
-      statuses: remaining.length === 0 ? [...STATUSES] : remaining,
-    };
-  });
-}
-
-const markers =
-  appliedFilters.statuses.length === 0
-    ? []
-    : (markersQuery.data ?? []).filter(
-        (marker) =>
-          marker.recordType === view && matchesSearch(marker, query),
-      );
+  const markers =
+    appliedFilters.statuses.length === 0
+      ? []
+      : (markersQuery.data ?? []).filter(
+          (marker) =>
+            marker.recordType === view && matchesSearch(marker, query),
+        );
   const selectedMarker = findSelectedMarker(markers, record);
 
   /** Writes the selected marker ID to the URL search state. */
@@ -156,7 +156,7 @@ const markers =
     });
   }
 
-    return (
+  return (
     <main
       className={`relative flex h-dvh flex-col ${sheet === "expanded" ? "pt-16" : ""}`}
     >
