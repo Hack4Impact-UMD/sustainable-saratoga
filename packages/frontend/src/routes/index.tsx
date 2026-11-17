@@ -1,14 +1,24 @@
-import type { MapMarker as MapMarkerData } from "@repo/common";
+import type { MapMarker as MapMarkerData, TreeStatus } from "@repo/common";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { FilterSheet } from "@frontend/components/filters/FilterSheet.tsx";
 import { MapOverlays } from "@frontend/components/map/MapOverlays.tsx";
 import { MapView } from "@frontend/components/map/MapView.tsx";
-import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import { matchesSearch } from "@frontend/lib/search.ts";
+import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
+import { SearchBar } from "@frontend/components/search/SearchBar.tsx";
 import { TreeList } from "@frontend/components/landing/TreeList.tsx";
 import type { SheetState } from "@frontend/components/landing/TreeList.tsx";
-import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
+import { StatusMarker } from "@frontend/components/status/StatusMarker.tsx";
+import {
+  DEFAULT_FILTERS,
+  STATUSES,
+  allStatusesSelected,
+  toMarkerQueryInput,
+} from "@frontend/lib/filters.ts";
+import type { Filters } from "@frontend/lib/filters.ts";
 import { trpc } from "@frontend/lib/trpc.ts";
-import { useEffect } from "react";
 
 /** Keeps only a non-empty record ID from the root route's search params. */
 export function validateSearch(search: Record<string, unknown>): {
@@ -38,8 +48,6 @@ export function validateSearch(search: Record<string, unknown>): {
 
 export const Route = createFileRoute("/")({
   validateSearch,
-  // Temporary: the landing page has no signed-out view yet, so send visitors to
-  // sign in instead of showing a blank page.
   beforeLoad: ({ context, location }) => {
     if (!context.auth.isAuthed) {
       throw redirect({
@@ -51,15 +59,65 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+const STATUS_LABEL: Record<TreeStatus, string> = {
+  requested: "Requested",
+  possible: "Possible",
+  approved: "Approved",
+  planted: "Planted",
+};
+
 /** Loads map records and composes the map with its overlay controls. */
 function Home() {
   const navigate = useNavigate();
   const { record, view = "planting", sheet = "partial" } = Route.useSearch();
-  const markersQuery = useQuery(trpc.map.markers.queryOptions({}));
-  const markers = (markersQuery.data ?? []).filter(
-    (marker) => marker.recordType === view,
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] =
+    useState<Filters>(DEFAULT_FILTERS);
+  const markersQuery = useQuery(
+    trpc.map.markers.queryOptions(toMarkerQueryInput(appliedFilters)),
   );
 
+  const activeFilters = [
+    ...appliedFilters.years.map((year) => ({
+      id: `year-${year}`,
+      label: String(year),
+    })),
+    ...(allStatusesSelected(appliedFilters.statuses)
+      ? []
+      : appliedFilters.statuses.map((status) => ({
+          id: `status-${status}`,
+          label: STATUS_LABEL[status],
+        }))),
+  ];
+
+  function removeFilter(id: string) {
+    if (id.startsWith("year-")) {
+      const year = Number(id.replace("year-", ""));
+      setAppliedFilters((current) => ({
+        ...current,
+        years: current.years.filter((y) => y !== year),
+      }));
+      return;
+    }
+
+    const status = id.replace("status-", "") as TreeStatus;
+    setAppliedFilters((current) => {
+      const remaining = current.statuses.filter((s) => s !== status);
+      return {
+        ...current,
+        statuses: remaining.length === 0 ? [...STATUSES] : remaining,
+      };
+    });
+  }
+
+  const markers =
+    appliedFilters.statuses.length === 0
+      ? []
+      : (markersQuery.data ?? []).filter(
+          (marker) =>
+            marker.recordType === view && matchesSearch(marker, query),
+        );
   const selectedMarker = findSelectedMarker(markers, record);
 
   /** Writes the selected marker ID to the URL search state. */
@@ -100,10 +158,10 @@ function Home() {
 
   return (
     <main
-      className={`h-dvh flex flex-col ${sheet === "expanded" ? "pt-16" : ""}`}
+      className={`relative flex h-dvh flex-col ${sheet === "expanded" ? "pt-16" : ""}`}
     >
       {sheet !== "expanded" && (
-        <div className="flex-1 min-h-0">
+        <div className="min-h-0 flex-1">
           <MapView
             markers={markers}
             selectedId={selectedMarker?.id}
@@ -115,6 +173,7 @@ function Home() {
           </MapView>
         </div>
       )}
+
       <TreeList
         markers={markers}
         isLoading={markersQuery.isPending}
@@ -124,6 +183,25 @@ function Home() {
         sheet={sheet}
         onViewChange={handleViewChange}
         onSheetChange={handleSheetChange}
+      />
+
+      <div className="absolute top-4 right-4 left-20 z-50">
+        <SearchBar
+          query={query}
+          activeFilterCount={activeFilters.length}
+          activeFilters={activeFilters}
+          onQueryChange={setQuery}
+          onFilterClick={() => setIsFilterOpen(true)}
+          onRemoveFilter={removeFilter}
+        />
+      </div>
+
+      <FilterSheet
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        applied={appliedFilters}
+        onApply={setAppliedFilters}
+        query={query}
       />
     </main>
   );
