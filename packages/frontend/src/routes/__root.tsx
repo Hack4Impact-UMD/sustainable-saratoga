@@ -3,12 +3,13 @@ import { useState } from "react";
 import {
   createRootRouteWithContext,
   Outlet,
+  useLocation,
   useRouter,
 } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 import { SyncStatus } from "@frontend/components/SyncStatus.tsx";
 import { MenuDrawer } from "@frontend/components/layout/MenuDrawer.tsx";
-import { auth } from "@frontend/lib/firebase.ts";
+import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { useAuth } from "@frontend/lib/useAuth.ts";
 import type { AuthState } from "@frontend/lib/useAuth.ts";
 
@@ -25,25 +26,27 @@ function RootLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { pathname } = useLocation();
+  // The People page has its own back button where the menu button would sit.
+  const showMenu = isAuthed && pathname !== "/people";
 
   const signOut = useMutation({
-    mutationFn: () => auth.signOut(),
+    mutationFn: () => signOutAndClear(queryClient),
     onSuccess: async () => {
-      await queryClient.resetQueries();
       await router.invalidate();
     },
   });
 
   return (
     <>
-      {isAuthed && (
+      {showMenu && (
         <>
           <button
             type="button"
             aria-label="Open menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
-            className="fixed top-4 left-4 z-40 grid size-10 place-items-center rounded-full border !border-line-subtle !bg-surface text-icon-primary shadow-1 hover:!bg-surface aria-expanded:!bg-surface"
+            className="fixed top-4 left-4 z-40 grid size-11 place-items-center rounded-full border border-line-subtle! bg-surface! text-icon-primary shadow-1 hover:bg-surface! aria-expanded:bg-surface!"
           >
             <Menu aria-hidden="true" className="size-5" />
           </button>
