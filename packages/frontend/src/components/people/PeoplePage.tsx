@@ -1,8 +1,10 @@
 import type { Person } from "@repo/common";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AlertCircle, ChevronLeft, Clock3 } from "lucide-react";
+import { AlertCircle, ChevronLeft, Clock3, SearchX } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { InviteModal } from "@frontend/components/people/InviteModal.tsx";
+import type { SendInvitesInput } from "@frontend/components/people/InviteModal.tsx";
 import { PersonActionsMenu } from "@frontend/components/people/PersonActionsMenu.tsx";
 import type { PersonMenuAction } from "@frontend/components/people/PersonActionsMenu.tsx";
 import { RemoveAccessDialog } from "@frontend/components/people/RemoveAccessDialog.tsx";
@@ -13,7 +15,7 @@ import {
   withoutPerson,
 } from "@frontend/components/people/inviteMutations.ts";
 import { PeopleSearchInput } from "@frontend/components/ui/PeopleSearchInput.tsx";
-import { Toast } from "@frontend/components/ui/Toast.tsx";
+import { notify } from "@frontend/lib/notify.tsx";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { sessionGeneration } from "@frontend/lib/sessionCleanup.ts";
 
@@ -24,12 +26,6 @@ const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
 });
 const emptyPeople: Person[] = [];
 const JUST_INVITED_MS = 4000;
-
-type ToastState = {
-  id: number;
-  message: string;
-  variant: "success" | "error";
-};
 
 type RemoveTarget = { uid: string; name: string };
 type FocusRequest = string | "list" | "title";
@@ -47,7 +43,6 @@ export function PeoplePage() {
   const [removePending, setRemovePending] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const [justInvitedId, setJustInvitedId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const triggers = useRef(new Map<string, HTMLButtonElement>());
@@ -55,7 +50,6 @@ export function PeoplePage() {
   const skipDialogRestore = useRef(false);
   const [dialogCopy, setDialogCopy] = useState<RemoveTarget | null>(null);
   const inFlight = useRef(false);
-  const toastId = useRef(0);
   const queryClient = useQueryClient();
   const peopleQuery = useQuery(trpc.people.list.queryOptions());
   const removeAccess = useMutation(
@@ -66,6 +60,9 @@ export function PeoplePage() {
   );
   const cancelInvite = useMutation(
     trpc.invites.cancel.mutationOptions({ networkMode: "always" }),
+  );
+  const sendInvitesMutation = useMutation(
+    trpc.invites.send.mutationOptions({ networkMode: "always" }),
   );
   const allPeople = peopleQuery.data ?? emptyPeople;
   const normalizedSearch = search.trim().toLowerCase();
@@ -114,9 +111,10 @@ export function PeoplePage() {
       )?.focus();
   });
 
-  function showToast(variant: ToastState["variant"], message: string) {
-    toastId.current += 1;
-    setToast({ id: toastId.current, variant, message });
+  async function sendInvites(input: SendInvitesInput) {
+    const result = await sendInvitesMutation.mutateAsync(input);
+    if (result.ok) void queryClient.invalidateQueries({ queryKey: listKey });
+    return result;
   }
 
   function focusAfterRemoval(visible: Person[], removedId: string) {
@@ -159,7 +157,7 @@ export function PeoplePage() {
       focusAfterRemoval(visible, target.uid);
       skipDialogRestore.current = true;
       setRemoveTarget(null);
-      showToast("success", `${target.name}'s access was removed.`);
+      notify("success", `${target.name}'s access was removed.`);
     } catch (error) {
       if (generation !== sessionGeneration()) return;
       const failure = classifyRowFailure(error);
@@ -181,7 +179,7 @@ export function PeoplePage() {
     inFlight.current = true;
     if (navigator.onLine === false) {
       inFlight.current = false;
-      showToast("error", "You're offline. Nothing was changed.");
+      notify("error", "You're offline. Nothing was changed.");
       return;
     }
     const generation = sessionGeneration();
@@ -193,27 +191,28 @@ export function PeoplePage() {
         await dropRow(person.id, generation);
         if (generation !== sessionGeneration()) return;
         focusAfterRemoval(people, person.id);
-        showToast("success", "Invite canceled.");
+        notify("success", "Invite canceled.");
         return;
       }
-      const { person: updated } = await resendInvite.mutateAsync({
-        inviteId: person.id,
-      });
+      const result = await resendInvite.mutateAsync({ inviteId: person.id });
       if (generation !== sessionGeneration()) return;
+      if (!result.ok) {
+        notify("error", "Couldn't resend the invite. Try again.");
+        return;
+      }
       await queryClient.cancelQueries({ queryKey: listKey });
       if (generation !== sessionGeneration()) return;
-      queryClient.setQueryData<Person[]>(listKey, (current) => {
-        if (
-          !current?.some(
-            (row) => row.id === updated.id && row.status !== "active",
-          )
-        )
-          return current;
-        return [updated, ...withoutPerson(current, updated.id)];
-      });
+      // The new link restarts the 7 days, so an expired invite is pending again.
+      queryClient.setQueryData<Person[]>(listKey, (current) =>
+        current?.map((row) =>
+          row.id === person.id && row.status !== "active"
+            ? { ...row, status: "pending" }
+            : row,
+        ),
+      );
       setJustInvitedId(person.id);
       pendingFocus.current = person.id;
-      showToast("success", "New invite link sent.");
+      notify("success", "New invite link sent.");
       void queryClient.invalidateQueries({ queryKey: listKey });
     } catch (error) {
       if (generation !== sessionGeneration()) return;
@@ -222,21 +221,21 @@ export function PeoplePage() {
       }
       const failure = classifyRowFailure(error);
       if (failure === "queued") {
-        showToast(
+        notify(
           "error",
           "Saved offline. It will be sent when the device is back online.",
         );
       } else if (failure === "unknown") {
-        showToast(
+        notify(
           "error",
           "Couldn't confirm the result. Check the refreshed list.",
         );
         void queryClient.invalidateQueries({ queryKey: listKey });
       } else if (action === "cancel") {
-        showToast("error", "Couldn't cancel the invite. Try again.");
+        notify("error", "Couldn't cancel the invite. Try again.");
         void queryClient.invalidateQueries({ queryKey: listKey });
       } else {
-        showToast("error", "Couldn't resend the invite. Try again.");
+        notify("error", "Couldn't resend the invite. Try again.");
         void queryClient.invalidateQueries({ queryKey: listKey });
       }
     } finally {
@@ -291,7 +290,7 @@ export function PeoplePage() {
   return (
     <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
       <header className="border-b border-divider">
-        <div className="flex h-14 items-center gap-2 px-1">
+        <div className="flex h-14 items-center gap-2 pr-4 pl-1">
           <Link
             to="/"
             aria-label="Back to records"
@@ -302,10 +301,11 @@ export function PeoplePage() {
           <h1
             ref={titleRef}
             tabIndex={-1}
-            className="type-h2 overflow-hidden text-ellipsis"
+            className="type-h2 min-w-0 flex-1 truncate outline-none"
           >
             People &amp; invitations
           </h1>
+          <InviteModal people={allPeople} sendInvites={sendInvites} />
         </div>
       </header>
 
@@ -324,7 +324,9 @@ export function PeoplePage() {
 
         <p
           aria-live="polite"
-          className="type-caption mt-1 mb-2 text-body-muted"
+          className={`type-caption mt-1 mb-2 text-body-muted ${
+            normalizedSearch && matchingPeopleCount === 0 ? "sr-only" : ""
+          }`}
         >
           {normalizedSearch ? (
             <>
@@ -381,11 +383,19 @@ export function PeoplePage() {
             />
           ))}
         </ul>
-      ) : (
-        <p className="type-body p-4 text-body-muted">
-          No people match your search.
-        </p>
-      )}
+      ) : normalizedSearch ? (
+        <div className="flex flex-col items-center gap-2 px-6 pt-24 text-center">
+          <div className="mb-2 grid size-12 place-items-center rounded-pill bg-pressed">
+            <SearchX aria-hidden="true" className="size-6 text-icon-primary" />
+          </div>
+          <p className="type-body-strong text-heading">
+            No one matches &ldquo;{search.trim()}&rdquo;
+          </p>
+          <p className="type-body-sm text-body-muted">
+            Check the spelling, or invite them.
+          </p>
+        </div>
+      ) : null}
 
       <RemoveAccessDialog
         name={dialogCopy?.name ?? ""}
@@ -411,16 +421,6 @@ export function PeoplePage() {
           );
         }}
       />
-
-      {toast && (
-        <Toast
-          key={toast.id}
-          data-toast-id={toast.id}
-          variant={toast.variant}
-          message={toast.message}
-          className="w-auto"
-        />
-      )}
     </main>
   );
 }

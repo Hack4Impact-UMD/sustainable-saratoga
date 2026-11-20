@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { Toaster } from "sonner";
 import "@frontend/index.css";
 import { queryClient } from "@frontend/lib/trpc.ts";
 import { App } from "@frontend/components/App.tsx";
@@ -16,6 +17,7 @@ createRoot(root).render(
       <AuthProvider>
         <App />
         <UpdatePrompt />
+        <Toaster position="bottom-center" offset={24} />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

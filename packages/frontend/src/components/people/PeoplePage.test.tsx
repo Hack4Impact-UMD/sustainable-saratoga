@@ -11,18 +11,23 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PeoplePage } from "@frontend/components/people/PeoplePage.tsx";
-import type { resendInvite } from "@backend/services/inviteManagement.ts";
 
-type InviteResendResult = Awaited<ReturnType<typeof resendInvite>>;
+// Matches the invites router results from the invitations backend (#41).
+type InviteResult =
+  | { ok: true; count: number }
+  | { ok: false; failures: { email: string; reason: string }[] };
 type TestInviteMutations = {
-  resend(input: { inviteId: string }): Promise<InviteResendResult>;
+  resend(input: { inviteId: string }): Promise<InviteResult>;
   cancel(input: { inviteId: string }): Promise<{ ok: true }>;
 };
+type SendInput = { emails: string[]; role: "volunteer" | "admin" };
 
 const queryState = vi.hoisted(() => ({
   people: [] as Person[],
   resend: vi.fn<TestInviteMutations["resend"]>(),
   cancel: vi.fn<TestInviteMutations["cancel"]>(),
+  send: vi.fn<(input: SendInput) => Promise<InviteResult>>(),
+  notify: vi.fn<(variant: "success" | "error", message: string) => void>(),
   error: false,
   pending: false,
   fetches: 0,
@@ -40,9 +45,12 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 
+vi.mock("@frontend/lib/notify.tsx", () => ({ notify: queryState.notify }));
+
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
     invites: {
+      send: { mutationOptions: () => ({ mutationFn: queryState.send }) },
       resend: { mutationOptions: () => ({ mutationFn: queryState.resend }) },
       cancel: { mutationOptions: () => ({ mutationFn: queryState.cancel }) },
     },
@@ -157,6 +165,12 @@ function renderPage(inviteMutations = readyInvites) {
   return queryClient;
 }
 
+function expectToast(variant: "success" | "error", message: string) {
+  return waitFor(() => {
+    expect(queryState.notify).toHaveBeenCalledWith(variant, message);
+  });
+}
+
 async function openMenu(name: string) {
   fireEvent.click(
     await screen.findByRole("button", { name: `More actions for ${name}` }),
@@ -177,6 +191,8 @@ beforeEach(() => {
   queryState.refetchError = false;
   queryState.removeCalls = [];
   queryState.removeMode = "ok";
+  queryState.notify.mockReset();
+  queryState.send.mockReset();
 });
 
 describe("PeoplePage", () => {
@@ -243,8 +259,9 @@ describe("PeoplePage", () => {
     });
     fireEvent.change(search, { target: { value: "missing" } });
 
+    expect(screen.getByText("No one matches “missing”")).toBeInTheDocument();
     expect(
-      screen.getByText("No people match your search."),
+      screen.getByText("Check the spelling, or invite them."),
     ).toBeInTheDocument();
   });
 
@@ -337,9 +354,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("button", { name: "Remove access" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Leo Brandt's access was removed.",
-    );
+    await expectToast("success", "Leo Brandt's access was removed.");
     expect(screen.queryByText("Leo Brandt")).not.toBeInTheDocument();
     await waitFor(() => {
       expect(
@@ -400,7 +415,7 @@ describe("PeoplePage", () => {
         "Saved offline. It will be sent when the device is back online.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(queryState.notify).not.toHaveBeenCalled();
     expect(screen.getByText("Leo Brandt")).toBeInTheDocument();
   });
 
@@ -415,9 +430,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("button", { name: "Remove access" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Leo Brandt's access was removed.",
-    );
+    await expectToast("success", "Leo Brandt's access was removed.");
     await waitFor(() => {
       expect(queryState.fetches).toBeGreaterThan(1);
     });
@@ -442,13 +455,9 @@ describe("PeoplePage", () => {
       await screen.findByRole("button", { name: "Remove access" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Leo Brandt's access was removed.",
-    );
+    await expectToast("success", "Leo Brandt's access was removed.");
     expect(search).toHaveValue("leo");
-    expect(
-      screen.getByText("No people match your search."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("No one matches “leo”")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "People & invitations" }),
     ).toHaveFocus();
@@ -469,9 +478,7 @@ describe("PeoplePage", () => {
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Cancel invite" }),
     );
-    const first = await screen.findByRole("status");
-    expect(first).toHaveTextContent("Invite canceled.");
-    expect(first).toHaveAttribute("data-toast-id", "1");
+    await expectToast("success", "Invite canceled.");
     expect(screen.queryByText("New invite")).not.toBeInTheDocument();
     expect(canceled).toEqual(["invite-new"]);
 
@@ -480,9 +487,12 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Remove invite" }),
     );
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveAttribute("data-toast-id", "2");
+      expect(queryState.notify).toHaveBeenCalledTimes(2);
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Invite canceled.");
+    expect(queryState.notify).toHaveBeenLastCalledWith(
+      "success",
+      "Invite canceled.",
+    );
     expect(canceled).toEqual(["invite-new", "invite-old"]);
   });
 
@@ -501,9 +511,7 @@ describe("PeoplePage", () => {
               }
             : person,
         );
-        const person = queryState.people.find((row) => row.id === inviteId);
-        if (!person) throw new Error("Expected resent row.");
-        return Promise.resolve({ person });
+        return Promise.resolve({ ok: true, count: 1 });
       },
     });
 
@@ -512,9 +520,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Resend invite" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "New invite link sent.",
-    );
+    await expectToast("success", "New invite link sent.");
     expect(screen.getByText("Invited just now")).toBeInTheDocument();
     expect(screen.queryByText("Invited Nov 12")).not.toBeInTheDocument();
     await waitFor(() => {
@@ -539,10 +545,125 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Resend invite" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Couldn't resend the invite. Try again.",
-    );
+    await expectToast("error", "Couldn't resend the invite. Try again.");
     expect(screen.getByText("Sent Sep 2 · link expired")).toBeInTheDocument();
+  });
+
+  it("reports a resend the server refused without changing the row", async () => {
+    renderPage({
+      cancel: () => Promise.resolve({ ok: true }),
+      resend: () =>
+        Promise.resolve({
+          ok: false,
+          failures: [{ email: "old@example.com", reason: "Delivery failed." }],
+        }),
+    });
+    await openMenu("Old invite");
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Resend invite" }),
+    );
+
+    await expectToast("error", "Couldn't resend the invite. Try again.");
+    expect(screen.getByText("Sent Sep 2 · link expired")).toBeInTheDocument();
+    expect(screen.queryByText("Invited just now")).not.toBeInTheDocument();
+  });
+
+  it("flags people already on the list in the invite sheet", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Invite" }));
+    const input = screen.getByRole("textbox", { name: "Email addresses" });
+
+    fireEvent.change(input, {
+      target: { value: "LEO@example.com new@example.com old@example.com" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(
+      screen.getByRole("button", {
+        name: "Already a member: LEO@example.com",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Already invited: new@example.com" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Invite expired: old@example.com" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Send 3 invites" }),
+    ).toBeDisabled();
+  });
+
+  it("sends invites, closes the sheet and refreshes the list", async () => {
+    queryState.send.mockResolvedValue({ ok: true, count: 2 });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Invite" }));
+    const input = screen.getByRole("textbox", { name: "Email addresses" });
+    fireEvent.change(input, {
+      target: { value: "a@example.org, b@example.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+    const fetchesBefore = queryState.fetches;
+
+    fireEvent.click(screen.getByRole("button", { name: "Send 2 invites" }));
+
+    await expectToast("success", "2 invites sent");
+    expect(queryState.send.mock.calls[0]?.[0]).toEqual({
+      emails: ["a@example.org", "b@example.org"],
+      role: "volunteer",
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(queryState.fetches).toBeGreaterThan(fetchesBefore);
+    });
+  });
+
+  it("highlights addresses the server refused and keeps the sheet open", async () => {
+    queryState.send.mockResolvedValue({
+      ok: false,
+      failures: [
+        {
+          email: "taken@example.org",
+          reason: "This email already belongs to an active member.",
+        },
+      ],
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Invite" }));
+    const input = screen.getByRole("textbox", { name: "Email addresses" });
+    fireEvent.change(input, {
+      target: { value: "taken@example.org fine@example.org" },
+    });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Send 2 invites" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Check the highlighted addresses and try again. Nothing was sent.",
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Couldn’t invite this address: taken@example.org",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
+    expect(queryState.notify).not.toHaveBeenCalled();
+  });
+
+  it("shows the offline state instead of sending", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Invite" }));
+    const input = screen.getByRole("textbox", { name: "Email addresses" });
+    fireEvent.change(input, { target: { value: "a@example.org" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Send 1 invite" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You’re offline",
+    );
+    expect(queryState.send).not.toHaveBeenCalled();
   });
 
   it("reports a thrown cancel error", async () => {
@@ -555,9 +676,7 @@ describe("PeoplePage", () => {
       await screen.findByRole("menuitem", { name: "Cancel invite" }),
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Couldn't cancel the invite. Try again.",
-    );
+    await expectToast("error", "Couldn't cancel the invite. Try again.");
     expect(screen.getByText("New invite")).toBeInTheDocument();
   });
 

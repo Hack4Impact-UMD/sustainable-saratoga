@@ -85,6 +85,17 @@
   --color-status-planted-tint: var(--status-planted-tint);
   --color-status-planted-text: var(--status-planted-text);
 
+  /* record pins     → fill-pin-requested, stroke-pin-requested-edge … */
+  --color-pin-requested: var(--pin-requested);
+  --color-pin-requested-edge: var(--pin-requested-edge);
+  --color-pin-approved: var(--pin-approved);
+  --color-pin-approved-edge: var(--pin-approved-edge);
+  --color-pin-planted: var(--pin-planted);
+  --color-pin-planted-edge: var(--pin-planted-edge);
+  --color-pin-possible: var(--pin-possible);
+  --color-pin-possible-edge: var(--pin-possible-edge);
+  --color-pin-upcoming-edge: var(--pin-upcoming-edge);
+
   /* map basemap      → bg-map-land, fill-map-park … (only if we style our own map) */
   --color-map-land: var(--map-land);
   --color-map-park: var(--map-park);

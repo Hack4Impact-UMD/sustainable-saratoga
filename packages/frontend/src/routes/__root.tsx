@@ -27,7 +27,8 @@ function RootLayout() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { pathname } = useLocation();
-  const showMenu = isAuthed && !pathname.startsWith("/invite/");
+  // The People page has its own back button where the menu button would sit.
+  const showMenu = isAuthed && pathname !== "/people";
 
   const signOut = useMutation({
     mutationFn: () => signOutAndClear(queryClient),
@@ -62,9 +63,7 @@ function RootLayout() {
       )}
 
       <SyncStatus />
-      <div className={pathname === "/people" ? "pt-16" : undefined}>
-        <Outlet />
-      </div>
+      <Outlet />
     </>
   );
 }

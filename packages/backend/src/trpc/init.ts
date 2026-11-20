@@ -17,15 +17,17 @@ export const createCallerFactory = t.createCallerFactory;
 /** Callable by anyone. `ctx.session` may be null. */
 export const publicProcedure = t.procedure;
 
-/** Allows invite acceptance before a profile exists. */
 export const sessionProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.session) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Sign in to continue.",
-    });
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
-  return next({ ctx: { ...ctx, session: ctx.session } });
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+    },
+  });
 });
 
 /**

@@ -3,10 +3,10 @@ import {
   GoogleAuthProvider,
   getAdditionalUserInfo,
   signInWithPopup,
+  signOut,
 } from "firebase/auth";
 import type { UserCredential } from "firebase/auth";
 import type { CreateUserInput } from "@repo/common";
-import { signOutAndClear } from "@frontend/lib/sessionCleanup.ts";
 import { auth } from "@frontend/lib/firebase.ts";
 import { queryClient, trpc } from "@frontend/lib/trpc.ts";
 
@@ -32,7 +32,7 @@ async function discardSignIn(credential: UserCredential) {
       console.error("Could not delete the unused Google account", error);
     }
   }
-  await signOutAndClear(queryClient);
+  await signOut(auth);
 }
 
 export type GoogleLoginResult =
@@ -44,31 +44,10 @@ export type GoogleLoginResult =
  * Signs in with Google. Only accounts that already have a profile get in;
  * anyone else is signed out again and told they have no access.
  */
-export function useGoogleLogin(inviteToken?: string) {
+export function useGoogleLogin() {
   return useMutation<GoogleLoginResult, Error>({
     mutationFn: async () => {
       const credential = await signInWithGoogle();
-      if (inviteToken) {
-        try {
-          const invitation = await queryClient.fetchQuery({
-            ...trpc.invites.check.queryOptions({ token: inviteToken }),
-            staleTime: 0,
-          });
-          if (
-            invitation.status === "valid" &&
-            invitation.email.toLowerCase() ===
-              credential.user.email?.toLowerCase()
-          ) {
-            return { status: "signed-in" };
-          }
-          throw new Error(
-            "Sign in with the email that received the invitation.",
-          );
-        } catch (error) {
-          await signOutAndClear(queryClient);
-          throw error;
-        }
-      }
       const { profile } = await queryClient.fetchQuery({
         ...trpc.users.me.queryOptions(),
         staleTime: 0,
@@ -94,33 +73,23 @@ export class WrongGoogleAccountError extends Error {
   }
 }
 
-function isConflict(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "data" in error &&
-    typeof error.data === "object" &&
-    error.data !== null &&
-    "code" in error.data &&
-    error.data.code === "CONFLICT"
-  );
-}
-
 /**
  * Creates an account with Google for the invited `email`, then the profile.
  * The Google account must use the invited address. If the person already has
  * a profile, they're simply signed in.
  */
+
+// when signing in with google and accepts the inivite, the google account must match that invited email
 export function useGoogleSignUp() {
-  const acceptInvite = useMutation(
-    trpc.invites.accept.mutationOptions({ networkMode: "always" }),
-  );
-  const createProfile = useMutation(trpc.users.create.mutationOptions());
+  const acceptInvitation = useMutation(trpc.invites.accept.mutationOptions());
 
   return useMutation<
-    { status: "accepted" | "restoring" },
+    void,
     Error,
-    CreateUserInput & { email: string; token?: string }
+    CreateUserInput & {
+      email: string;
+      token: string;
+    }
   >({
     mutationFn: async ({ email, token, ...profile }) => {
       const credential = await signInWithGoogle(email);
@@ -130,26 +99,18 @@ export function useGoogleSignUp() {
         throw new WrongGoogleAccountError(email);
       }
 
-      if (token) {
-        try {
-          return await acceptInvite.mutateAsync({ ...profile, token });
-        } catch (error) {
-          // A lost response can follow a committed acceptance. Keep the
-          // Firebase account so the invitee can safely sign in and retry.
-          await signOutAndClear(queryClient);
-          throw error;
-        }
-      }
-
-      try {
-        await createProfile.mutateAsync(profile);
-      } catch (error) {
-        // they already have a profile, so this was really a sign-in
-        if (isConflict(error)) return { status: "accepted" };
-        await discardSignIn(credential);
-        throw error;
-      }
-      return { status: "accepted" };
+      // acceptInvite commits the profile and the accepted invite status in one
+      // transaction. A failure here -- including a CONFLICT from a replayed
+      // request -- may have happened after that commit, so deleting the account
+      // would leave the invite accepted with no working login. Preserve the
+      // account and surface the error; CONFLICT is not treated as a successful
+      // sign-in, since a different account may have consumed the invite.
+      await acceptInvitation.mutateAsync({
+        token,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        volunteerTypes: profile.volunteerTypes,
+      });
     },
   });
 }

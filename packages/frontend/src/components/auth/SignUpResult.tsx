@@ -53,15 +53,14 @@ const resultContent: Record<
   "account-exists": {
     title: "Account already exists",
     message:
-      "Sign in with your password or Google. If you’ve forgotten your password, reset it.",
+      "Sign in with your password or Google. If you've forgotten your password, reset it.",
     tone: "info",
     icon: Info,
     action: "Sign in",
   },
   "no-access": {
     title: "No access yet",
-    message:
-      "priya.personal@example.com isn’t set up for the tree tracker. Contact your administrator.",
+    message: "isn't set up for the tree tracker. Contact your administrator.",
     tone: "plain",
     icon: Leaf,
     action: "Use another account",
@@ -102,7 +101,10 @@ export function SignUpResult({
           </header>
 
           {isPlain ? (
-            <p className="type-supporting text-center">{result.message}</p>
+            <p className="type-supporting text-center">
+              {email ?? "Your account"} isn&apos;t set up for the tree tracker.
+              Contact your administrator.
+            </p>
           ) : (
             <div
               className={`flex items-start gap-2 rounded-md border px-3 py-3 ${noticeStyles[result.tone]}`}
@@ -124,7 +126,7 @@ export function SignUpResult({
                 {state === "account-exists" && (
                   <>
                     <h2 className="font-bold">
-                      An account already exists for jordan.lee@example.org
+                      An account already exists for {email ?? "your email"}
                     </h2>
                     <p className="type-caption">{result.message}</p>
                   </>

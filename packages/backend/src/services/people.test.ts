@@ -8,24 +8,6 @@ type Docs = { id: string; data: () => unknown }[];
 const now = new Date("2026-06-01T00:00:00.000Z");
 let invites: Docs = [];
 let users: Docs = [];
-let profile: Record<string, unknown> | null = null;
-
-function storedProfile() {
-  return {
-    exists: profile !== null,
-    data: () => (profile ? { ...profile } : {}),
-  };
-}
-
-function applyWrite(data: unknown) {
-  const patch = data as Record<string, unknown>;
-  const next: Record<string, unknown> = profile ? { ...profile } : {};
-  for (const [key, value] of Object.entries(patch)) {
-    if (value !== null && typeof value === "object") delete next[key];
-    else next[key] = value;
-  }
-  profile = next;
-}
 
 const update = vi.fn<(data: unknown) => Promise<void>>();
 const get = vi.fn<() => Promise<{ exists: boolean; data: () => unknown }>>();
@@ -36,11 +18,6 @@ const where = vi.fn<
   (...args: unknown[]) => { get: () => Promise<{ docs: Docs }> }
 >(() => ({ get: () => Promise.resolve({ docs: invites }) }));
 const db = {
-  runTransaction: (fn: (tx: unknown) => Promise<unknown>) =>
-    fn({
-      get: () => get(),
-      update: (_ref: unknown, data: unknown) => update(data),
-    }),
   collection: (name: string) =>
     name === "invitations"
       ? { where }
@@ -75,12 +52,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   invites = [];
   users = [];
-  profile = null;
-  get.mockImplementation(() => Promise.resolve(storedProfile()));
-  update.mockImplementation((data) => {
-    applyWrite(data);
-    return Promise.resolve();
-  });
 });
 
 describe("listPeople", () => {
@@ -139,19 +110,15 @@ describe("listPeople", () => {
 
 describe("removeAccess", () => {
   it("marks the profile removed, disables the account and revokes sessions", async () => {
-    profile = member("Zed");
+    get.mockResolvedValue({ exists: true, data: () => member("Zed") });
 
     await removeAccess(db, auth, "admin-1", "u1", now);
 
     expect(doc).toHaveBeenCalledWith("u1");
-    expect(update).toHaveBeenCalledWith({
+    expect(update).toHaveBeenCalledExactlyOnceWith({
       status: "removed",
       removedAt: now.toISOString(),
       removedBy: "admin-1",
-      restorationInviteId: expect.anything(),
-      authUnlock: expect.anything(),
-      desiredAuthDisabled: true,
-      authRevision: 1,
     });
     expect(updateUser).toHaveBeenCalledExactlyOnceWith("u1", {
       disabled: true,
@@ -160,7 +127,7 @@ describe("removeAccess", () => {
   });
 
   it("never deletes the profile", async () => {
-    profile = member("Zed");
+    get.mockResolvedValue({ exists: true, data: () => member("Zed") });
     const deleteSpy = vi.fn<() => void>();
     doc.mockReturnValueOnce({ get, update, delete: deleteSpy } as never);
 
@@ -178,7 +145,7 @@ describe("removeAccess", () => {
   });
 
   it("reports a missing member", async () => {
-    profile = null;
+    get.mockResolvedValue({ exists: false, data: () => ({}) });
 
     await expect(
       removeAccess(db, auth, "admin-1", "nobody", now),
@@ -186,37 +153,18 @@ describe("removeAccess", () => {
     expect(updateUser).not.toHaveBeenCalled();
   });
 
-  it("refreshes revocation for an already-removed member", async () => {
-    profile = member("Zed", "volunteer", "removed");
+  it("finishes the Auth steps for an already-removed member without rewriting the profile", async () => {
+    get.mockResolvedValue({
+      exists: true,
+      data: () => member("Zed", "volunteer", "removed"),
+    });
 
     await removeAccess(db, auth, "admin-1", "u1", now);
 
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "removed",
-        removedBy: "admin-1",
-        restorationInviteId: expect.anything(),
-      }),
-    );
+    expect(update).not.toHaveBeenCalled();
     expect(updateUser).toHaveBeenCalledExactlyOnceWith("u1", {
       disabled: true,
     });
     expect(revokeRefreshTokens).toHaveBeenCalledExactlyOnceWith("u1");
-  });
-
-  it("re-enables auth when a newer restoration lands during the disable", async () => {
-    profile = member("Zed", "volunteer", "active");
-    updateUser.mockImplementationOnce(() => {
-      profile = member("Zed", "volunteer", "active");
-      return Promise.resolve();
-    });
-
-    await removeAccess(db, auth, "admin-1", "u1", now);
-
-    expect(updateUser.mock.calls).toEqual([
-      ["u1", { disabled: true }],
-      ["u1", { disabled: false }],
-    ]);
-    expect(profile?.status).toBe("active");
   });
 });

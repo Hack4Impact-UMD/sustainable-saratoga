@@ -56,6 +56,9 @@ function GoogleMap({
   selectedId,
   onMarkerSelect,
   renderMarker,
+  defaultCenter = DEFAULT_CENTER,
+  defaultZoom = DEFAULT_ZOOM,
+  interactive = true,
   children,
 }: MapViewProps & { mapId: string }) {
   const status = useApiLoadingStatus();
@@ -75,10 +78,11 @@ function GoogleMap({
       <Map
         className="h-full w-full"
         mapId={mapId}
-        defaultCenter={DEFAULT_CENTER}
-        defaultZoom={DEFAULT_ZOOM}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         disableDefaultUI
-        gestureHandling="greedy"
+        gestureHandling={interactive ? "greedy" : "none"}
+        keyboardShortcuts={interactive}
         clickableIcons={false}
       >
         {markers.map((marker) => {

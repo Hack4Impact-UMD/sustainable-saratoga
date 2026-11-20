@@ -20,6 +20,7 @@ vi.mock("@frontend/lib/firebase.ts", () => ({ auth: {} }));
 vi.mock("@frontend/lib/trpc.ts", () => ({
   trpc: {
     invites: {
+      send: { mutationOptions: () => ({}) },
       resend: { mutationOptions: () => ({}) },
       cancel: { mutationOptions: () => ({}) },
     },

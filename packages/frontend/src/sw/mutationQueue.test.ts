@@ -167,8 +167,9 @@ describe("handleMutation", () => {
     expect(queue.entries).toHaveLength(0);
   });
 
-  it("opts out only the people row actions", () => {
+  it("opts out only the People page actions", () => {
     expect(skipsOfflineQueue("people.removeAccess")).toBe(true);
+    expect(skipsOfflineQueue("invites.send")).toBe(true);
     expect(skipsOfflineQueue("invites.resend")).toBe(true);
     expect(skipsOfflineQueue("invites.cancel")).toBe(true);
     expect(skipsOfflineQueue("trees.create")).toBe(false);

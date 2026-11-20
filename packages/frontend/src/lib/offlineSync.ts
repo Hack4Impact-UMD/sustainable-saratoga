@@ -8,17 +8,16 @@
 export const MUTATION_QUEUE_NAME = "trpc-mutations";
 
 /**
- * Set on row-management mutations so a dropped connection is not replayed.
+ * Set on People page mutations so a dropped connection is not replayed.
  * An administrator can reconcile an uncertain response with the live list.
  */
 export const SKIP_OFFLINE_QUEUE_HEADER = "x-skip-offline-queue";
 
 const SKIP_OFFLINE_QUEUE_PATHS = new Set([
   "people.removeAccess",
+  "invites.send",
   "invites.resend",
   "invites.cancel",
-  "invites.accept",
-  "invites.restoreSignIn",
 ]);
 
 export function skipsOfflineQueue(path: string) {

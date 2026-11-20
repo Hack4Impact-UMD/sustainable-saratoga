@@ -43,7 +43,7 @@ const PeopleSearchInput = React.forwardRef<
         type="search"
         data-slot="input"
         onChange={handleChange}
-        className="h-full min-w-0 w-full border-0 text-base outline-none placeholder:text-body-muted focus-visible:border-0 focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none md:text-sm"
+        className="type-body h-full min-w-0 w-full border-0 text-body outline-none placeholder:text-body-muted focus-visible:border-0 focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
       />
       {hasValue && (
         <button
