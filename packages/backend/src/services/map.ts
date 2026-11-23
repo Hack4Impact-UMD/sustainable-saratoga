@@ -8,10 +8,6 @@ const addressGroup = type({
   nextTreeNumber: "number.safe >= 1",
 });
 
-/**
- * Returns markers matching the filters. Reads the `trees` Firestore collection
- * and enriches each document with the address-group count.
- */
 export async function listMapMarkers(
   db: Firestore,
   filters: MapMarkersInput,
