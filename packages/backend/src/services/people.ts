@@ -62,6 +62,27 @@ export async function listPeople(
 }
 
 /**
+ * Returns all active members as lightweight entries for a dropdown picker.
+ * Sorted by name.
+ */
+export async function listActiveMembers(
+  db: Firestore,
+): Promise<{ uid: string; name: string }[]> {
+  const snapshot = await db.collection("users").get();
+  return snapshot.docs
+    .map((doc) => ({
+      uid: doc.id,
+      profile: userProfile.assert(doc.data()),
+    }))
+    .filter(({ profile }) => profile.status === "active")
+    .map(({ uid, profile }) => ({
+      uid,
+      name: fullName(profile.firstName, profile.lastName),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
  * Locks a member out. The profile is marked removed, never deleted, so their
  * records stay credited to them. The profile is written first: if a later Auth
  * step fails, the member is already refused by `protectedProcedure`, and

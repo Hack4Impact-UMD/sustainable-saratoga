@@ -6,6 +6,7 @@ import {
   SEED_PASSWORD,
   seed,
   seedInvitations,
+  seedTreeRecords,
   seedUsers,
 } from "@backend/dev/seed.ts";
 
@@ -79,6 +80,7 @@ describe("seed", () => {
     await expect(seed(db, auth, now)).resolves.toEqual({
       users: seedUsers(now).length,
       invitations: seedInvitations(now).length,
+      trees: 5,
     });
 
     expect(createUser).toHaveBeenCalledTimes(seedUsers(now).length);
@@ -94,8 +96,13 @@ describe("seed", () => {
     expect(createUser).toHaveBeenCalledWith(
       expect.objectContaining({ uid: "seed-removed", disabled: true }),
     );
+    // users + invitations + tree records + address groups
+    const { records, groups } = seedTreeRecords(now);
     expect(set).toHaveBeenCalledTimes(
-      seedUsers(now).length + seedInvitations(now).length,
+      seedUsers(now).length +
+        seedInvitations(now).length +
+        records.length +
+        groups.length,
     );
   });
 
