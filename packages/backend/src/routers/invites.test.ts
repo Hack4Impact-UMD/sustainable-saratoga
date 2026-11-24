@@ -44,24 +44,35 @@ function setup() {
       });
     },
   });
+  const created = new Map<string, unknown>();
   const users = {
     get: () =>
       Promise.resolve({ docs: members.map((user) => ({ data: () => user })) }),
+    doc: (uid: string) => ({
+      id: uid,
+      get: () => Promise.resolve({ exists: false, data: () => null }),
+    }),
   };
-  const invites = {
-    doc: (id = `invite-${++nextId}`) => ref(id),
-    where: (field: "status", operator: "==", status: string) => ({
+  const where = (
+    field: "status" | "tokenHash",
+    operator: "==",
+    value: string,
+  ) => {
+    const query = {
+      limit: () => query,
       get: async () => ({
         docs: await Promise.all(
           [...records]
             .filter(
-              ([, record]) => operator === "==" && record[field] === status,
+              ([, record]) => operator === "==" && record[field] === value,
             )
             .map(([id]) => ref(id).get()),
         ),
       }),
-    }),
+    };
+    return query;
   };
+  const invites = { doc: (id = `invite-${++nextId}`) => ref(id), where };
   const db = {
     collection: (name: string) => (name === "users" ? users : invites),
     runTransaction: async (run: (tx: unknown) => Promise<unknown>) => {
@@ -72,6 +83,8 @@ function setup() {
           writes.push(() => records.set(id, value)),
         delete: ({ id }: { id: string }) =>
           writes.push(() => records.delete(id)),
+        create: ({ id }: { id: string }, value: unknown) =>
+          writes.push(() => created.set(id, value)),
         update: ({ id }: { id: string }, value: Partial<Invitation>) =>
           writes.push(() => {
             const record = records.get(id);
@@ -87,8 +100,13 @@ function setup() {
   return {
     records,
     members,
+    created,
     invites: createCaller({ ...context, session }).invites,
     anonymous: createCaller({ ...context, session: null }).invites,
+    invitee: createCaller({
+      ...context,
+      session: { uid: "invitee", email, emailVerified: true },
+    }).invites,
   };
 }
 
@@ -310,4 +328,51 @@ it("restores the old link when a resend delivery fails", async () => {
     ok: false,
   });
   expect(records.get(inviteId)).toEqual(old);
+});
+
+/** The token in the most recent invite email. */
+function lastEmailedToken() {
+  const token = mail.mock.calls.at(-1)?.[0][0]?.token;
+  assert.ok(token);
+  return token;
+}
+
+it("checks an emailed link by its token hash", async () => {
+  const { invites, anonymous } = setup();
+  await invites.send(send);
+  await expect(anonymous.check({ token: lastEmailedToken() })).resolves.toEqual(
+    { status: "valid", email, role: "volunteer" },
+  );
+  await expect(anonymous.check({ token: inviteId })).resolves.toEqual({
+    status: "expired",
+  });
+});
+
+it("stops accepting the old link after a resend", async () => {
+  const { invites, anonymous } = setup();
+  await invites.send(send);
+  const oldToken = lastEmailedToken();
+  await invites.resend({ inviteId });
+  await expect(anonymous.check({ token: oldToken })).resolves.toEqual({
+    status: "expired",
+  });
+  await expect(
+    anonymous.check({ token: lastEmailedToken() }),
+  ).resolves.toMatchObject({ status: "valid" });
+});
+
+it("accepts an emailed link and creates the profile", async () => {
+  const { invites, invitee, records, created } = setup();
+  await invites.send(send);
+  await invitee.accept({
+    token: lastEmailedToken(),
+    firstName: "Val",
+    lastName: "Unteer",
+  });
+  expect(records.get(inviteId)?.status).toBe("accepted");
+  expect(created.get("invitee")).toMatchObject({
+    email,
+    role: "volunteer",
+    status: "active",
+  });
 });

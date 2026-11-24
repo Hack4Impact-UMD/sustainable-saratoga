@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { deliverInvites, inviteLink } from "@backend/services/inviteDelivery.ts";
+import {
+  deliverInvites,
+  inviteLink,
+} from "@backend/services/inviteDelivery.ts";
 
 const messages = [
   { email: "a@example.com", token: "tokenA" },
@@ -13,7 +16,7 @@ beforeEach(() => {
   vi.stubEnv("FUNCTIONS_EMULATOR", "");
   vi.stubEnv("RESEND_API_KEY", "key");
   vi.stubEnv("INVITE_FROM_EMAIL", "invites@sustainablesaratoga.org");
-  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -28,22 +31,22 @@ it("prints links instead of sending on the emulator", async () => {
   vi.stubEnv("FUNCTIONS_EMULATOR", "true");
   await expect(deliverInvites(messages)).resolves.toEqual([]);
   expect(fetchMock).not.toHaveBeenCalled();
-  expect(console.log).toHaveBeenCalledWith(
+  expect(console.warn).toHaveBeenCalledWith(
     `[invite] a@example.com: ${inviteLink("tokenA", "https://app.test")}`,
   );
-  expect(console.log).toHaveBeenCalledTimes(2);
+  expect(console.warn).toHaveBeenCalledTimes(2);
 });
 
 it("sends one email per invitee with the link", async () => {
   fetchMock.mockResolvedValue({ ok: true });
   await expect(deliverInvites(messages)).resolves.toEqual([]);
   expect(fetchMock).toHaveBeenCalledTimes(2);
-  const [url, init] = fetchMock.mock.calls[0]!;
+  const [url, init] = fetchMock.mock.calls[0] ?? [];
   expect(url).toBe("https://api.resend.com/emails");
   expect(init.headers.Authorization).toBe("Bearer key");
   const body = JSON.parse(init.body);
   expect(body.to).toEqual(["a@example.com"]);
-  expect(body.text).toContain("https://app.test/accept-invite?token=tokenA");
+  expect(body.text).toContain("https://app.test/invite/tokenA");
 });
 
 it("reports only the emails that failed", async () => {
@@ -58,7 +61,10 @@ it("reports only the emails that failed", async () => {
 it("reports a network error as a failure instead of throwing", async () => {
   fetchMock.mockRejectedValue(new Error("offline"));
   const failures = await deliverInvites(messages);
-  expect(failures.map((f) => f.email)).toEqual(["a@example.com", "b@example.com"]);
+  expect(failures.map((f) => f.email)).toEqual([
+    "a@example.com",
+    "b@example.com",
+  ]);
 });
 
 it("fails every email when the provider is not configured", async () => {

@@ -37,3 +37,6 @@ logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Data migration
+fulcrum_data/

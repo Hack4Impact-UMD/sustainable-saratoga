@@ -14,6 +14,7 @@ const records = {
     species: "Red maple",
     scientificName: "Acer rubrum",
     cultivar: "Red Sunset",
+    responsible: "Priya Nair",
     status: "planted",
     origin: "requested",
     lat: 43.0831,
@@ -114,6 +115,7 @@ const records = {
     species: "Sugar maple",
     scientificName: null,
     cultivar: null,
+    responsible: "Priya Nair",
     status: "planted",
     origin: "possible",
     lat: 43.0831,
@@ -174,6 +176,7 @@ const records = {
     species: "River birch",
     scientificName: null,
     cultivar: null,
+    responsible: "Priya Nair",
     status: "possible",
     origin: "possible",
     lat: 43.0788,
@@ -228,6 +231,7 @@ const records = {
     species: "White oak",
     scientificName: null,
     cultivar: null,
+    responsible: "Sam Okafor",
     status: "approved",
     origin: "requested",
     lat: 43.0812,
@@ -282,6 +286,7 @@ const records = {
     species: "Eastern white pine",
     scientificName: null,
     cultivar: null,
+    responsible: "Priya Nair",
     status: "planted",
     origin: "possible",
     lat: 43.0766,
@@ -342,6 +347,7 @@ const records = {
     species: "American elm",
     scientificName: null,
     cultivar: null,
+    responsible: null,
     status: "approved",
     origin: "possible",
     lat: 43.0854,
@@ -396,6 +402,7 @@ const records = {
     species: "Eastern white pine",
     scientificName: null,
     cultivar: null,
+    responsible: "Priya Nair",
     status: "requested",
     origin: "requested",
     lat: 43.0769,
@@ -450,6 +457,7 @@ const records = {
     species: "Eastern white pine",
     scientificName: null,
     cultivar: null,
+    responsible: "Priya Nair",
     status: "possible",
     origin: "possible",
     lat: 43.0762,
@@ -502,4 +510,9 @@ const sampleRecords: TreeRecord[] = sampleRecordIds.map((id) =>
 
 export function getSampleRecord(id: string): TreeRecord | undefined {
   return sampleRecords.find((record) => record.id === id);
+}
+
+/** Every sample record, for showing neighbouring trees on a map. */
+export function listSampleRecords(): TreeRecord[] {
+  return sampleRecords;
 }

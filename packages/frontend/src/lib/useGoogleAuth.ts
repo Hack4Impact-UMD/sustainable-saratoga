@@ -73,28 +73,25 @@ export class WrongGoogleAccountError extends Error {
   }
 }
 
-function isConflict(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "data" in error &&
-    typeof error.data === "object" &&
-    error.data !== null &&
-    "code" in error.data &&
-    error.data.code === "CONFLICT"
-  );
-}
-
 /**
  * Creates an account with Google for the invited `email`, then the profile.
  * The Google account must use the invited address. If the person already has
  * a profile, they're simply signed in.
  */
-export function useGoogleSignUp() {
-  const createProfile = useMutation(trpc.users.create.mutationOptions());
 
-  return useMutation<void, Error, CreateUserInput & { email: string }>({
-    mutationFn: async ({ email, ...profile }) => {
+// when signing in with google and accepts the inivite, the google account must match that invited email
+export function useGoogleSignUp() {
+  const acceptInvitation = useMutation(trpc.invites.accept.mutationOptions());
+
+  return useMutation<
+    void,
+    Error,
+    CreateUserInput & {
+      email: string;
+      token: string;
+    }
+  >({
+    mutationFn: async ({ email, token, ...profile }) => {
       const credential = await signInWithGoogle(email);
 
       if (credential.user.email?.toLowerCase() !== email.toLowerCase()) {
@@ -102,14 +99,18 @@ export function useGoogleSignUp() {
         throw new WrongGoogleAccountError(email);
       }
 
-      try {
-        await createProfile.mutateAsync(profile);
-      } catch (error) {
-        // they already have a profile, so this was really a sign-in
-        if (isConflict(error)) return;
-        await discardSignIn(credential);
-        throw error;
-      }
+      // acceptInvite commits the profile and the accepted invite status in one
+      // transaction. A failure here -- including a CONFLICT from a replayed
+      // request -- may have happened after that commit, so deleting the account
+      // would leave the invite accepted with no working login. Preserve the
+      // account and surface the error; CONFLICT is not treated as a successful
+      // sign-in, since a different account may have consumed the invite.
+      await acceptInvitation.mutateAsync({
+        token,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        volunteerTypes: profile.volunteerTypes,
+      });
     },
   });
 }

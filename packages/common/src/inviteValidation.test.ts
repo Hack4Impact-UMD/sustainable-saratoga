@@ -14,7 +14,10 @@ it("flags invalid emails", () => {
 });
 
 it("flags every copy of a duplicate, ignoring case", () => {
-  const result = validateInviteEmails(["a@example.com", "A@example.com"], "volunteer");
+  const result = validateInviteEmails(
+    ["a@example.com", "A@example.com"],
+    "volunteer",
+  );
   expect("failures" in result && result.failures.map((f) => f.email)).toEqual([
     "a@example.com",
     "A@example.com",
@@ -36,6 +39,7 @@ it("allows admin only for org emails", () => {
 
 it("rejects look-alike org domains", () => {
   expect(
-    "failures" in validateInviteEmails(["x@evil-sustainablesaratoga.org"], "admin"),
+    "failures" in
+      validateInviteEmails(["x@evil-sustainablesaratoga.org"], "admin"),
   ).toBe(true);
 });

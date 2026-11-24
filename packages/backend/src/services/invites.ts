@@ -1,17 +1,26 @@
 import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
+import type { Auth } from "firebase-admin/auth";
 import type {
   DocumentReference,
   DocumentSnapshot,
   Firestore,
+  Query,
   QuerySnapshot,
 } from "firebase-admin/firestore";
 import {
   invitation,
   issuedInvitation,
+  userProfile,
   validateInviteEmails,
 } from "@repo/common";
-import type { Invitation, InviteFailure, UserRole } from "@repo/common";
+import type {
+  AcceptInviteInput,
+  Invitation,
+  InviteFailure,
+  UserProfile,
+  UserRole,
+} from "@repo/common";
 import { deliverInvites } from "@backend/services/inviteDelivery.ts";
 import type { InviteMessage } from "@backend/services/inviteDelivery.ts";
 
@@ -79,8 +88,11 @@ async function rollback(db: Firestore, undo: Undo[]): Promise<void> {
         if (!snapshot.exists && previous) transaction.set(ref, previous);
         return;
       }
-      const current = snapshot.exists ? invitation.assert(snapshot.data()) : null;
-      if (current?.status !== "pending" || current.tokenHash !== ourHash) return;
+      const current = snapshot.exists
+        ? invitation.assert(snapshot.data())
+        : null;
+      if (current?.status !== "pending" || current.tokenHash !== ourHash)
+        return;
       if (previous) transaction.set(ref, previous);
       else transaction.delete(ref);
     });
@@ -118,7 +130,9 @@ export async function sendInvites(
   const messages = validation.emails.map(inviteMessage);
   const now = Date.now();
   const saved = await db.runTransaction(
-    async (transaction): Promise<{ failures: InviteFailure[] } | { undo: Undo[] }> => {
+    async (
+      transaction,
+    ): Promise<{ failures: InviteFailure[] } | { undo: Undo[] }> => {
       const [members, pending] = await Promise.all([
         transaction.get(users),
         transaction.get(invites.where("status", "==", "pending")),
@@ -187,7 +201,8 @@ export async function resendInvite(
     async (
       transaction,
     ): Promise<
-      { failures: InviteFailure[] } | { message: InviteMessage; previous: Invitation }
+      | { failures: InviteFailure[] }
+      | { message: InviteMessage; previous: Invitation }
     > => {
       const invite = readInvite(await transaction.get(ref));
       if (invite.status !== "pending") {
@@ -216,13 +231,17 @@ export async function resendInvite(
   );
   if ("failures" in saved) return { ok: false, failures: saved.failures };
 
-  const failures = await deliverOrRollback(db, [saved.message], [
-    {
-      ref,
-      previous: saved.previous,
-      ourHash: hashInviteToken(saved.message.token),
-    },
-  ]);
+  const failures = await deliverOrRollback(
+    db,
+    [saved.message],
+    [
+      {
+        ref,
+        previous: saved.previous,
+        ourHash: hashInviteToken(saved.message.token),
+      },
+    ],
+  );
   if (failures.length > 0) return { ok: false, failures };
   return { ok: true, count: 1 };
 }
@@ -244,4 +263,186 @@ export async function cancelInvite(
       transaction.update(ref, { status: "canceled" });
   });
   return { ok: true };
+}
+
+/**
+ * Finds the invite an emailed link points to. Links carry the raw token, and
+ * only its hash is stored, so a leaked database can't be used to sign up.
+ */
+function inviteByToken(db: Firestore, token: string): Query {
+  return db
+    .collection("invitations")
+    .where("tokenHash", "==", hashInviteToken(token))
+    .limit(1);
+}
+
+export type CheckInviteResult =
+  | { status: "valid"; email: string; role: Invitation["role"] }
+  | { status: "expired" | "used" | "canceled"; email?: string };
+
+function getInviteStatus(invite: Invitation, now: Date): CheckInviteResult {
+  if (invite.status === "canceled") {
+    return { status: "canceled", email: invite.email };
+  }
+
+  if (invite.status === "accepted") {
+    return { status: "used", email: invite.email };
+  }
+
+  if (new Date(invite.expiresAt).getTime() <= now.getTime()) {
+    return { status: "expired", email: invite.email };
+  }
+
+  return {
+    status: "valid",
+    email: invite.email,
+    role: invite.role,
+  };
+}
+
+export async function checkInvite(
+  db: Firestore,
+  token: string,
+  now = new Date(),
+): Promise<CheckInviteResult> {
+  const snapshot = await inviteByToken(db, token).get();
+  const [match] = snapshot.docs;
+
+  if (!match) {
+    return { status: "expired" };
+  }
+
+  const invite = invitation.assert(match.data());
+  return getInviteStatus(invite, now);
+}
+
+export async function acceptInvite(
+  db: Firestore,
+  auth: Auth,
+  uid: string,
+  email: string,
+  input: AcceptInviteInput,
+  now = new Date(),
+): Promise<void> {
+  const inviteQuery = inviteByToken(db, input.token);
+  const userRef = db.collection("users").doc(uid);
+
+  let shouldEnableAccount = false;
+
+  await db.runTransaction(async (transaction) => {
+    const [inviteSnapshot, userSnapshot] = await Promise.all([
+      transaction.get(inviteQuery),
+      transaction.get(userRef),
+    ]);
+    const [match] = inviteSnapshot.docs;
+
+    if (!match) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Invitation not found.",
+      });
+    }
+
+    const invite = invitation.assert(match.data());
+
+    if (invite.status === "canceled") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "This invitation was canceled.",
+      });
+    }
+
+    if (invite.status === "accepted") {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "This invitation has already been used.",
+      });
+    }
+
+    if (new Date(invite.expiresAt).getTime() <= now.getTime()) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "This invitation has expired.",
+      });
+    }
+
+    if (invite.email.toLowerCase() !== email.toLowerCase()) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "This invitation belongs to a different email address.",
+      });
+    }
+
+    let profile: UserProfile;
+
+    if (userSnapshot.exists) {
+      const existingProfile = userProfile.assert({
+        uid,
+        ...userSnapshot.data(),
+      });
+
+      if (existingProfile.email.toLowerCase() !== invite.email.toLowerCase()) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An account already exists with a different email.",
+        });
+      }
+
+      if (existingProfile.status !== "removed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An account already exists for this user.",
+        });
+      }
+
+      profile =
+        invite.role === "admin"
+          ? {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "admin",
+              status: "active",
+            }
+          : {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "volunteer",
+              status: "active",
+              volunteerTypes: input.volunteerTypes ?? ["planter"],
+            };
+
+      shouldEnableAccount = true;
+      transaction.set(userRef, profile);
+    } else {
+      profile =
+        invite.role === "admin"
+          ? {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "admin",
+              status: "active",
+            }
+          : {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: invite.email,
+              role: "volunteer",
+              status: "active",
+              volunteerTypes: input.volunteerTypes ?? ["planter"],
+            };
+
+      transaction.create(userRef, profile);
+    }
+
+    transaction.update(match.ref, { status: "accepted" });
+  });
+
+  // Firebase Auth is outside Firestore transactions.
+  // Re-enable only after the profile and invitation update succeeds.
+  if (shouldEnableAccount) {
+    await auth.updateUser(uid, { disabled: false });
+  }
 }

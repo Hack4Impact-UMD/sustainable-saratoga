@@ -6,7 +6,7 @@ const DELIVERY_FAILED = "Delivery failed.";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function inviteLink(token: string, appUrl: string): string {
-  return `${appUrl.replace(/\/$/, "")}/accept-invite?token=${encodeURIComponent(token)}`;
+  return `${appUrl.replace(/\/$/, "")}/invite/${encodeURIComponent(token)}`;
 }
 
 async function sendOne(
@@ -53,11 +53,12 @@ export async function deliverInvites(
 ): Promise<InviteFailure[]> {
   const emulator = process.env.FUNCTIONS_EMULATOR === "true";
   const appUrl =
-    process.env.APP_URL || (emulator ? "http://localhost:5173" : undefined);
+    process.env.APP_URL || (emulator ? "http://localhost:5173" : "");
 
   if (emulator) {
+    // No email on the emulator: print the link so it can be opened by hand.
     for (const { email, token } of messages) {
-      console.log(`[invite] ${email}: ${inviteLink(token, appUrl!)}`);
+      console.warn(`[invite] ${email}: ${inviteLink(token, appUrl)}`);
     }
     return [];
   }

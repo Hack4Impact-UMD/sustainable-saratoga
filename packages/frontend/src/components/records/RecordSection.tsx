@@ -23,7 +23,7 @@ export function RecordSection({
       className="border-t border-divider first:border-t-0"
     >
       <h2 className="m-0">
-        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 bg-pressed px-4 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 bg-pressed h-[57px] px-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset">
           <span className="type-h2 text-heading">{title}</span>
           <ChevronDown
             aria-hidden="true"
