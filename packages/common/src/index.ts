@@ -5,3 +5,4 @@ export * from "@common/user.ts";
 export * from "@common/validation.ts";
 export * from "@common/record.ts";
 export * from "@common/people.ts";
+export * from "@common/inviteValidation.ts";
