@@ -7,7 +7,7 @@ import {
 } from "@backend/services/invites.ts";
 import { adminProcedure, router } from "@backend/trpc/init.ts";
 
-const sendInput = type({ emails: "string[] > 0", role: userRole });
+const sendInput = type({ emails: "1 <= string[] <= 50", role: userRole });
 const inviteInput = type({ inviteId: /^(?!\.{1,2}$)(?!__.*__$)[^/]+$/ });
 
 export const invitesRouter = router({
