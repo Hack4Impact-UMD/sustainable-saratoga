@@ -1,13 +1,6 @@
 import { useId, useState } from "react";
-import {
-  CircleAlert,
-  CircleCheck,
-  RefreshCw,
-  Send,
-  UserPlus,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
+import { CircleAlert, RefreshCw, Send, UserPlus, X } from "lucide-react";
+import type { Person } from "@repo/common";
 
 import { Badge } from "@frontend/components/ui/badge.tsx";
 import { Button } from "@frontend/components/ui/button.tsx";
@@ -23,6 +16,7 @@ import {
 import { Input } from "@frontend/components/ui/input.tsx";
 import { Label } from "@frontend/components/ui/label.tsx";
 import { Spinner } from "@frontend/components/ui/spinner.tsx";
+import { notify } from "@frontend/lib/notify.tsx";
 import {
   Select,
   SelectContent,
@@ -40,23 +34,68 @@ type EmailIssue =
   | "invalid-format"
   | "already-member"
   | "expired-invite"
-  | "already-invited";
+  | "already-invited"
+  | "rejected";
 type InviteEmail = {
   address: string;
   issue?: EmailIssue;
+  /** Who the address belongs to, or the server's reason for "rejected". */
+  detail?: string;
 };
+type SendError = "offline" | "failed" | "rejected";
 
 const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type SendInvitesResult = { ok: true } | { ok: false };
+// A function, so TypeScript doesn't assume it stays the same across an await.
+const isOffline = () => navigator.onLine === false;
 
-async function mockSendInvites(): Promise<SendInvitesResult> {
-  // TODO: Replace this mock with the invite API and its all-or-nothing result.
-  await new Promise((resolve) => window.setTimeout(resolve, 700));
+export type SendInvitesInput = {
+  emails: string[];
+  role: "volunteer" | "admin";
+};
 
-  return { ok: false };
-  // To preview the success toast, swap the active result:
-  // return { ok: true };
+/** The invites.send result: all addresses are invited, or none are. */
+export type SendInvitesResult =
+  | { ok: true; count: number }
+  | { ok: false; failures: { email: string; reason: string }[] };
+
+interface InviteModalProps {
+  /** Current members and invites, so their addresses are flagged up front. */
+  people?: Person[];
+  sendInvites: (input: SendInvitesInput) => Promise<SendInvitesResult>;
+}
+
+const sendErrorCopy: Record<SendError, { title: string; message: string }> = {
+  offline: {
+    title: "You’re offline",
+    message: "Connect to Wi-Fi or mobile data and try again. Nothing was sent.",
+  },
+  failed: {
+    title: "Couldn’t send the invites",
+    message: "Check your connection and try again. Nothing was sent.",
+  },
+  rejected: {
+    title: "Couldn’t send the invites",
+    message: "Check the highlighted addresses and try again. Nothing was sent.",
+  },
+};
+
+/** Flags an address that is malformed or already on the People list. */
+function findIssue(
+  address: string,
+  people: Person[],
+): Pick<InviteEmail, "issue" | "detail"> {
+  if (!emailAddressPattern.test(address)) return { issue: "invalid-format" };
+  const match = people.find(
+    (person) => person.email.toLowerCase() === address.toLowerCase(),
+  );
+  if (!match) return {};
+  if (match.status === "active") {
+    return { issue: "already-member", detail: match.name || undefined };
+  }
+  return {
+    issue: match.status === "expired" ? "expired-invite" : "already-invited",
+  };
 }
 
 function canInviteAsAdmin(emails: InviteEmail[]) {
@@ -70,7 +109,7 @@ function canInviteAsAdmin(emails: InviteEmail[]) {
   );
 }
 
-function getEmailIssueCopy(issue: EmailIssue, email: string) {
+function getEmailIssueCopy(issue: EmailIssue, email: string, detail?: string) {
   switch (issue) {
     case "invalid-format":
       return {
@@ -80,7 +119,7 @@ function getEmailIssueCopy(issue: EmailIssue, email: string) {
     case "already-member":
       return {
         title: "Already a member",
-        description: "This person already has access to Tree Tracker.",
+        description: `${detail ?? "This person"} already has access to Tree Tracker.`,
       };
     case "expired-invite":
       return {
@@ -93,22 +132,28 @@ function getEmailIssueCopy(issue: EmailIssue, email: string) {
         description:
           "Their invite is still pending. Use Resend invite in the list if they need a new link.",
       };
+    case "rejected":
+      return {
+        title: "Couldn’t invite this address",
+        description: detail ?? "Remove it and try again.",
+      };
   }
 }
 
-export function InviteModal() {
+export function InviteModal({ people = [], sendInvites }: InviteModalProps) {
   const emailDescriptionId = useId();
   const [emails, setEmails] = useState<InviteEmail[]>([]);
   const [emailDraft, setEmailDraft] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isSendFailed, setIsSendFailed] = useState(false);
+  const [sendError, setSendError] = useState<SendError | null>(null);
   const [selectedRole, setSelectedRole] = useState<"Volunteer" | "Admin">(
     "Volunteer",
   );
+  // A server rejection doesn't block a retry; the other issues need fixing first.
   const canSendInvites =
     emails.length > 0 &&
-    emails.every(({ address }) => emailAddressPattern.test(address));
+    emails.every(({ issue }) => !issue || issue === "rejected");
   const canSelectAdmin = canInviteAsAdmin(emails);
   const activeRole =
     selectedRole === "Admin" && canSelectAdmin ? selectedRole : "Volunteer";
@@ -134,13 +179,7 @@ export function InviteModal() {
         if (!address || knownEmails.has(normalizedEmail)) return [];
         knownEmails.add(normalizedEmail);
 
-        // TODO: Populate member/invitation status issues after invite API integration.
-        const issue = emailAddressPattern.test(address)
-          ? undefined
-          : "invalid-format";
-        const chip: InviteEmail = { address };
-        if (issue) chip.issue = issue;
-        return [chip];
+        return [{ address, ...findIssue(address, people) }];
       });
 
     updateEmails([...emails, ...newEmails]);
@@ -153,32 +192,66 @@ export function InviteModal() {
 
   async function handleSendInvites() {
     if (isSending) return;
-
-    setIsSendFailed(false);
-    setIsSending(true);
-    const result = await mockSendInvites();
-    setIsSending(false);
-
-    if (!result.ok) {
-      setIsSendFailed(true);
+    if (isOffline()) {
+      setSendError("offline");
       return;
     }
 
-    const sentCount = emails.length;
+    // Clear earlier server rejections so a retry starts clean.
+    const pending = emails.map((email) =>
+      email.issue === "rejected" ? { address: email.address } : email,
+    );
+    setEmails(pending);
+    setSendError(null);
+    setIsSending(true);
+    let result: SendInvitesResult;
+    try {
+      result = await sendInvites({
+        emails: pending.map(({ address }) => address),
+        role: activeRole === "Admin" ? "admin" : "volunteer",
+      });
+    } catch {
+      setSendError(isOffline() ? "offline" : "failed");
+      return;
+    } finally {
+      setIsSending(false);
+    }
+
+    if (!result.ok) {
+      const reasons = new Map(
+        result.failures.map(({ email, reason }) => [
+          email.trim().toLowerCase(),
+          reason,
+        ]),
+      );
+      const marked = pending.map((email) => {
+        const reason = reasons.get(email.address.toLowerCase());
+        return reason
+          ? {
+              address: email.address,
+              issue: "rejected" as const,
+              detail: reason,
+            }
+          : email;
+      });
+      setEmails(marked);
+      setSendError(
+        marked.some(({ issue }) => issue === "rejected")
+          ? "rejected"
+          : "failed",
+      );
+      return;
+    }
+
     setIsOpen(false);
     setEmails([]);
     setEmailDraft("");
     setSelectedRole("Volunteer");
-    toast.success(`${sentCount} invite${sentCount === 1 ? "" : "s"} sent`, {
-      duration: 4000,
-      icon: <CircleCheck className="size-6 shrink-0 text-line-success" />,
-      unstyled: true,
-      className:
-        "flex w-[min(27rem,calc(100vw-2rem))] items-center gap-4 rounded-md border-0 bg-heading px-5 py-4 text-on-primary shadow-2",
-      classNames: {
-        title: "type-body-strong !text-on-primary",
-      },
-    });
+    setSendError(null);
+    notify(
+      "success",
+      `${result.count} invite${result.count === 1 ? "" : "s"} sent`,
+    );
   }
 
   return (
@@ -236,10 +309,10 @@ export function InviteModal() {
                   isSending ? "bg-disabled-fill" : "bg-surface"
                 }`}
               >
-                {emails.map(({ address, issue }) => {
+                {emails.map(({ address, issue, detail }) => {
                   const tooltipId = `${emailDescriptionId}-${encodeURIComponent(address)}`;
                   const issueCopy = issue
-                    ? getEmailIssueCopy(issue, address)
+                    ? getEmailIssueCopy(issue, address, detail)
                     : undefined;
                   const removeEmail = () =>
                     updateEmails(
@@ -270,7 +343,11 @@ export function InviteModal() {
                                 type="button"
                                 disabled={isSending}
                                 aria-describedby={tooltipId}
-                                aria-label={`Invalid email address: ${address}`}
+                                aria-label={`${
+                                  issue === "invalid-format"
+                                    ? "Invalid email address"
+                                    : issueCopy.title
+                                }: ${address}`}
                                 className="flex min-w-0 max-w-full items-center gap-2 rounded-pill bg-transparent p-0 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                               />
                             }
@@ -413,7 +490,7 @@ export function InviteModal() {
               </Select>
             </div>
 
-            {isSendFailed ? (
+            {sendError ? (
               <div
                 role="alert"
                 className="flex gap-3 rounded-md border border-line-error bg-error-tint p-3"
@@ -424,10 +501,10 @@ export function InviteModal() {
                 />
                 <div className="flex flex-col gap-1">
                   <p className="type-body-strong text-error">
-                    Couldn’t send the invites
+                    {sendErrorCopy[sendError].title}
                   </p>
                   <p className="type-body-sm">
-                    Check your connection and try again. Nothing was sent.
+                    {sendErrorCopy[sendError].message}
                   </p>
                 </div>
               </div>
@@ -459,7 +536,7 @@ export function InviteModal() {
                 <Spinner aria-label="Sending invitations" />
                 Sending...
               </>
-            ) : isSendFailed ? (
+            ) : sendError ? (
               <>
                 <RefreshCw aria-hidden="true" className="size-5" />
                 Try again

@@ -2,11 +2,19 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { Toaster } from "sonner";
 import { afterEach, describe, expect, it } from "vitest";
 import { InviteModal } from "@frontend/components/people/InviteModal.tsx";
+import type { SendInvitesResult } from "@frontend/components/people/InviteModal.tsx";
+
+// Rejects like a dropped connection, a tick later so the busy state shows.
+function failingSend(): Promise<SendInvitesResult> {
+  return new Promise((_resolve, reject) =>
+    window.setTimeout(() => reject(new TypeError("Failed to fetch")), 0),
+  );
+}
 
 function openInviteDialog() {
   render(
     <>
-      <InviteModal />
+      <InviteModal sendInvites={failingSend} />
       <Toaster position="bottom-center" offset={24} />
     </>,
   );
