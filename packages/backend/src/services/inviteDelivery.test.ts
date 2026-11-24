@@ -29,7 +29,7 @@ it("prints links instead of sending on the emulator", async () => {
   await expect(deliverInvites(messages)).resolves.toEqual([]);
   expect(fetchMock).not.toHaveBeenCalled();
   expect(console.log).toHaveBeenCalledWith(
-    `[invite] a@example.com: ${inviteLink("tokenA")}`,
+    `[invite] a@example.com: ${inviteLink("tokenA", "https://app.test")}`,
   );
   expect(console.log).toHaveBeenCalledTimes(2);
 });
@@ -63,6 +63,13 @@ it("reports a network error as a failure instead of throwing", async () => {
 
 it("fails every email when the provider is not configured", async () => {
   vi.stubEnv("RESEND_API_KEY", "");
+  const failures = await deliverInvites(messages);
+  expect(failures).toHaveLength(2);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it("fails every email when APP_URL is missing outside the emulator", async () => {
+  vi.stubEnv("APP_URL", "");
   const failures = await deliverInvites(messages);
   expect(failures).toHaveLength(2);
   expect(fetchMock).not.toHaveBeenCalled();

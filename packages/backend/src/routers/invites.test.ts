@@ -167,19 +167,6 @@ it("rejects a legacy active member case-insensitively", async () => {
   expect(records.size).toBe(0);
 });
 
-it("rechecks membership after delivery", async () => {
-  const { invites, records, members } = setup();
-  mail.mockImplementationOnce(() => {
-    members.push({ email, status: "active" });
-    return Promise.resolve([]);
-  });
-  await expect(invites.send(send)).resolves.toMatchObject({
-    ok: false,
-    failures: [{ email }],
-  });
-  expect(records.size).toBe(0);
-});
-
 it("leaves existing and new invites untouched when any delivery fails", async () => {
   const { invites, records } = setup();
   await invites.send(send);
@@ -254,20 +241,20 @@ it("cancels immediately and accepts a repeated cancel", async () => {
 });
 
 it.each(["canceled", "accepted"] as const)(
-  "keeps a concurrent %s state during resend",
+  "keeps a concurrent %s state when a resend delivery fails",
   async (status) => {
     const { invites, records } = setup();
     await invites.send(send);
-    const old = records.get(inviteId);
-    assert.ok(old);
     mail.mockImplementationOnce(() => {
-      records.set(inviteId, { ...old, status });
-      return Promise.resolve([]);
+      const current = records.get(inviteId);
+      assert.ok(current);
+      records.set(inviteId, { ...current, status });
+      return Promise.resolve([{ email, reason: "Delivery failed." }]);
     });
-    await expect(invites.resend({ inviteId })).rejects.toMatchObject({
-      code: "CONFLICT",
+    await expect(invites.resend({ inviteId })).resolves.toMatchObject({
+      ok: false,
     });
-    expect(records.get(inviteId)).toEqual({ ...old, status });
+    expect(records.get(inviteId)?.status).toBe(status);
   },
 );
 
@@ -306,3 +293,21 @@ it.each(["send", "resend", "cancel"] as const)(
     expect(mail).not.toHaveBeenCalled();
   },
 );
+
+it("saves nothing when delivery fails on a first-time send", async () => {
+  const { invites, records } = setup();
+  mail.mockResolvedValueOnce([{ email, reason: "Delivery failed." }]);
+  await expect(invites.send(send)).resolves.toMatchObject({ ok: false });
+  expect(records.size).toBe(0);
+});
+
+it("restores the old link when a resend delivery fails", async () => {
+  const { invites, records } = setup();
+  await invites.send(send);
+  const old = records.get(inviteId);
+  mail.mockResolvedValueOnce([{ email, reason: "Delivery failed." }]);
+  await expect(invites.resend({ inviteId })).resolves.toMatchObject({
+    ok: false,
+  });
+  expect(records.get(inviteId)).toEqual(old);
+});

@@ -5,16 +5,16 @@ export type InviteMessage = { email: string; token: string };
 const DELIVERY_FAILED = "Delivery failed.";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function inviteLink(token: string): string {
-  const base = process.env.APP_URL ?? "http://localhost:5173";
-  return `${base.replace(/\/$/, "")}/accept-invite?token=${encodeURIComponent(token)}`;
+export function inviteLink(token: string, appUrl: string): string {
+  return `${appUrl.replace(/\/$/, "")}/accept-invite?token=${encodeURIComponent(token)}`;
 }
 
 async function sendOne(
   { email, token }: InviteMessage,
   apiKey: string,
+  appUrl: string,
 ): Promise<InviteFailure | null> {
-  const link = inviteLink(token);
+  const link = inviteLink(token, appUrl);
   const failure = { email, reason: DELIVERY_FAILED };
   // Try twice: the second attempt only happens after a 429 (rate limited).
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -51,15 +51,19 @@ async function sendOne(
 export async function deliverInvites(
   messages: InviteMessage[],
 ): Promise<InviteFailure[]> {
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
+  const emulator = process.env.FUNCTIONS_EMULATOR === "true";
+  const appUrl =
+    process.env.APP_URL || (emulator ? "http://localhost:5173" : undefined);
+
+  if (emulator) {
     for (const { email, token } of messages) {
-      console.log(`[invite] ${email}: ${inviteLink(token)}`);
+      console.log(`[invite] ${email}: ${inviteLink(token, appUrl!)}`);
     }
     return [];
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || !process.env.INVITE_FROM_EMAIL) {
+  if (!apiKey || !appUrl || !process.env.INVITE_FROM_EMAIL) {
     return messages.map(({ email }) => ({
       email,
       reason: "Email delivery is not configured.",
@@ -70,7 +74,7 @@ export async function deliverInvites(
   const failures: InviteFailure[] = [];
   for (const [index, message] of messages.entries()) {
     if (index > 0) await sleep(500);
-    const failure = await sendOne(message, apiKey);
+    const failure = await sendOne(message, apiKey, appUrl);
     if (failure) failures.push(failure);
   }
   return failures;
