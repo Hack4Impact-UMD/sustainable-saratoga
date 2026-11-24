@@ -2,6 +2,7 @@ import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import { invitation, userProfile } from "@repo/common";
 import type { Invitation, UserProfile } from "@repo/common";
+import { hashInviteToken } from "@backend/services/invites.ts";
 
 /**
  * Mock accounts and invites for the local emulators. `pnpm dev` loads them on
@@ -20,6 +21,7 @@ export interface SeedUser {
 }
 
 export interface SeedInvitation {
+  /** Also the invite's token, so the dev link is /invite/{id}. */
   id: string;
   data: Invitation;
 }
@@ -120,6 +122,7 @@ export function seedInvitations(now: Date = new Date()): SeedInvitation[] {
       createdAt: daysFrom(now, -createdDaysAgo),
       expiresAt: daysFrom(now, expiresInDays),
       invitedBy: ADMIN_UID,
+      tokenHash: hashInviteToken(id),
     },
   });
 

@@ -1,11 +1,22 @@
 import { TRPCError } from "@trpc/server";
-import { acceptInviteInput, checkInviteInput } from "@repo/common";
+import { type } from "arktype";
+import { acceptInviteInput, checkInviteInput, userRole } from "@repo/common";
 import {
-  router,
+  acceptInvite,
+  cancelInvite,
+  checkInvite,
+  resendInvite,
+  sendInvites,
+} from "@backend/services/invites.ts";
+import {
+  adminProcedure,
   publicProcedure,
+  router,
   sessionProcedure,
 } from "@backend/trpc/init.ts";
-import { acceptInvite, checkInvite } from "@backend/services/invites.ts";
+
+const sendInput = type({ emails: "1 <= string[] <= 50", role: userRole });
+const inviteInput = type({ inviteId: /^(?!\.{1,2}$)(?!__.*__$)[^/]+$/ });
 
 export const invitesRouter = router({
   check: publicProcedure.input(checkInviteInput).query(({ ctx, input }) => {
@@ -30,4 +41,16 @@ export const invitesRouter = router({
         input,
       );
     }),
+
+  send: adminProcedure
+    .input(sendInput)
+    .mutation(({ ctx, input }) =>
+      sendInvites(ctx.db, ctx.session.uid, input.emails, input.role),
+    ),
+  resend: adminProcedure
+    .input(inviteInput)
+    .mutation(({ ctx, input }) => resendInvite(ctx.db, input.inviteId)),
+  cancel: adminProcedure
+    .input(inviteInput)
+    .mutation(({ ctx, input }) => cancelInvite(ctx.db, input.inviteId)),
 });
