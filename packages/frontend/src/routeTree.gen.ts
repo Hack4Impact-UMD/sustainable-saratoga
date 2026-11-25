@@ -20,6 +20,7 @@ import { Route as GuestInviteTokenRouteImport } from './routes/_guest/invite/$to
 import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 import { Route as AuthenticatedRecordsRecordIdIndexRouteImport } from './routes/_authenticated/records/$recordId.index'
+import { Route as AuthenticatedRecordsRecordIdEditRouteImport } from './routes/_authenticated/records/$recordId.edit'
 import { Route as AuthenticatedRecordsRecordIdMapRouteImport } from './routes/_authenticated/records/$recordId.map'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,12 @@ const AuthenticatedRecordsRecordIdIndexRoute =
     path: '/records/$recordId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRecordsRecordIdEditRoute =
+  AuthenticatedRecordsRecordIdEditRouteImport.update({
+    id: '/records/$recordId/edit',
+    path: '/records/$recordId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecordsRecordIdMapRoute =
   AuthenticatedRecordsRecordIdMapRouteImport.update({
     id: '/records/$recordId/map',
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof GuestInviteTokenRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/records/$recordId/': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof GuestInviteTokenRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/records/$recordId': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -120,6 +129,7 @@ export interface FileRoutesById {
   '/_guest/invite/$token': typeof GuestInviteTokenRoute
   '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/_authenticated/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/_authenticated/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/_authenticated/records/$recordId/': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/login/check-mail'
     | '/login/forgot-password'
+    | '/records/$recordId/edit'
     | '/records/$recordId/map'
     | '/records/$recordId/'
   fileRoutesByTo: FileRoutesByTo
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/login/check-mail'
     | '/login/forgot-password'
+    | '/records/$recordId/edit'
     | '/records/$recordId/map'
     | '/records/$recordId'
   id:
@@ -160,6 +172,7 @@ export interface FileRouteTypes {
     | '/_guest/invite/$token'
     | '/_guest/login/check-mail'
     | '/_guest/login/forgot-password'
+    | '/_authenticated/records/$recordId/edit'
     | '/_authenticated/records/$recordId/map'
     | '/_authenticated/records/$recordId/'
   fileRoutesById: FileRoutesById
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecordsRecordIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/records/$recordId/edit': {
+      id: '/_authenticated/records/$recordId/edit'
+      path: '/records/$recordId/edit'
+      fullPath: '/records/$recordId/edit'
+      preLoaderRoute: typeof AuthenticatedRecordsRecordIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/records/$recordId/map': {
       id: '/_authenticated/records/$recordId/map'
       path: '/records/$recordId/map'
@@ -263,12 +283,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedRecordsRecordIdEditRoute: typeof AuthenticatedRecordsRecordIdEditRoute
   AuthenticatedRecordsRecordIdMapRoute: typeof AuthenticatedRecordsRecordIdMapRoute
   AuthenticatedRecordsRecordIdIndexRoute: typeof AuthenticatedRecordsRecordIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedRecordsRecordIdEditRoute: AuthenticatedRecordsRecordIdEditRoute,
   AuthenticatedRecordsRecordIdMapRoute: AuthenticatedRecordsRecordIdMapRoute,
   AuthenticatedRecordsRecordIdIndexRoute:
     AuthenticatedRecordsRecordIdIndexRoute,
