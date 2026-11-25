@@ -5,6 +5,7 @@ import {
   Map,
   useApiLoadingStatus,
   useMap,
+  useMapsLibrary,
 } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
@@ -58,6 +59,7 @@ function GoogleMap({
   renderMarker,
   defaultCenter = DEFAULT_CENTER,
   defaultZoom = DEFAULT_ZOOM,
+  onCenterChange,
   interactive = true,
   children,
 }: MapViewProps & { mapId: string }) {
@@ -99,15 +101,22 @@ function GoogleMap({
           );
         })}
       </Map>
-      <GoogleMapCamera>
+      <GoogleMapCamera onCenterChange={onCenterChange}>
         <MapOverlayLayer>{children}</MapOverlayLayer>
       </GoogleMapCamera>
     </div>
   );
 }
 
-function GoogleMapCamera({ children }: { children?: ReactNode }) {
+function GoogleMapCamera({
+  children,
+  onCenterChange,
+}: {
+  children?: ReactNode;
+  onCenterChange?: (center: { lat: number; lng: number }) => void;
+}) {
   const map = useMap();
+  const geocodingLibrary = useMapsLibrary("geocoding");
   const pending = useRef<PanToCall | null>(null);
 
   useEffect(() => {
@@ -116,14 +125,37 @@ function GoogleMapCamera({ children }: { children?: ReactNode }) {
     pending.current = null;
   }, [map]);
 
+  useEffect(() => {
+    if (!map || !onCenterChange) return;
+    const listener = map.addListener("center_changed", () => {
+      const center = map.getCenter()?.toJSON();
+      if (center) onCenterChange(center);
+    });
+    const center = map.getCenter()?.toJSON();
+    if (center) onCenterChange(center);
+    return () => listener.remove();
+  }, [map, onCenterChange]);
+
   const camera = useMemo<MapCamera>(
     () => ({
       panTo: (pos, zoom) => {
         if (map) moveCamera(map, { pos, zoom });
         else pending.current = { pos, zoom };
       },
+      geocodingStatus: geocodingLibrary ? "ready" : "loading",
+      geocodeAddress: async (address) => {
+        if (!geocodingLibrary)
+          throw new Error("Address lookup is not ready yet.");
+        const { results } = await new geocodingLibrary.Geocoder().geocode({
+          address,
+          componentRestrictions: { country: "US" },
+        });
+        const location = results[0]?.geometry.location;
+        if (!location) throw new Error("No matching address was found.");
+        return location.toJSON();
+      },
     }),
-    [map],
+    [map, geocodingLibrary],
   );
   return (
     <MapCameraContext.Provider value={camera}>
@@ -139,7 +171,14 @@ function moveCamera(map: GoogleMapInstance, { pos, zoom }: PanToCall) {
   if (zoom !== undefined) map.setZoom(zoom);
 }
 
-const noopCamera: MapCamera = { panTo: () => {} };
+const noopCamera: MapCamera = {
+  panTo: () => {},
+  geocodingStatus: "unavailable",
+  geocodeAddress: () =>
+    Promise.reject(
+      new Error("Address lookup is unavailable because the map is offline."),
+    ),
+};
 
 function MapFallback({
   reason,

@@ -24,7 +24,7 @@ describe("useCurrentPosition", () => {
       typeof navigator.geolocation.getCurrentPosition
     >((success) => {
       success({
-        coords: { latitude: 43.0831, longitude: -73.7846 },
+        coords: { latitude: 43.0831, longitude: -73.7846, accuracy: 8 },
       } as GeolocationPosition);
     });
     Object.defineProperty(navigator, "geolocation", {
@@ -42,6 +42,7 @@ describe("useCurrentPosition", () => {
       lat: 43.0831,
       lng: -73.7846,
     });
+    expect(result.current.accuracyMeters).toBe(8);
   });
 
   it("reports denied permission without throwing", () => {

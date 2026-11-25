@@ -6,7 +6,15 @@ import type {
   AddressSuggestion,
 } from "@frontend/components/records/location/AddressSearch.tsx";
 
-afterEach(cleanup);
+const originalGeolocation = navigator.geolocation;
+
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(navigator, "geolocation", {
+    configurable: true,
+    value: originalGeolocation,
+  });
+});
 
 const suggestions: AddressSuggestion[] = [
   {
@@ -15,6 +23,7 @@ const suggestions: AddressSuggestion[] = [
     state: "NY",
     treeCount: 1,
     hasHouseNumber: true,
+    location: { lat: 43.082886, lng: -73.784522 },
   },
   {
     address: "Phila St",
@@ -79,6 +88,7 @@ describe("AddressSearch", () => {
       state: "NY",
       treeCount: 1,
       source: "suggestion",
+      location: { lat: 43.082886, lng: -73.784522 },
     });
   });
 
@@ -159,6 +169,65 @@ describe("AddressSearch", () => {
       screen.getByRole("button", { name: "Place a pin on the map instead" }),
     );
     expect(onSelect).toHaveBeenCalledWith({ kind: "pin" });
+  });
+
+  it("passes the user's current coordinates and GPS accuracy to the map flow", () => {
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: {
+        getCurrentPosition: (success: PositionCallback) => {
+          success({
+            coords: {
+              latitude: 43.09,
+              longitude: -73.79,
+              accuracy: 3.65,
+            },
+          } as GeolocationPosition);
+        },
+      },
+    });
+    const { onSelect } = renderAddressSearch();
+    fireEvent.change(screen.getByRole("searchbox", { name: /address/i }), {
+      target: { value: "62" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use my current location" }),
+    );
+
+    expect(onSelect).toHaveBeenCalledWith({
+      kind: "current-location",
+      lat: 43.09,
+      lng: -73.79,
+      accuracyMeters: 3.65,
+    });
+  });
+
+  it("shows a clear error when current location cannot be found", () => {
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: {
+        getCurrentPosition: (
+          _success: PositionCallback,
+          failure?: PositionErrorCallback | null,
+        ) => {
+          failure?.({
+            code: 1,
+            message: "Permission denied",
+          } as GeolocationPositionError);
+        },
+      },
+    });
+    renderAddressSearch();
+    fireEvent.change(screen.getByRole("searchbox", { name: /address/i }), {
+      target: { value: "62" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use my current location" }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Location access was denied",
+    );
   });
 
   it("uses the page back action when no street prompt is open", () => {

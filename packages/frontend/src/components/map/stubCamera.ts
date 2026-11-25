@@ -5,7 +5,7 @@ import type {
 
 let lastPanTo: PanToCall | undefined;
 
-export const stubCamera: MapCamera = {
+export const stubCamera: Pick<MapCamera, "panTo"> = {
   panTo: (pos, zoom) => {
     lastPanTo = { pos, zoom };
   },

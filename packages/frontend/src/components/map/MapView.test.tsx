@@ -1,6 +1,12 @@
 import type { MapMarker } from "@repo/common";
 import type { ReactNode } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapView } from "@frontend/components/map/MapView.tsx";
 import { MapViewStub } from "@frontend/components/map/MapViewStub.tsx";
@@ -9,6 +15,50 @@ import {
   resetStubCamera,
 } from "@frontend/components/map/stubCamera.ts";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
+
+const mapsMock = vi.hoisted(() => {
+  const state: {
+    center: { lat: number; lng: number };
+    centerListener: (() => void) | null;
+  } = {
+    center: { lat: 43.0831, lng: -73.7846 },
+    centerListener: null,
+  };
+  const mapInstance = {
+    panTo: (center: { lat: number; lng: number }) => {
+      state.center = center;
+      state.centerListener?.();
+    },
+    setZoom: vi.fn<(zoom: number) => void>(),
+    getCenter: () => ({ toJSON: () => state.center }),
+    addListener: (_event: string, listener: () => void) => {
+      state.centerListener = listener;
+      return {
+        remove: () => {
+          state.centerListener = null;
+        },
+      };
+    },
+  };
+  const geocodingLibrary = {
+    Geocoder: class {
+      async geocode() {
+        return await Promise.resolve({
+          results: [
+            {
+              geometry: {
+                location: {
+                  toJSON: () => ({ lat: 43.082886, lng: -73.784522 }),
+                },
+              },
+            },
+          ],
+        });
+      }
+    },
+  };
+  return { state, mapInstance, geocodingLibrary };
+});
 
 // Just enough of the SDK to render GoogleMap's layout without loading Google.
 vi.mock("@vis.gl/react-google-maps", () => ({
@@ -29,7 +79,8 @@ vi.mock("@vis.gl/react-google-maps", () => ({
     <div>{children}</div>
   ),
   useApiLoadingStatus: () => "LOADED",
-  useMap: () => null,
+  useMap: () => mapsMock.mapInstance,
+  useMapsLibrary: () => mapsMock.geocodingLibrary,
 }));
 
 const markers = [
@@ -40,6 +91,21 @@ const markers = [
 function renderMarker(marker: MapMarker, selected: boolean) {
   return (
     <span data-testid={`pin-${marker.id}`} data-selected={String(selected)} />
+  );
+}
+
+function GeocodeButton() {
+  const { geocodeAddress, panTo } = useMapCamera();
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const location = await geocodeAddress("62 Phila St");
+        panTo(location, 18);
+      }}
+    >
+      Find address
+    </button>
   );
 }
 
@@ -56,6 +122,8 @@ afterEach(() => {
   cleanup();
   vi.unstubAllEnvs();
   resetStubCamera();
+  mapsMock.state.center = { lat: 43.0831, lng: -73.7846 };
+  mapsMock.state.centerListener = null;
 });
 
 describe("MapViewStub", () => {
@@ -70,6 +138,33 @@ describe("MapViewStub", () => {
 
     expect(screen.getByRole("button", { name: "tree-1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "tree-2" })).toBeInTheDocument();
+  });
+
+  it("geocodes an address and reports the map's updated center", async () => {
+    vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "test-key");
+    vi.stubEnv("VITE_GOOGLE_MAPS_MAP_ID", "test-map-id");
+    const onCenterChange =
+      vi.fn<(center: { lat: number; lng: number }) => void>();
+    render(
+      <MapView
+        markers={[]}
+        onMarkerSelect={() => {}}
+        renderMarker={() => null}
+        onCenterChange={onCenterChange}
+      >
+        <GeocodeButton />
+      </MapView>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Find address" }));
+
+    await waitFor(() => {
+      expect(onCenterChange).toHaveBeenLastCalledWith({
+        lat: 43.082886,
+        lng: -73.784522,
+      });
+    });
+    expect(mapsMock.state.center).toEqual({ lat: 43.082886, lng: -73.784522 });
   });
 
   it("calls onMarkerSelect with the clicked marker's id", () => {
@@ -108,19 +203,25 @@ describe("MapViewStub", () => {
   });
 
   it("gives children a camera that records the last pan", () => {
+    const onCenterChange =
+      vi.fn<(center: { lat: number; lng: number }) => void>();
     render(
       <MapViewStub
         markers={markers}
         onMarkerSelect={vi.fn<(id: string) => void>()}
         renderMarker={renderMarker}
+        defaultCenter={{ lat: 43, lng: -73 }}
+        onCenterChange={onCenterChange}
       >
         <PanButton />
       </MapViewStub>,
     );
 
+    expect(onCenterChange).toHaveBeenCalledWith({ lat: 43, lng: -73 });
     fireEvent.click(screen.getByRole("button", { name: "Pan" }));
 
     expect(lastStubPanTo()).toEqual({ pos: { lat: 1, lng: 2 }, zoom: 17 });
+    expect(onCenterChange).toHaveBeenLastCalledWith({ lat: 1, lng: 2 });
   });
 });
 

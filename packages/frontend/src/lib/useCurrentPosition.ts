@@ -16,6 +16,7 @@ export interface UseCurrentPositionResult {
   locate: () => void;
   status: LocationStatus;
   position: CurrentPosition | null;
+  accuracyMeters: number | null;
 }
 
 const PERMISSION_DENIED = 1;
@@ -23,6 +24,7 @@ const PERMISSION_DENIED = 1;
 export function useCurrentPosition(): UseCurrentPositionResult {
   const [status, setStatus] = useState<LocationStatus>("idle");
   const [position, setPosition] = useState<CurrentPosition | null>(null);
+  const [accuracyMeters, setAccuracyMeters] = useState<number | null>(null);
   const requestId = useRef(0);
 
   const locate = useCallback(() => {
@@ -33,6 +35,7 @@ export function useCurrentPosition(): UseCurrentPositionResult {
     }
 
     setStatus("requesting");
+    setAccuracyMeters(null);
 
     const uiTimeout = window.setTimeout(() => {
       if (requestId.current === request) setStatus("error");
@@ -40,10 +43,14 @@ export function useCurrentPosition(): UseCurrentPositionResult {
     const finish = (
       nextStatus: "success" | "denied" | "error",
       nextPosition?: CurrentPosition,
+      nextAccuracyMeters?: number,
     ) => {
       if (requestId.current !== request) return;
       window.clearTimeout(uiTimeout);
-      if (nextPosition !== undefined) setPosition(nextPosition);
+      if (nextPosition !== undefined) {
+        setPosition(nextPosition);
+        setAccuracyMeters(nextAccuracyMeters ?? null);
+      }
       setStatus(nextStatus);
     };
 
@@ -52,7 +59,11 @@ export function useCurrentPosition(): UseCurrentPositionResult {
       // oxlint-disable promise/prefer-await-to-callbacks
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
-          finish("success", { lat: coords.latitude, lng: coords.longitude });
+          finish(
+            "success",
+            { lat: coords.latitude, lng: coords.longitude },
+            coords.accuracy,
+          );
         },
         (error) => {
           finish(error.code === PERMISSION_DENIED ? "denied" : "error");
@@ -64,5 +75,5 @@ export function useCurrentPosition(): UseCurrentPositionResult {
     }
   }, []);
 
-  return { locate, status, position };
+  return { locate, status, position, accuracyMeters };
 }

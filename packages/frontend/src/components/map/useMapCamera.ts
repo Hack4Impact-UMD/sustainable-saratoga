@@ -12,6 +12,8 @@ export interface PanToCall {
 
 export interface MapCamera {
   panTo: (pos: LatLng, zoom?: number) => void;
+  geocodingStatus: "loading" | "ready" | "unavailable";
+  geocodeAddress: (address: string) => Promise<LatLng>;
 }
 
 export const MapCameraContext = createContext<MapCamera | null>(null);

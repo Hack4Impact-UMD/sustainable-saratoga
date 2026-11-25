@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, LocateFixed, MapPin, Search, X } from "lucide-react";
+import { useCurrentPosition } from "@frontend/lib/useCurrentPosition.ts";
+import type { LatLng } from "@frontend/components/map/useMapCamera.ts";
 
 export interface AddressSuggestion {
   address: string;
@@ -7,6 +9,7 @@ export interface AddressSuggestion {
   state: string;
   treeCount: number;
   hasHouseNumber: boolean;
+  location?: LatLng;
 }
 
 export type AddressSearchSelection =
@@ -17,8 +20,14 @@ export type AddressSearchSelection =
       state: string;
       treeCount: number;
       source: "suggestion" | "typed";
+      location?: LatLng;
     }
-  | { kind: "current-location"; latitude: number; longitude: number }
+  | {
+      kind: "current-location";
+      lat: number;
+      lng: number;
+      accuracyMeters: number | null;
+    }
   | { kind: "pin" };
 
 interface AddressSearchProps {
@@ -39,8 +48,14 @@ export function AddressSearch({
   const [streetToComplete, setStreetToComplete] =
     useState<AddressSuggestion | null>(null);
   const [houseNumber, setHouseNumber] = useState("");
-  const [locationError, setLocationError] = useState("");
-  const [isLocating, setIsLocating] = useState(false);
+  const { locate, status, position, accuracyMeters } = useCurrentPosition();
+  const isLocating = status === "requesting";
+  const locationError =
+    status === "denied"
+      ? "Location access was denied. Enable it in your browser settings to find your position."
+      : status === "error"
+        ? "Your location could not be found. Please try again."
+        : "";
 
   const matchingSuggestions = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -59,6 +74,15 @@ export function AddressSearch({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [streetToComplete]);
 
+  useEffect(() => {
+    if (status !== "success" || !position) return;
+    onSelect({
+      kind: "current-location",
+      ...position,
+      accuracyMeters,
+    });
+  }, [accuracyMeters, onSelect, position, status]);
+
   function selectSuggestion(suggestion: AddressSuggestion) {
     if (!suggestion.hasHouseNumber) {
       setStreetToComplete(suggestion);
@@ -72,6 +96,7 @@ export function AddressSearch({
       state: suggestion.state,
       treeCount: suggestion.treeCount,
       source: "suggestion",
+      ...(suggestion.location ? { location: suggestion.location } : {}),
     });
   }
 
@@ -99,29 +124,7 @@ export function AddressSearch({
   }
 
   function useCurrentLocation() {
-    setLocationError("");
-    if (!navigator.geolocation) {
-      setLocationError("Location access isn’t available on this device.");
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setIsLocating(false);
-        onSelect({
-          kind: "current-location",
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        });
-      },
-      () => {
-        setIsLocating(false);
-        setLocationError(
-          "Couldn’t get your location. Check your location settings and try again.",
-        );
-      },
-    );
+    locate();
   }
 
   const goBack = () => {
@@ -144,9 +147,7 @@ export function AddressSearch({
         >
           <ChevronLeft aria-hidden="true" className="size-6" />
         </button>
-        <h1 className="type-h2 font-display text-heading">
-          New record
-        </h1>
+        <h1 className="type-h2 font-display text-heading">New record</h1>
       </header>
 
       <h2 className="type-h2 flex h-[57px] shrink-0 items-center border-b border-divider bg-pressed px-5">
