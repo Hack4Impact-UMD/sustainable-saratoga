@@ -16,10 +16,13 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
+import { Route as AuthenticatedRecordsIndexRouteImport } from './routes/_authenticated/records/index'
+import { Route as AuthenticatedRecordsNewRouteImport } from './routes/_authenticated/records/new'
 import { Route as GuestInviteTokenRouteImport } from './routes/_guest/invite/$token'
 import { Route as GuestLoginCheckMailRouteImport } from './routes/_guest/login/check-mail'
 import { Route as GuestLoginForgotPasswordRouteImport } from './routes/_guest/login/forgot-password'
 import { Route as AuthenticatedRecordsRecordIdIndexRouteImport } from './routes/_authenticated/records/$recordId.index'
+import { Route as AuthenticatedRecordsRecordIdEditRouteImport } from './routes/_authenticated/records/$recordId.edit'
 import { Route as AuthenticatedRecordsRecordIdMapRouteImport } from './routes/_authenticated/records/$recordId.map'
 
 const IndexRoute = IndexRouteImport.update({
@@ -55,6 +58,17 @@ const GuestLoginRoute = GuestLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const AuthenticatedRecordsIndexRoute =
+  AuthenticatedRecordsIndexRouteImport.update({
+    id: '/records/',
+    path: '/records/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecordsNewRoute = AuthenticatedRecordsNewRouteImport.update({
+  id: '/records/new',
+  path: '/records/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const GuestInviteTokenRoute = GuestInviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
@@ -77,6 +91,12 @@ const AuthenticatedRecordsRecordIdIndexRoute =
     path: '/records/$recordId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRecordsRecordIdEditRoute =
+  AuthenticatedRecordsRecordIdEditRouteImport.update({
+    id: '/records/$recordId/edit',
+    path: '/records/$recordId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecordsRecordIdMapRoute =
   AuthenticatedRecordsRecordIdMapRouteImport.update({
     id: '/records/$recordId/map',
@@ -90,9 +110,12 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/login': typeof GuestLoginRouteWithChildren
+  '/records/new': typeof AuthenticatedRecordsNewRoute
   '/invite/$token': typeof GuestInviteTokenRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/records/': typeof AuthenticatedRecordsIndexRoute
+  '/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/records/$recordId/': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -102,9 +125,12 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/login': typeof GuestLoginRouteWithChildren
+  '/records/new': typeof AuthenticatedRecordsNewRoute
   '/invite/$token': typeof GuestInviteTokenRoute
   '/login/check-mail': typeof GuestLoginCheckMailRoute
   '/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/records': typeof AuthenticatedRecordsIndexRoute
+  '/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/records/$recordId': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -117,9 +143,12 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_guest/login': typeof GuestLoginRouteWithChildren
+  '/_authenticated/records/new': typeof AuthenticatedRecordsNewRoute
   '/_guest/invite/$token': typeof GuestInviteTokenRoute
   '/_guest/login/check-mail': typeof GuestLoginCheckMailRoute
   '/_guest/login/forgot-password': typeof GuestLoginForgotPasswordRoute
+  '/_authenticated/records/': typeof AuthenticatedRecordsIndexRoute
+  '/_authenticated/records/$recordId/edit': typeof AuthenticatedRecordsRecordIdEditRoute
   '/_authenticated/records/$recordId/map': typeof AuthenticatedRecordsRecordIdMapRoute
   '/_authenticated/records/$recordId/': typeof AuthenticatedRecordsRecordIdIndexRoute
 }
@@ -131,9 +160,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/people'
     | '/login'
+    | '/records/new'
     | '/invite/$token'
     | '/login/check-mail'
     | '/login/forgot-password'
+    | '/records/'
+    | '/records/$recordId/edit'
     | '/records/$recordId/map'
     | '/records/$recordId/'
   fileRoutesByTo: FileRoutesByTo
@@ -143,9 +175,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/people'
     | '/login'
+    | '/records/new'
     | '/invite/$token'
     | '/login/check-mail'
     | '/login/forgot-password'
+    | '/records'
+    | '/records/$recordId/edit'
     | '/records/$recordId/map'
     | '/records/$recordId'
   id:
@@ -157,9 +192,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/people'
     | '/_guest/login'
+    | '/_authenticated/records/new'
     | '/_guest/invite/$token'
     | '/_guest/login/check-mail'
     | '/_guest/login/forgot-password'
+    | '/_authenticated/records/'
+    | '/_authenticated/records/$recordId/edit'
     | '/_authenticated/records/$recordId/map'
     | '/_authenticated/records/$recordId/'
   fileRoutesById: FileRoutesById
@@ -223,6 +261,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestLoginRouteImport
       parentRoute: typeof GuestRouteRoute
     }
+    '/_authenticated/records/': {
+      id: '/_authenticated/records/'
+      path: '/records'
+      fullPath: '/records/'
+      preLoaderRoute: typeof AuthenticatedRecordsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/records/new': {
+      id: '/_authenticated/records/new'
+      path: '/records/new'
+      fullPath: '/records/new'
+      preLoaderRoute: typeof AuthenticatedRecordsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_guest/invite/$token': {
       id: '/_guest/invite/$token'
       path: '/invite/$token'
@@ -251,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecordsRecordIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/records/$recordId/edit': {
+      id: '/_authenticated/records/$recordId/edit'
+      path: '/records/$recordId/edit'
+      fullPath: '/records/$recordId/edit'
+      preLoaderRoute: typeof AuthenticatedRecordsRecordIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/records/$recordId/map': {
       id: '/_authenticated/records/$recordId/map'
       path: '/records/$recordId/map'
@@ -263,12 +322,18 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedRecordsNewRoute: typeof AuthenticatedRecordsNewRoute
+  AuthenticatedRecordsIndexRoute: typeof AuthenticatedRecordsIndexRoute
+  AuthenticatedRecordsRecordIdEditRoute: typeof AuthenticatedRecordsRecordIdEditRoute
   AuthenticatedRecordsRecordIdMapRoute: typeof AuthenticatedRecordsRecordIdMapRoute
   AuthenticatedRecordsRecordIdIndexRoute: typeof AuthenticatedRecordsRecordIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedRecordsNewRoute: AuthenticatedRecordsNewRoute,
+  AuthenticatedRecordsIndexRoute: AuthenticatedRecordsIndexRoute,
+  AuthenticatedRecordsRecordIdEditRoute: AuthenticatedRecordsRecordIdEditRoute,
   AuthenticatedRecordsRecordIdMapRoute: AuthenticatedRecordsRecordIdMapRoute,
   AuthenticatedRecordsRecordIdIndexRoute:
     AuthenticatedRecordsRecordIdIndexRoute,

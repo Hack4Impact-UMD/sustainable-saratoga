@@ -75,13 +75,14 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
           {record.address}
         </p>
         {/* TODO: link to the edit flow (Flow 7) once that page exists. */}
-        <button
-          type="button"
+        <Link
+          to="/records/$recordId/edit"
+          params={{ recordId: record.id }}
           className="type-btn-secondary inline-flex h-9 items-center gap-1.5 rounded-pill border border-primary bg-surface px-4 text-primary hover:bg-hover"
         >
           <Pencil aria-hidden="true" className="size-4" />
           Edit
-        </button>
+        </Link>
       </div>
       <header className="flex flex-col gap-4 px-4 py-4">
         <div className="flex items-start justify-between gap-4">

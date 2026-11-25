@@ -28,7 +28,7 @@ export function RecordPhotos({ photos }: { photos: TreeRecord["photos"] }) {
             <img
               src={photo.src}
               alt={photo.caption}
-              className="aspect-[114/100] w-full rounded-md border border-divider bg-pressed object-cover"
+              className="w-full rounded-md border border-divider bg-pressed object-cover"
             />
             <span className="type-chip text-heading">{photo.caption}</span>
             <span className="type-caption text-body-muted">
