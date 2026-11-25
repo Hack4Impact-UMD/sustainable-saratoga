@@ -1,0 +1,529 @@
+import type { Person } from "@repo/common";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { AlertCircle, ChevronLeft, Clock3, SearchX } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { InviteModal } from "@frontend/components/people/InviteModal.tsx";
+import type { SendInvitesInput } from "@frontend/components/people/InviteModal.tsx";
+import { PersonActionsMenu } from "@frontend/components/people/PersonActionsMenu.tsx";
+import type { PersonMenuAction } from "@frontend/components/people/PersonActionsMenu.tsx";
+import { RemoveAccessDialog } from "@frontend/components/people/RemoveAccessDialog.tsx";
+import type { RemoveDialogError } from "@frontend/components/people/RemoveAccessDialog.tsx";
+import {
+  classifyRowFailure,
+  nextActionableId,
+  withoutPerson,
+} from "@frontend/components/people/inviteMutations.ts";
+import { PeopleSearchInput } from "@frontend/components/ui/PeopleSearchInput.tsx";
+import { notify } from "@frontend/lib/notify.tsx";
+import { trpc } from "@frontend/lib/trpc.ts";
+import { sessionGeneration } from "@frontend/lib/sessionCleanup.ts";
+
+const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+const emptyPeople: Person[] = [];
+const JUST_INVITED_MS = 4000;
+
+type RemoveTarget = { uid: string; name: string };
+type FocusRequest = string | "list" | "title";
+
+/**
+ * Displays the admin's people list. The API supplies the invite-first ordering;
+ * this component only filters those rows for the local search field.
+ */
+export function PeoplePage() {
+  const [search, setSearch] = useState("");
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [removeError, setRemoveError] = useState<RemoveDialogError | null>(
+    null,
+  );
+  const [removePending, setRemovePending] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
+  const [justInvitedId, setJustInvitedId] = useState<string | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const triggers = useRef(new Map<string, HTMLButtonElement>());
+  const pendingFocus = useRef<FocusRequest | null>(null);
+  const skipDialogRestore = useRef(false);
+  const [dialogCopy, setDialogCopy] = useState<RemoveTarget | null>(null);
+  const inFlight = useRef(false);
+  const queryClient = useQueryClient();
+  const peopleQuery = useQuery(trpc.people.list.queryOptions());
+  const removeAccess = useMutation(
+    trpc.people.removeAccess.mutationOptions({ networkMode: "always" }),
+  );
+  const resendInvite = useMutation(
+    trpc.invites.resend.mutationOptions({ networkMode: "always" }),
+  );
+  const cancelInvite = useMutation(
+    trpc.invites.cancel.mutationOptions({ networkMode: "always" }),
+  );
+  const sendInvitesMutation = useMutation(
+    trpc.invites.send.mutationOptions({ networkMode: "always" }),
+  );
+  const allPeople = peopleQuery.data ?? emptyPeople;
+  const normalizedSearch = search.trim().toLowerCase();
+  const people = useMemo(
+    () =>
+      allPeople.filter(
+        (person) =>
+          person.name.toLowerCase().includes(normalizedSearch) ||
+          person.email.toLowerCase().includes(normalizedSearch),
+      ),
+    [allPeople, normalizedSearch],
+  );
+  const memberCount = allPeople.filter(
+    (person) => person.status === "active",
+  ).length;
+  const inviteCount = allPeople.length - memberCount;
+  const matchingPeopleCount = people.length;
+  const listKey = trpc.people.list.queryKey();
+
+  useEffect(() => {
+    if (!peopleQuery.isPending) {
+      titleRef.current?.focus();
+    }
+  }, [peopleQuery.isPending]);
+
+  useEffect(() => {
+    if (!justInvitedId) return;
+    const timeout = window.setTimeout(
+      () => setJustInvitedId(null),
+      JUST_INVITED_MS,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [justInvitedId]);
+
+  useLayoutEffect(() => {
+    const request = pendingFocus.current;
+    if (!request) return;
+    pendingFocus.current = null;
+    if (request === "title") titleRef.current?.focus();
+    else if (request === "list") listRef.current?.focus();
+    else
+      (
+        triggers.current.get(request) ??
+        listRef.current ??
+        titleRef.current
+      )?.focus();
+  });
+
+  async function sendInvites(input: SendInvitesInput) {
+    const result = await sendInvitesMutation.mutateAsync(input);
+    if (result.ok) void queryClient.invalidateQueries({ queryKey: listKey });
+    return result;
+  }
+
+  function focusAfterRemoval(visible: Person[], removedId: string) {
+    const nextId = nextActionableId(visible, removedId);
+    const remaining = withoutPerson(visible, removedId);
+    pendingFocus.current = nextId
+      ? nextId
+      : remaining.length > 0
+        ? "list"
+        : "title";
+  }
+
+  async function dropRow(id: string, generation: number) {
+    await queryClient.cancelQueries({ queryKey: listKey });
+    if (generation !== sessionGeneration()) return;
+    queryClient.setQueryData<Person[]>(listKey, (current) =>
+      withoutPerson(current ?? [], id),
+    );
+    void queryClient.invalidateQueries({ queryKey: listKey });
+  }
+
+  async function confirmRemove() {
+    if (!removeTarget || inFlight.current) return;
+    inFlight.current = true;
+    if (navigator.onLine === false) {
+      inFlight.current = false;
+      setRemoveError("offline");
+      return;
+    }
+    const generation = sessionGeneration();
+    const target = removeTarget;
+    const visible = people;
+    setRemovePending(true);
+    setRemoveError(null);
+    try {
+      await removeAccess.mutateAsync({ uid: target.uid });
+      if (generation !== sessionGeneration()) return;
+      await dropRow(target.uid, generation);
+      if (generation !== sessionGeneration()) return;
+      focusAfterRemoval(visible, target.uid);
+      skipDialogRestore.current = true;
+      setRemoveTarget(null);
+      notify("success", `${target.name}'s access was removed.`);
+    } catch (error) {
+      if (generation !== sessionGeneration()) return;
+      const failure = classifyRowFailure(error);
+      setRemoveError(failure === "server" ? "failed" : failure);
+      if (failure !== "queued") {
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      }
+    } finally {
+      inFlight.current = false;
+      setRemovePending(false);
+    }
+  }
+
+  async function runInviteAction(
+    action: Exclude<PersonMenuAction, "remove">,
+    person: Person,
+  ) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    if (navigator.onLine === false) {
+      inFlight.current = false;
+      notify("error", "You're offline. Nothing was changed.");
+      return;
+    }
+    const generation = sessionGeneration();
+    setActionPending(true);
+    try {
+      if (action === "cancel") {
+        await cancelInvite.mutateAsync({ inviteId: person.id });
+        if (generation !== sessionGeneration()) return;
+        await dropRow(person.id, generation);
+        if (generation !== sessionGeneration()) return;
+        focusAfterRemoval(people, person.id);
+        notify("success", "Invite canceled.");
+        return;
+      }
+      const result = await resendInvite.mutateAsync({ inviteId: person.id });
+      if (generation !== sessionGeneration()) return;
+      if (!result.ok) {
+        notify("error", "Couldn't resend the invite. Try again.");
+        return;
+      }
+      await queryClient.cancelQueries({ queryKey: listKey });
+      if (generation !== sessionGeneration()) return;
+      // The new link restarts the 7 days, so an expired invite is pending again.
+      queryClient.setQueryData<Person[]>(listKey, (current) =>
+        current?.map((row) =>
+          row.id === person.id && row.status !== "active"
+            ? { ...row, status: "pending" }
+            : row,
+        ),
+      );
+      setJustInvitedId(person.id);
+      pendingFocus.current = person.id;
+      notify("success", "New invite link sent.");
+      void queryClient.invalidateQueries({ queryKey: listKey });
+    } catch (error) {
+      if (generation !== sessionGeneration()) return;
+      if (document.activeElement === document.body) {
+        pendingFocus.current = person.id;
+      }
+      const failure = classifyRowFailure(error);
+      if (failure === "queued") {
+        notify(
+          "error",
+          "Saved offline. It will be sent when the device is back online.",
+        );
+      } else if (failure === "unknown") {
+        notify(
+          "error",
+          "Couldn't confirm the result. Check the refreshed list.",
+        );
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      } else if (action === "cancel") {
+        notify("error", "Couldn't cancel the invite. Try again.");
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      } else {
+        notify("error", "Couldn't resend the invite. Try again.");
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      }
+    } finally {
+      inFlight.current = false;
+      setActionPending(false);
+    }
+  }
+
+  function onRowAction(person: Person, action: PersonMenuAction) {
+    if (action === "remove") {
+      setRemoveError(null);
+      const target = { uid: person.id, name: person.name || person.email };
+      setDialogCopy(target);
+      setRemoveTarget(target);
+      return;
+    }
+    void runInviteAction(action, person);
+  }
+
+  if (peopleQuery.isPending) {
+    return (
+      <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
+        <output className="type-body block p-4 text-body">
+          Loading people...
+        </output>
+      </main>
+    );
+  }
+
+  if (peopleQuery.isError && peopleQuery.data === undefined) {
+    return (
+      <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
+        <div className="flex items-start gap-2 p-4 text-error">
+          <AlertCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+          <p role="alert" className="type-body">
+            The people list couldn&apos;t load.
+          </p>
+          <button
+            type="button"
+            className="type-link min-h-11 min-w-11 shrink-0"
+            onClick={() => void peopleQuery.refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const busy = removePending || actionPending;
+
+  return (
+    <main className="mx-auto min-h-dvh w-full max-w-md bg-surface">
+      <header className="border-b border-divider">
+        <div className="flex h-14 items-center gap-2 pr-4 pl-1">
+          <Link
+            to="/"
+            aria-label="Back to records"
+            className="grid size-11 shrink-0 place-items-center rounded-pill text-icon-primary hover:bg-hover"
+          >
+            <ChevronLeft aria-hidden="true" className="size-5" />
+          </Link>
+          <h1
+            ref={titleRef}
+            tabIndex={-1}
+            className="type-h2 min-w-0 flex-1 truncate outline-none"
+          >
+            People &amp; invitations
+          </h1>
+          <InviteModal people={allPeople} sendInvites={sendInvites} />
+        </div>
+      </header>
+
+      <div className="px-4">
+        <label htmlFor="people-search" className="mt-3 mb-2 block">
+          <PeopleSearchInput
+            id="people-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            onClear={() => setSearch("")}
+            placeholder="Search name or email"
+            aria-label="Search name or email"
+          />
+        </label>
+
+        <p
+          aria-live="polite"
+          className={`type-caption mt-1 mb-2 text-body-muted ${
+            normalizedSearch && matchingPeopleCount === 0 ? "sr-only" : ""
+          }`}
+        >
+          {normalizedSearch ? (
+            <>
+              Showing{" "}
+              <strong className="font-bold text-heading">
+                {matchingPeopleCount}
+              </strong>{" "}
+              results
+            </>
+          ) : (
+            <>
+              <strong className="font-bold text-heading">
+                {formatCount(memberCount, "member")}
+              </strong>
+              {inviteCount > 0 && <> · {formatCount(inviteCount, "invite")}</>}
+            </>
+          )}
+        </p>
+        {peopleQuery.isError && (
+          <div className="mb-2 flex items-center gap-2 text-error">
+            <AlertCircle aria-hidden="true" className="size-5 shrink-0" />
+            <p role="alert" className="type-body">
+              The people list couldn&apos;t refresh.
+            </p>
+            <button
+              type="button"
+              className="type-link min-h-11 min-w-11"
+              onClick={() => void peopleQuery.refetch()}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
+      </div>
+
+      {people.length > 0 ? (
+        <ul
+          ref={listRef}
+          tabIndex={-1}
+          aria-label="People and invitations"
+          className="divide-y divide-divider outline-none"
+        >
+          {people.map((person) => (
+            <PersonRow
+              key={person.id}
+              person={person}
+              justInvited={person.id === justInvitedId}
+              menuDisabled={busy}
+              triggerRef={(node) => {
+                if (node) triggers.current.set(person.id, node);
+                else triggers.current.delete(person.id);
+              }}
+              onAction={(action) => onRowAction(person, action)}
+            />
+          ))}
+        </ul>
+      ) : normalizedSearch ? (
+        <div className="flex flex-col items-center gap-2 px-6 pt-24 text-center">
+          <div className="mb-2 grid size-12 place-items-center rounded-pill bg-pressed">
+            <SearchX aria-hidden="true" className="size-6 text-icon-primary" />
+          </div>
+          <p className="type-body-strong text-heading">
+            No one matches &ldquo;{search.trim()}&rdquo;
+          </p>
+          <p className="type-body-sm text-body-muted">
+            Check the spelling, or invite them.
+          </p>
+        </div>
+      ) : null}
+
+      <RemoveAccessDialog
+        name={dialogCopy?.name ?? ""}
+        open={removeTarget !== null}
+        pending={removePending}
+        error={removeError}
+        onDismiss={() => {
+          if (removePending) return;
+          setRemoveTarget(null);
+          setRemoveError(null);
+        }}
+        onConfirm={() => void confirmRemove()}
+        finalFocus={() => {
+          if (skipDialogRestore.current) {
+            skipDialogRestore.current = false;
+            return false;
+          }
+          const uid = dialogCopy?.uid;
+          return (
+            (uid && triggers.current.get(uid)) ||
+            listRef.current ||
+            titleRef.current
+          );
+        }}
+      />
+    </main>
+  );
+}
+
+function formatCount(count: number, singular: string) {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`;
+}
+
+function PersonRow({
+  person,
+  justInvited,
+  menuDisabled,
+  triggerRef,
+  onAction,
+}: {
+  person: Person;
+  justInvited: boolean;
+  menuDisabled: boolean;
+  triggerRef: (node: HTMLButtonElement | null) => void;
+  onAction: (action: PersonMenuAction) => void;
+}) {
+  const displayName = person.name || person.email;
+  const statusLabel =
+    person.status === "pending"
+      ? "Pending"
+      : person.status === "expired"
+        ? "Expired"
+        : null;
+
+  return (
+    <li
+      className={`flex min-h-18 items-center gap-2 px-4 py-2.5 ${
+        justInvited ? "bg-selected" : ""
+      }`}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="type-body-strong truncate text-heading">
+            {displayName}
+            {person.isSelf && " (you)"}
+          </p>
+
+          {statusLabel && (
+            <span
+              className={`type-badge inline-flex w-22 items-center gap-1 rounded-pill border py-0.5 pr-2 pl-1.5 ${
+                person.status === "expired"
+                  ? "border-line-error bg-error-tint text-error"
+                  : "border-line-warning bg-status-requested-tint text-status-requested-text"
+              }`}
+            >
+              {person.status === "expired" ? (
+                <AlertCircle aria-hidden="true" className="size-3.5" />
+              ) : (
+                <Clock3 aria-hidden="true" className="size-3.5" />
+              )}
+              {statusLabel}
+            </span>
+          )}
+        </div>
+
+        {person.status === "active" && (
+          <p className="type-caption truncate text-body-muted">
+            {person.email}
+          </p>
+        )}
+
+        {person.status !== "active" && (
+          <p className="type-caption truncate text-body-muted">
+            {justInvited ? (
+              "Invited just now"
+            ) : (
+              <>
+                {person.status === "expired" ? "Sent" : "Invited"}{" "}
+                {formatInviteDate(person.invitedAt)}
+                {person.status === "expired" && " · link expired"}
+              </>
+            )}
+          </p>
+        )}
+      </div>
+
+      <span className="type-body-sm w-19 text-right capitalize">
+        {person.role}
+      </span>
+
+      {person.isSelf ? (
+        <div aria-hidden="true" className="size-11 shrink-0" />
+      ) : (
+        <PersonActionsMenu
+          person={person}
+          disabled={menuDisabled}
+          triggerRef={triggerRef}
+          onAction={onAction}
+        />
+      )}
+    </li>
+  );
+}
+
+function formatInviteDate(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : inviteDateFormatter.format(date);
+}
