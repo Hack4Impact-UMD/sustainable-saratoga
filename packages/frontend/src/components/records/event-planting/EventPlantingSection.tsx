@@ -1,6 +1,6 @@
-import { fieldGuidance as g } from "../fieldGuidance.ts";
-import { FieldLabel } from "../FieldLabel.tsx";
-import type { EventPlantingValue } from "./types.ts";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
+import { FieldLabel } from "@frontend/components/records/FieldLabel.tsx";
+import type { EventPlantingValue } from "@frontend/components/records/event-planting/types.ts";
 
 type Props = {
   value: EventPlantingValue;

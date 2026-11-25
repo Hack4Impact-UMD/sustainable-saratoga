@@ -1,4 +1,3 @@
-
 export type PlantingPreparationValue = {
   spotFlagged: boolean | null;
   readyToPlant: boolean | null;

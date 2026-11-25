@@ -20,21 +20,19 @@ const createTreeRecordInput = treeRecord
     lng: "number = 0",
   });
 
-  const updateTreeRecordInput = treeRecord
-  .omit("id")
-  .omit("recordInformation");
+const updateTreeRecordInput = treeRecord.omit("id").omit("recordInformation");
 
 export const recordsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-  const snapshot = await ctx.db.collection("records").get();
+    const snapshot = await ctx.db.collection("records").get();
 
-  return snapshot.docs.map((doc) =>
-    treeRecord.assert({
-      ...doc.data(),
-      id: doc.id,
-    }),
-  );
-}),
+    return snapshot.docs.map((doc) =>
+      treeRecord.assert({
+        ...doc.data(),
+        id: doc.id,
+      }),
+    );
+  }),
   getById: protectedProcedure
     .input(type({ id: "string >= 1" }))
     .query(async ({ ctx, input }) => {
@@ -77,9 +75,7 @@ export const recordsRouter = router({
     }),
 
   update: protectedProcedure
-    .input(
-      type({ id: "string >= 1" }).and(updateTreeRecordInput),
-    )
+    .input(type({ id: "string >= 1" }).and(updateTreeRecordInput))
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
       const recordRef = ctx.db.collection("records").doc(id);

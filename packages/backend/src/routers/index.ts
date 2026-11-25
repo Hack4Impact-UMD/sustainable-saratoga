@@ -10,7 +10,7 @@ export const appRouter = router({
   map: mapRouter,
   people: peopleRouter,
   invites: invitesRouter,
-  records: recordsRouter
+  records: recordsRouter,
 });
 
 export type AppRouter = typeof appRouter;

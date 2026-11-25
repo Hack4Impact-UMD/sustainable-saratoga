@@ -1,6 +1,6 @@
-import { fieldGuidance as g } from "../fieldGuidance.ts";
-import { FieldLabel } from "../FieldLabel.tsx";
-import type { PlantingPreparationValue } from "./types.ts";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
+import { FieldLabel } from "@frontend/components/records/FieldLabel.tsx";
+import type { PlantingPreparationValue } from "@frontend/components/records/planting-preparation/types.ts";
 
 type PlantingPreparationSectionProps = {
   value: PlantingPreparationValue;
@@ -9,7 +9,10 @@ type PlantingPreparationSectionProps = {
 };
 
 type BooleanField =
-  "spotFlagged" | "readyToPlant" | "comingSoonSign" | "utilityMarked";
+  | "spotFlagged"
+  | "readyToPlant"
+  | "comingSoonSign"
+  | "utilityMarked";
 
 const QUESTIONS: { key: BooleanField; label: string; hint: string }[] = [
   { key: "spotFlagged", label: "Planting spot flagged", hint: g.spotFlagged },

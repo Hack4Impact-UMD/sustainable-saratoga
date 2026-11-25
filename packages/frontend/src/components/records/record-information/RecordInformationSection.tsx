@@ -1,5 +1,4 @@
-
-import type { RecordInformationValue } from "./types.ts";
+import type { RecordInformationValue } from "@frontend/components/records/record-information/types.ts";
 
 type Props = {
   value: RecordInformationValue;
@@ -30,18 +29,14 @@ function InformationField({
 }) {
   return (
     <div className="min-w-0 space-y-1">
-      <p className="text-[12px] font-normal text-body-muted">
-        {label}
-      </p>
+      <p className="text-[12px] font-normal text-body-muted">{label}</p>
 
       <p className="text-[14px] font-normal text-heading">
         {value || "Not available"}
       </p>
 
       {note && (
-        <p className="text-[12px] font-normal text-body-muted">
-          {note}
-        </p>
+        <p className="text-[12px] font-normal text-body-muted">{note}</p>
       )}
     </div>
   );
@@ -66,10 +61,7 @@ export function RecordInformationSection({ value }: Props) {
 
       {/* Record ID */}
       <div className="col-span-2">
-        <InformationField
-          label="Record ID"
-          value={value.recordId}
-        />
+        <InformationField label="Record ID" value={value.recordId} />
       </div>
     </div>
   );

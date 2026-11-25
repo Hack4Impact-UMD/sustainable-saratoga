@@ -1,6 +1,9 @@
-import { FullScreen } from "./FullScreen.tsx";
-import { BackIcon, MapPinIcon } from "./icons.tsx";
-import { splitAddress } from "./types.ts";
+import { FullScreen } from "@frontend/components/records/location/FullScreen.tsx";
+import {
+  BackIcon,
+  MapPinIcon,
+} from "@frontend/components/records/location/icons.tsx";
+import { splitAddress } from "@frontend/components/records/location/types.ts";
 
 type Props = {
   address: string;

@@ -1,16 +1,8 @@
-
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { TreeRecord } from "@repo/common";
-import {
-  ChevronDown,
-  Check,
-  Search,
-  X,
-  UserRound,
-  MapPin,
-} from "lucide-react";
+import { ChevronDown, Check, Search, X, UserRound, MapPin } from "lucide-react";
 import { trpc } from "@frontend/lib/trpc.ts";
 import { RecordSection } from "@frontend/components/records/RecordSection.tsx";
 import {
@@ -23,28 +15,20 @@ import {
 } from "@frontend/components/ui/dialog.tsx";
 
 import { LocationSection } from "@frontend/components/records/location/LocationSection.tsx";
-import {
-  EMPTY_LOCATION,
-  type LocationValue,
-} from "@frontend/components/records/location/types.ts";
+import { EMPTY_LOCATION } from "@frontend/components/records/location/types.ts";
+import type { LocationValue } from "@frontend/components/records/location/types.ts";
 
 import { ContactsSection } from "@frontend/components/records/contacts/ContactsSection.tsx";
-import {
-  contactsAreValid,
-  type ContactsValue,
-} from "@frontend/components/records/contacts/types.ts";
+import { contactsAreValid } from "@frontend/components/records/contacts/types.ts";
+import type { ContactsValue } from "@frontend/components/records/contacts/types.ts";
 
 import { SiteAssessmentSection } from "@frontend/components/records/site-assessment/SiteAssessmentSection.tsx";
-import {
-  EMPTY_SITE_ASSESSMENT,
-  type SiteAssessmentValue,
-} from "@frontend/components/records/site-assessment/types.ts";
+import { EMPTY_SITE_ASSESSMENT } from "@frontend/components/records/site-assessment/types.ts";
+import type { SiteAssessmentValue } from "@frontend/components/records/site-assessment/types.ts";
 
 import { PlantingPreparationSection } from "@frontend/components/records/planting-preparation/PlantingPreparationSection.tsx";
-import {
-  EMPTY_PLANTING_PREPARATION,
-  type PlantingPreparationValue,
-} from "@frontend/components/records/planting-preparation/types.ts";
+import { EMPTY_PLANTING_PREPARATION } from "@frontend/components/records/planting-preparation/types.ts";
+import type { PlantingPreparationValue } from "@frontend/components/records/planting-preparation/types.ts";
 
 import { TreeSpeciesSection } from "@frontend/components/records/tree-details/TreeDetailsSection.tsx";
 import type { TreeSpeciesValue } from "@frontend/components/records/tree-details/types.ts";
@@ -54,9 +38,7 @@ import type { EventPlantingValue } from "@frontend/components/records/event-plan
 
 import { RecordInformationSection } from "@frontend/components/records/record-information/RecordInformationSection.tsx";
 
-export const Route = createFileRoute(
-  "/_authenticated/records/$recordId/edit",
-)({
+export const Route = createFileRoute("/_authenticated/records/$recordId/edit")({
   component: EditRecordPage,
 });
 
@@ -83,14 +65,16 @@ function EditRecordPage() {
   );
 
   if (recordQuery.isPending) {
-    return <main className="min-h-dvh w-full bg-surface">Loading record...</main>;
+    return (
+      <main className="min-h-dvh w-full bg-surface">Loading record...</main>
+    );
   }
 
   if (recordQuery.isError) {
     return (
       <main className="min-h-dvh bg-surface p-4">
         <p role="alert" className="text-error">
-          Couldn't load this record. Please try again.
+          Couldn&apos;t save your changes. Please try again.
         </p>
       </main>
     );
@@ -131,12 +115,11 @@ function EditRecordForm({ record }: { record: TreeRecord }) {
         ? { lat: record.lat, lng: record.lng }
         : null,
     description: record.location.description ?? "",
-    ownership:
-      record.location.ownership?.toLowerCase().includes("dpw")
-        ? "dpw"
-        : record.location.ownership?.toLowerCase().includes("private")
-          ? "private"
-          : "",
+    ownership: record.location.ownership?.toLowerCase().includes("dpw")
+      ? "dpw"
+      : record.location.ownership?.toLowerCase().includes("private")
+        ? "private"
+        : "",
   };
 
   const initialContacts: ContactsValue = {
@@ -163,12 +146,12 @@ function EditRecordForm({ record }: { record: TreeRecord }) {
       record.siteAssessment.ifNotInRow === "not-applicable"
         ? record.siteAssessment.ifNotInRow
         : "",
-    exposure: (
-      ["N", "NE", "E", "SE", "S", "SW", "W", "NW"].includes(
-        record.siteAssessment.energyDirection ?? "",
-      )
-        ? record.siteAssessment.energyDirection
-        : ({
+    exposure: (["N", "NE", "E", "SE", "S", "SW", "W", "NW"].includes(
+      record.siteAssessment.energyDirection ?? "",
+    )
+      ? record.siteAssessment.energyDirection
+      : (
+          {
             North: "N",
             Northeast: "NE",
             East: "E",
@@ -177,10 +160,10 @@ function EditRecordForm({ record }: { record: TreeRecord }) {
             Southwest: "SW",
             West: "W",
             Northwest: "NW",
-          } as Record<string, string>)[
-            record.siteAssessment.energyDirection ?? ""
-          ]
-    ) as SiteAssessmentValue["exposure"],
+          } as Record<string, string>
+        )[
+          record.siteAssessment.energyDirection ?? ""
+        ]) as SiteAssessmentValue["exposure"],
     wireConflict:
       savedWireConflict === "none" ||
       savedWireConflict === "clear-as-it-matures" ||
@@ -243,58 +226,58 @@ function EditRecordForm({ record }: { record: TreeRecord }) {
     treeSpecies: initialTreeSpecies,
     eventPlanting: initialEventPlanting,
     responsible: record.responsible ?? "",
-    status: record.status
+    status: record.status,
   };
 
   const selectedPerson = activePeople.find(
-  (person) => person.id === responsibleOverride,
-);
-
-const availableStatuses = [
-  ...(record.origin === "requested"
-    ? [{ value: "requested", label: "Requested", color: "#4285c5" }]
-    : []),
-  ...(record.origin === "possible"
-    ? [{ value: "possible", label: "Possible", color: "#ed8735" }]
-    : []),
-  { value: "approved", label: "Approved", color: "#9974cf" },
-  { value: "planted", label: "Planted", color: "#78ad35" },
-] as const;
-
-const filteredPeople = activePeople.filter((person) => {
-  const search = memberSearch.toLowerCase();
-
-  return (
-    (person.name ?? "").toLowerCase().includes(search) ||
-    (person.email ?? "").toLowerCase().includes(search)
+    (person) => person.id === responsibleOverride,
   );
-});
 
-const selectedPersonName =
-  selectedPerson?.name ||
-  selectedPerson?.email ||
-  (responsibleOverride === "__unassigned__"
-    ? "Unassigned"
-    : record.responsible || "Unassigned");
+  const availableStatuses = [
+    ...(record.origin === "requested"
+      ? [{ value: "requested", label: "Requested", color: "#4285c5" }]
+      : []),
+    ...(record.origin === "possible"
+      ? [{ value: "possible", label: "Possible", color: "#ed8735" }]
+      : []),
+    { value: "approved", label: "Approved", color: "#9974cf" },
+    { value: "planted", label: "Planted", color: "#78ad35" },
+  ] as const;
 
-const currentResponsible =
-  responsibleOverride === "__unassigned__"
-    ? ""
-    : selectedPerson?.name ||
-      selectedPerson?.email ||
-      record.responsible ||
-      "";
+  const filteredPeople = activePeople.filter((person) => {
+    const search = memberSearch.toLowerCase();
 
-const currentValues = {
-  location,
-  contacts,
-  siteAssessment,
-  plantingPreparation,
-  treeSpecies,
-  eventPlanting,
-  responsible: currentResponsible,
-  status
-};
+    return (
+      (person.name ?? "").toLowerCase().includes(search) ||
+      (person.email ?? "").toLowerCase().includes(search)
+    );
+  });
+
+  const selectedPersonName =
+    selectedPerson?.name ||
+    selectedPerson?.email ||
+    (responsibleOverride === "__unassigned__"
+      ? "Unassigned"
+      : record.responsible || "Unassigned");
+
+  const currentResponsible =
+    responsibleOverride === "__unassigned__"
+      ? ""
+      : selectedPerson?.name ||
+        selectedPerson?.email ||
+        record.responsible ||
+        "";
+
+  const currentValues = {
+    location,
+    contacts,
+    siteAssessment,
+    plantingPreparation,
+    treeSpecies,
+    eventPlanting,
+    responsible: currentResponsible,
+    status,
+  };
 
   const hasChanges =
     JSON.stringify(currentValues) !== JSON.stringify(originalValues);
@@ -329,15 +312,15 @@ const currentValues = {
     const state = addressParts[2] ?? record.state;
 
     const pipelineState =
-  record.origin === "possible"
-    ? {
-        origin: "possible" as const,
-        status: status as "possible" | "approved" | "planted",
-      }
-    : {
-        origin: "requested" as const,
-        status: status as "requested" | "approved" | "planted",
-      };
+      record.origin === "possible"
+        ? {
+            origin: "possible" as const,
+            status: status as "possible" | "approved" | "planted",
+          }
+        : {
+            origin: "requested" as const,
+            status: status as "requested" | "approved" | "planted",
+          };
     updateMutation.mutate({
       id: record.id,
       ...pipelineState,
@@ -378,8 +361,7 @@ const currentValues = {
         overheadUtilities: record.siteAssessment.overheadUtilities,
         undergroundUtilities: record.siteAssessment.undergroundUtilities,
         crown: record.siteAssessment.crown,
-        preparationRequired:
-          siteAssessment.preparationRequired.trim() || null,
+        preparationRequired: siteAssessment.preparationRequired.trim() || null,
         notes: siteAssessment.notes.trim() || null,
       },
 
@@ -463,285 +445,276 @@ const currentValues = {
         </button>
       </header>
 
-      
-<div className="bg-white">
-  {/* Status & assignment heading */}
-  <div className="flex h-[68px] items-center border-y border-[#e0e5df] bg-[#f2f3f0] px-4">
-    <h2 className="text-[20px] font-bold text-[#292929]">
-      Status &amp; assignment
-    </h2>
-  </div>
+      <div className="bg-white">
+        {/* Status & assignment heading */}
+        <div className="flex h-[68px] items-center border-y border-[#e0e5df] bg-[#f2f3f0] px-4">
+          <h2 className="text-[20px] font-bold text-[#292929]">
+            Status &amp; assignment
+          </h2>
+        </div>
 
-  <div className="space-y-5 px-4 py-5">
-    {/* Status */}
-    
-<div className="space-y-2">
-  <label className="flex items-center gap-2 text-[15px] font-semibold text-heading">
-    Status <span className="text-error">*</span>
+        <div className="space-y-5 px-4 py-5">
+          {/* Status */}
 
-    <span
-      title="The current status of this tree record"
-      className="flex size-5 items-center justify-center rounded-full border-2 border-icon-primary text-[12px] font-bold text-icon-primary"
-    >
-      i
-    </span>
-  </label>
-
-  <div className="relative">
-    <button
-      type="button"
-      aria-expanded={statusOpen}
-      onClick={() => {
-        setStatusOpen((open) => !open);
-        setMemberPickerOpen(false);
-      }}
-      className="flex min-h-11 w-full items-center justify-between rounded-[8px] border border-divider bg-surface px-3 text-left text-[15px] text-heading"
-    >
-      <span>
-        {availableStatuses.find((item) => item.value === status)?.label}
-      </span>
-
-      <ChevronDown
-        className={`size-5 transition-transform ${
-          statusOpen ? "rotate-180" : ""
-        }`}
-      />
-    </button>
-
-    {statusOpen && (
-      <>
-        <button
-          type="button"
-          aria-label="Close status options"
-          className="fixed inset-0 z-30 cursor-default bg-transparent"
-          onClick={() => setStatusOpen(false)}
-        />
-
-        <div
-          style={{ backgroundColor: "#ffffff", opacity: 1 }}
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-divider bg-white p-2 shadow-lg"
-        >
-          {availableStatuses.map((option) => {
-            const selected = status === option.value;
-
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  setStatus(option.value as typeof status);
-                  setStatusOpen(false);
-                }}
-                className={`flex min-h-11 w-full items-center gap-3 rounded-md border px-3 text-left text-[15px] ${
-                  selected
-                    ? "border-primary bg-primary/10 font-semibold text-heading"
-                    : "border-transparent bg-white text-body"
-                }`}
+          <div className="space-y-2">
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-heading">
+              Status <span className="text-error">*</span>
+              <span
+                title="The current status of this tree record"
+                className="flex size-5 items-center justify-center rounded-full border-2 border-icon-primary text-[12px] font-bold text-icon-primary"
               >
-                <span
-                  className="flex size-6 shrink-0 items-center justify-center rounded-full border-2"
-                  style={{
-                    borderColor: option.color,
-                    color: option.color,
-                  }}
-                >
-                  <MapPin className="size-4 fill-current" />
+                i
+              </span>
+            </p>
+
+            <div className="relative">
+              <button
+                type="button"
+                aria-expanded={statusOpen}
+                onClick={() => {
+                  setStatusOpen((open) => !open);
+                  setMemberPickerOpen(false);
+                }}
+                className="flex min-h-11 w-full items-center justify-between rounded-[8px] border border-divider bg-surface px-3 text-left text-[15px] text-heading"
+              >
+                <span>
+                  {
+                    availableStatuses.find((item) => item.value === status)
+                      ?.label
+                  }
                 </span>
 
-                <span className="flex-1">{option.label}</span>
-
-                {selected && (
-                  <Check className="size-5 text-primary" />
-                )}
+                <ChevronDown
+                  className={`size-5 transition-transform ${
+                    statusOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-            );
-          })}
-        </div>
-      </>
-    )}
-  </div>
-</div>
 
+              {statusOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close status options"
+                    className="fixed inset-0 z-30 cursor-default bg-transparent"
+                    onClick={() => setStatusOpen(false)}
+                  />
 
-    {/* Responsible member */}
-    
-<div className="space-y-2">
-  <label className="block text-[15px] font-semibold text-heading">
-    Responsible member
-  </label>
+                  <div
+                    style={{ backgroundColor: "#ffffff", opacity: 1 }}
+                    className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-divider bg-white p-2 shadow-lg"
+                  >
+                    {availableStatuses.map((option) => {
+                      const selected = status === option.value;
 
-  <button
-    type="button"
-    onClick={() => {
-      setMemberPickerOpen(true);
-      setStatusOpen(false);
-      setMemberSearch("");
-    }}
-    className="flex min-h-11 w-full items-center justify-between rounded-[8px] border border-divider bg-surface px-3 text-left text-[15px] text-heading"
-  >
-    <span className="flex min-w-0 items-center gap-3">
-      {responsibleOverride === "__unassigned__" ||
-      !currentResponsible ? (
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-divider text-body">
-          <UserRound className="size-4" />
-        </span>
-      ) : (
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#91ad58] text-[11px] font-bold text-white">
-          {selectedPersonName
-            .split(" ")
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase()}
-        </span>
-      )}
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setStatus(option.value as typeof status);
+                            setStatusOpen(false);
+                          }}
+                          className={`flex min-h-11 w-full items-center gap-3 rounded-md border px-3 text-left text-[15px] ${
+                            selected
+                              ? "border-primary bg-primary/10 font-semibold text-heading"
+                              : "border-transparent bg-white text-body"
+                          }`}
+                        >
+                          <span
+                            className="flex size-6 shrink-0 items-center justify-center rounded-full border-2"
+                            style={{
+                              borderColor: option.color,
+                              color: option.color,
+                            }}
+                          >
+                            <MapPin className="size-4 fill-current" />
+                          </span>
 
-      <span className="truncate">{selectedPersonName}</span>
-    </span>
+                          <span className="flex-1">{option.label}</span>
 
-    <ChevronDown className="size-5 shrink-0 text-body" />
-  </button>
-</div>
+                          {selected && (
+                            <Check className="size-5 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
-  </div>
+          {/* Responsible member */}
 
-  {/* Responsible member bottom sheet */}
-  <Dialog
-    open={memberPickerOpen}
-    onOpenChange={setMemberPickerOpen}
-  >
-    <DialogOverlay className="bg-black/50" />
+          <div className="space-y-2">
+            <p className="block text-[15px] font-semibold text-heading">
+              Responsible member
+            </p>
 
-    <DialogContent
-      showCloseButton={false}
-      style={{
-        backgroundColor: "#ffffff",
-        opacity: 1,
-      }}
-      className="fixed inset-x-0 bottom-0 top-auto flex max-h-[85dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-[24px] border border-divider bg-white p-0 shadow-xl sm:bottom-0 sm:top-auto sm:max-w-none sm:translate-x-0 sm:translate-y-0"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-3 pt-6">
-        <DialogTitle className="font-serif text-[23px] font-bold text-[#292929]">
-          Responsible member
-        </DialogTitle>
-
-        <button
-          type="button"
-          onClick={() => setMemberPickerOpen(false)}
-          aria-label="Close member picker"
-          className="rounded-full p-1 text-[#536057]"
-        >
-          <X className="size-7" />
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="px-5 pb-3">
-        <div className="flex min-h-[54px] items-center gap-3 rounded-full border-2 border-[#176638] px-5">
-          <Search className="size-6 shrink-0 text-[#536057]" />
-
-          <input
-            autoFocus
-            value={memberSearch}
-            onChange={(event) => setMemberSearch(event.target.value)}
-            placeholder="Search members"
-            className="w-full bg-transparent text-[16px] text-[#292929] outline-none placeholder:text-[#858585]"
-          />
-        </div>
-      </div>
-
-      {/* Members */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-        {/* Unassigned */}
-        <button
-          type="button"
-          onClick={() => {
-            setResponsibleOverride("__unassigned__");
-            setMemberPickerOpen(false);
-          }}
-          className={`flex min-h-[64px] w-full items-center gap-3 border-b border-[#e0e5df] px-2 text-left ${
-            responsibleOverride === "__unassigned__"
-              ? "bg-[#e6f0e4] text-[#174b2b]"
-              : ""
-          }`}
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#cbd3c9] text-[#536057]">
-            <UserRound className="size-5" />
-          </span>
-
-          <span className="flex-1">
-            <span className="block text-[16px] font-medium">
-              Unassigned
-            </span>
-            <span className="block text-[14px] text-[#536057]">
-              No responsible member
-            </span>
-          </span>
-
-          {responsibleOverride === "__unassigned__" && (
-            <Check className="size-6 text-[#176638]" />
-          )}
-        </button>
-
-        {filteredPeople.map((person) => {
-          const name = person.name || person.email || "Member";
-          const initials = name
-            .split(" ")
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
-
-          const selected =
-            responsibleOverride === person.id ||
-            (!responsibleOverride &&
-              record.responsible === name);
-
-          return (
             <button
-              key={person.id}
               type="button"
               onClick={() => {
-                setResponsibleOverride(person.id);
-                setMemberPickerOpen(false);
+                setMemberPickerOpen(true);
+                setStatusOpen(false);
+                setMemberSearch("");
               }}
-              className={`flex min-h-[64px] w-full items-center gap-3 border-b border-[#e0e5df] px-2 text-left ${
-                selected
-                  ? "bg-[#e6f0e4] text-[#174b2b]"
-                  : ""
-              }`}
+              className="flex min-h-11 w-full items-center justify-between rounded-[8px] border border-divider bg-surface px-3 text-left text-[15px] text-heading"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#91ad58] text-[13px] font-bold text-white">
-                {initials}
+              <span className="flex min-w-0 items-center gap-3">
+                {responsibleOverride === "__unassigned__" ||
+                !currentResponsible ? (
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-divider text-body">
+                    <UserRound className="size-4" />
+                  </span>
+                ) : (
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#91ad58] text-[11px] font-bold text-white">
+                    {selectedPersonName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                )}
+
+                <span className="truncate">{selectedPersonName}</span>
               </span>
 
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[16px] font-medium">
-                  {name}
-                </span>
-                <span className="block truncate text-[14px] text-[#536057]">
-                  {person.role || "Volunteer"}
-                </span>
-              </span>
-
-              {selected && (
-                <Check className="size-6 shrink-0 text-[#176638]" />
-              )}
+              <ChevronDown className="size-5 shrink-0 text-body" />
             </button>
-          );
-        })}
+          </div>
+        </div>
 
-        {filteredPeople.length === 0 && (
-          <p className="py-8 text-center text-[14px] text-[#777f78]">
-            No members found.
-          </p>
-        )}
+        {/* Responsible member bottom sheet */}
+        <Dialog open={memberPickerOpen} onOpenChange={setMemberPickerOpen}>
+          <DialogOverlay className="bg-black/50" />
+
+          <DialogContent
+            showCloseButton={false}
+            style={{
+              backgroundColor: "#ffffff",
+              opacity: 1,
+            }}
+            className="fixed inset-x-0 bottom-0 top-auto flex max-h-[85dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-[24px] border border-divider bg-white p-0 shadow-xl sm:bottom-0 sm:top-auto sm:max-w-none sm:translate-x-0 sm:translate-y-0"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pb-3 pt-6">
+              <DialogTitle className="font-serif text-[23px] font-bold text-[#292929]">
+                Responsible member
+              </DialogTitle>
+
+              <button
+                type="button"
+                onClick={() => setMemberPickerOpen(false)}
+                aria-label="Close member picker"
+                className="rounded-full p-1 text-[#536057]"
+              >
+                <X className="size-7" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="px-5 pb-3">
+              <div className="flex min-h-[54px] items-center gap-3 rounded-full border-2 border-[#176638] px-5">
+                <Search className="size-6 shrink-0 text-[#536057]" />
+
+                <input
+                  value={memberSearch}
+                  onChange={(event) => setMemberSearch(event.target.value)}
+                  placeholder="Search members"
+                  className="w-full bg-transparent text-[16px] text-[#292929] outline-none placeholder:text-[#858585]"
+                />
+              </div>
+            </div>
+
+            {/* Members */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
+              {/* Unassigned */}
+              <button
+                type="button"
+                onClick={() => {
+                  setResponsibleOverride("__unassigned__");
+                  setMemberPickerOpen(false);
+                }}
+                className={`flex min-h-[64px] w-full items-center gap-3 border-b border-[#e0e5df] px-2 text-left ${
+                  responsibleOverride === "__unassigned__"
+                    ? "bg-[#e6f0e4] text-[#174b2b]"
+                    : ""
+                }`}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#cbd3c9] text-[#536057]">
+                  <UserRound className="size-5" />
+                </span>
+
+                <span className="flex-1">
+                  <span className="block text-[16px] font-medium">
+                    Unassigned
+                  </span>
+                  <span className="block text-[14px] text-[#536057]">
+                    No responsible member
+                  </span>
+                </span>
+
+                {responsibleOverride === "__unassigned__" && (
+                  <Check className="size-6 text-[#176638]" />
+                )}
+              </button>
+
+              {filteredPeople.map((person) => {
+                const name = person.name || person.email || "Member";
+                const initials = name
+                  .split(" ")
+                  .map((part) => part[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase();
+
+                const selected =
+                  responsibleOverride === person.id ||
+                  (!responsibleOverride && record.responsible === name);
+
+                return (
+                  <button
+                    key={person.id}
+                    type="button"
+                    onClick={() => {
+                      setResponsibleOverride(person.id);
+                      setMemberPickerOpen(false);
+                    }}
+                    className={`flex min-h-[64px] w-full items-center gap-3 border-b border-[#e0e5df] px-2 text-left ${
+                      selected ? "bg-[#e6f0e4] text-[#174b2b]" : ""
+                    }`}
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#91ad58] text-[13px] font-bold text-white">
+                      {initials}
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[16px] font-medium">
+                        {name}
+                      </span>
+                      <span className="block truncate text-[14px] text-[#536057]">
+                        {person.role || "Volunteer"}
+                      </span>
+                    </span>
+
+                    {selected && (
+                      <Check className="size-6 shrink-0 text-[#176638]" />
+                    )}
+                  </button>
+                );
+              })}
+
+              {filteredPeople.length === 0 && (
+                <p className="py-8 text-center text-[14px] text-[#777f78]">
+                  No members found.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </DialogContent>
-  </Dialog>
-</div>
-
 
       <RecordSection title="Location" defaultOpen>
         <LocationSection value={location} onChange={setLocation} />
@@ -766,16 +739,11 @@ const currentValues = {
       </RecordSection>
 
       <RecordSection title="Tree details">
-        <TreeSpeciesSection
-          value={treeSpecies}
-          onChange={setTreeSpecies}
-        />
+        <TreeSpeciesSection value={treeSpecies} onChange={setTreeSpecies} />
       </RecordSection>
 
       <RecordSection title={`Photos (${record.photos.length})`}>
-        <p className="p-4 text-[14px] text-body-muted">
-          Photos
-        </p>
+        <p className="p-4 text-[14px] text-body-muted">Photos</p>
       </RecordSection>
 
       <RecordSection title="Event & planting details">
@@ -799,7 +767,7 @@ const currentValues = {
 
       {updateMutation.isError && (
         <p role="alert" className="p-4 text-[14px] text-error">
-          Couldn't save your changes. Please try again.
+          Couldn&apos;t save your changes. Please try again.
         </p>
       )}
 
@@ -815,7 +783,8 @@ const currentValues = {
               Discard your changes?
             </DialogTitle>
             <DialogDescription className="text-[15px] text-[#4b5563]">
-              Your changes haven't been saved. Are you sure you want to leave?
+              Your changes haven&apos;t been saved. Are you sure you want to
+              leave?
             </DialogDescription>
           </DialogHeader>
 

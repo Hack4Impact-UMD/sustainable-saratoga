@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { fieldGuidance as g } from "../fieldGuidance.ts";
-import { FieldLabel } from "../FieldLabel.tsx";
-import { AddressEntryScreen } from "./AddressEntryScreen.tsx";
-import { MapPinIcon, SearchIcon } from "./icons.tsx";
-import { PlacePinScreen } from "./PlacePinScreen.tsx";
-import type { LocationValue } from "./types.ts";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
+import { FieldLabel } from "@frontend/components/records/FieldLabel.tsx";
+import { AddressEntryScreen } from "@frontend/components/records/location/AddressEntryScreen.tsx";
+import {
+  MapPinIcon,
+  SearchIcon,
+} from "@frontend/components/records/location/icons.tsx";
+import { PlacePinScreen } from "@frontend/components/records/location/PlacePinScreen.tsx";
+import type { LocationValue } from "@frontend/components/records/location/types.ts";
 
 type Props = {
   value: LocationValue;

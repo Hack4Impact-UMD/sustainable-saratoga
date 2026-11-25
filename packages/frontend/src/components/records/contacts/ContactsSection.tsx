@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { fieldGuidance as g } from "../fieldGuidance.ts";
-import { FieldLabel } from "../FieldLabel.tsx";
-import {
-  isValidEmail,
-  type ContactsValue,
-  type PropertyOwner,
-} from "./types.tsx";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
+import { FieldLabel } from "@frontend/components/records/FieldLabel.tsx";
+import { isValidEmail } from "@frontend/components/records/contacts/types.tsx";
+import type {
+  ContactsValue,
+  PropertyOwner,
+} from "@frontend/components/records/contacts/types.tsx";
 
 type Props = {
   value: ContactsValue;

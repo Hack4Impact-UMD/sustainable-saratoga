@@ -5,11 +5,10 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type CSSProperties,
-  type ReactNode,
 } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { InfoIcon } from "./location/icons.tsx";
+import { InfoIcon } from "@frontend/components/records/location/icons.tsx";
 
 type Props = {
   /** The input this label names. Omit for a group of buttons (use `id`). */

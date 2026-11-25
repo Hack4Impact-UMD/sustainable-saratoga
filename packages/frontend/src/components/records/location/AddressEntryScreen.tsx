@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { FullScreen } from "./FullScreen.tsx";
-import { BackIcon, CloseIcon, SearchIcon } from "./icons.tsx";
+import { FullScreen } from "@frontend/components/records/location/FullScreen.tsx";
+import {
+  BackIcon,
+  CloseIcon,
+  SearchIcon,
+} from "@frontend/components/records/location/icons.tsx";
 
 type Props = {
   /** The address already on the form, if any. */
@@ -103,7 +107,7 @@ export function AddressEntryScreen({
           </button>
 
           <p className="text-[13px] text-body-muted">
-            Can't find it?{" "}
+            Can&apos;t find it?{" "}
             <button
               type="button"
               onClick={onPlacePinInstead}

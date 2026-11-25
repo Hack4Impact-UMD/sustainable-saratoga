@@ -83,7 +83,6 @@ export function RecordHeader({ record }: { record: TreeRecord }) {
           <Pencil aria-hidden="true" className="size-4" />
           Edit
         </Link>
-
       </div>
       <header className="flex flex-col gap-4 px-4 py-4">
         <div className="flex items-start justify-between gap-4">

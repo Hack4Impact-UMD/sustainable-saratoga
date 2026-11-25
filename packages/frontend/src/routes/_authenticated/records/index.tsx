@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -16,23 +15,23 @@ function AllRecordsPage() {
   const recordsQuery = useQuery(trpc.records.list.queryOptions());
 
   const allRecords = useMemo(() => {
-  const savedRecords = recordsQuery.data ?? [];
-  const savedIds = new Set(savedRecords.map((record) => record.id));
+    const savedRecords = recordsQuery.data ?? [];
+    const savedIds = new Set(savedRecords.map((record) => record.id));
 
-  return [
-    ...savedRecords.map((record) => ({
-      record,
-      source: "Saved" as const,
-    })),
-
-    ...listSampleRecords()
-      .filter((record) => !savedIds.has(record.id))
-      .map((record) => ({
+    return [
+      ...savedRecords.map((record) => ({
         record,
-        source: "Sample" as const,
+        source: "Saved" as const,
       })),
-  ];
-}, [recordsQuery.data]);
+
+      ...listSampleRecords()
+        .filter((record) => !savedIds.has(record.id))
+        .map((record) => ({
+          record,
+          source: "Sample" as const,
+        })),
+    ];
+  }, [recordsQuery.data]);
 
   const filteredRecords = allRecords.filter(({ record }) => {
     const searchValue = search.toLowerCase().trim();
@@ -40,18 +39,16 @@ function AllRecordsPage() {
     if (!searchValue) return true;
 
     return [
-  record.id,
-  record.address,
-  record.city,
-  record.state,
-  record.species,
-  record.cultivar,
-  record.responsible,
-]
-  .filter(Boolean)
-  .some((value) =>
-    String(value).toLowerCase().includes(searchValue),
-  );
+      record.id,
+      record.address,
+      record.city,
+      record.state,
+      record.species,
+      record.cultivar,
+      record.responsible,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(searchValue));
   });
 
   return (
@@ -77,7 +74,7 @@ function AllRecordsPage() {
 
       {recordsQuery.isError && (
         <p role="alert" className="py-6 text-center text-sm text-error">
-          Couldn't load saved records. Please try again.
+          Couldn&apos;t load saved records. Please try again.
         </p>
       )}
 

@@ -40,7 +40,6 @@ function RecordPage() {
       {showToast && (
         <div className="fixed bottom-5 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-[520px] -translate-x-1/2">
           <div className="flex items-center gap-4 rounded-[24px] bg-[#292b2b] px-5 py-4 text-white shadow-xl">
-
             {/* Success icon */}
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full border-[3px] border-[#a8d77c] text-[#a8d77c]">
               ✓
@@ -48,17 +47,11 @@ function RecordPage() {
 
             {/* Toast text */}
             <div className="min-w-0 flex-1">
-              <p
-                style={{ color: "#ffffff" }}
-                className="text-[16px] font-bold"
-              >
+              <p style={{ color: "#ffffff" }} className="text-[16px] font-bold">
                 Record created
               </p>
 
-              <p
-                style={{ color: "#a8d77c" }}
-                className="text-[14px]"
-              >
+              <p style={{ color: "#a8d77c" }} className="text-[14px]">
                 Synced
               </p>
             </div>
@@ -73,7 +66,6 @@ function RecordPage() {
             >
               ×
             </button>
-
           </div>
         </div>
       )}

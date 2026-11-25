@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 export type PhotoItem = {
@@ -17,28 +16,20 @@ type PhotosSectionProps = {
 function getToday() {
   const date = new Date();
   const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60000)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
-export function PhotosSection({
-  value,
-  onChange,
-}: PhotosSectionProps) {
+export function PhotosSection({ value, onChange }: PhotosSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     return () => {
       value.forEach((photo) => {
         URL.revokeObjectURL(photo.previewUrl);
       });
     };
-  }, []);
+  }, [value]);
 
-  function handleAddPhotos(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  function handleAddPhotos(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
 
     const newPhotos: PhotoItem[] = files.map((file) => ({
@@ -71,9 +62,7 @@ export function PhotosSection({
   ) {
     onChange(
       value.map((photo) =>
-        photo.id === id
-          ? { ...photo, [field]: newValue }
-          : photo,
+        photo.id === id ? { ...photo, [field]: newValue } : photo,
       ),
     );
   }
@@ -96,9 +85,9 @@ export function PhotosSection({
                 onClick={() => handleRemovePhoto(photo.id)}
                 aria-label="Remove photo"
                 className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-[#292929]"
-                >
+              >
                 <span style={{ color: "#ffffff" }}>X</span>
-                </button>
+              </button>
             </div>
 
             {/* Photo title */}
@@ -106,11 +95,7 @@ export function PhotosSection({
               type="text"
               value={photo.title}
               onChange={(event) =>
-                handleUpdatePhoto(
-                  photo.id,
-                  "title",
-                  event.target.value,
-                )
+                handleUpdatePhoto(photo.id, "title", event.target.value)
               }
               placeholder="Photo title"
               className="w-full min-w-0 border-0 bg-transparent p-0 text-[14px] font-semibold text-heading outline-none"
@@ -121,11 +106,7 @@ export function PhotosSection({
               type="date"
               value={photo.date}
               onChange={(event) =>
-                handleUpdatePhoto(
-                  photo.id,
-                  "date",
-                  event.target.value,
-                )
+                handleUpdatePhoto(photo.id, "date", event.target.value)
               }
               className="w-full border-0 bg-transparent p-0 text-[14px] text-body-muted outline-none"
             />

@@ -14,9 +14,7 @@ export const EMPTY_EVENT_PLANTING: EventPlantingValue = {
   plantedBy: " ",
 };
 
-export function countFilledEventPlantingFields(
-  value: EventPlantingValue,
-) {
+export function countFilledEventPlantingFields(value: EventPlantingValue) {
   return (
     (value.event.trim() ? 1 : 0) +
     (value.eventYear.trim() ? 1 : 0) +

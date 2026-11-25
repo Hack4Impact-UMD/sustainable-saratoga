@@ -29,9 +29,7 @@ function RootLayout() {
   const { pathname } = useLocation();
   // The People page has its own back button where the menu button would sit.
   const showMenu =
-  isAuthed &&
-  pathname !== "/people" &&
-  pathname !== "/records/new";
+    isAuthed && pathname !== "/people" && pathname !== "/records/new";
 
   const signOut = useMutation({
     mutationFn: () => signOutAndClear(queryClient),

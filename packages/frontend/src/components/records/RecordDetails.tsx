@@ -10,7 +10,6 @@ import { formatDate } from "@frontend/lib/formatDate.ts";
 export function RecordDetails({ record }: { record: TreeRecord }) {
   const { location, siteAssessment, plantingPreparation } = record;
   const { contacts, eventPlantingDetails, recordInformation } = record;
-  
 
   return (
     <div>

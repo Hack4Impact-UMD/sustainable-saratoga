@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { fieldGuidance as g } from "../fieldGuidance.ts";
-import { FieldLabel } from "../FieldLabel.tsx";
+import { fieldGuidance as g } from "@frontend/components/records/fieldGuidance.ts";
+import { FieldLabel } from "@frontend/components/records/FieldLabel.tsx";
 import type {
   Exposure,
   PlacementIfNotInRow,
   SiteAssessmentValue,
   WireConflict,
-} from "./types.tsx";
+} from "@frontend/components/records/site-assessment/types.tsx";
 
 type Props = {
   value: SiteAssessmentValue;
@@ -48,7 +48,7 @@ const INPUT_CLASS =
 function sanitizeDecimal(raw: string) {
   const cleaned = raw.replace(/[^\d.]/g, "");
   const [whole, ...rest] = cleaned.split(".");
-  return rest.length ? `${whole}.${rest.join("")}` : whole;
+  return rest.length > 0 ? `${whole}.${rest.join("")}` : whole;
 }
 
 function RadioOption({

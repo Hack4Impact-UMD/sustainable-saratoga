@@ -1,4 +1,3 @@
-
 import { ChevronDown, ChevronUp, Lock } from "lucide-react";
 import {
   Collapsible,
@@ -29,13 +28,8 @@ export function RecordSection({
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <Lock
-                  aria-hidden="true"
-                  className="size-5 text-icon-primary"
-                />
-                <span className="text-sm text-body underline">
-                  Automatic
-                </span>
+                <Lock aria-hidden="true" className="size-5 text-icon-primary" />
+                <span className="text-sm text-body underline">Automatic</span>
               </div>
 
               <ChevronUp
@@ -46,9 +40,7 @@ export function RecordSection({
           </div>
         </h2>
 
-        <div className="bg-surface px-4 py-4">
-          {children}
-        </div>
+        <div className="bg-surface px-4 py-4">{children}</div>
       </section>
     );
   }
