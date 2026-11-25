@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  FilePlus,
+  Library,
   LogOut,
-  Map,
+  Map, 
   PanelLeftClose,
   Settings,
   Settings2,
@@ -121,6 +123,34 @@ export function MenuDrawer({
             />
             Records
           </Link>
+
+          <Link
+            to="/records"
+            onClick={onClose}
+            aria-current={pathname === "/records" ? "page" : undefined}
+            className={`flex h-12 w-full items-center gap-3 rounded-md p-4 ${
+              pathname === "/records"
+                ? "type-btn-primary bg-selected text-primary"
+                : "type-btn-secondary text-body hover:bg-hover"
+            }`}
+          >
+            <Library
+              aria-hidden="true"
+              className="size-5 shrink-0 text-icon-primary"
+            />
+            All Records
+          </Link>
+
+          <Link
+          to="/records/new"
+          onClick={onClose}
+          className="type-btn-secondary flex h-12 w-full items-center gap-3 rounded-md p-4 text-body hover:bg-hover">
+          <FilePlus
+            aria-hidden="true"
+            className="size-5 shrink-0 text-icon-primary"
+          />
+          Create record
+        </Link>
 
           {profile?.role === "admin" && (
             <section aria-labelledby="administration-heading">

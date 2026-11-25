@@ -7,10 +7,10 @@ import { RecordPhotos } from "@frontend/components/records/RecordPhotos.tsx";
 import { RecordSection } from "@frontend/components/records/RecordSection.tsx";
 import { formatDate } from "@frontend/lib/formatDate.ts";
 
-/** Read-only record details: header plus the eight collapsible sections. */
 export function RecordDetails({ record }: { record: TreeRecord }) {
   const { location, siteAssessment, plantingPreparation } = record;
   const { contacts, eventPlantingDetails, recordInformation } = record;
+  
 
   return (
     <div>
