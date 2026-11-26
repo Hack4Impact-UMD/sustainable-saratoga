@@ -189,7 +189,7 @@ describe("RecordLocation", () => {
     ).toHaveClass("opacity-60");
     expect(screen.getByRole("button", { name: "Move pin" })).toBeEnabled();
     expect(screen.getByLabelText("Saved pin map preview")).toHaveClass(
-      "aspect-[2/1]",
+      "h-[200px]",
     );
     expect(notify).toHaveBeenCalledWith("success", "Pin placed");
 

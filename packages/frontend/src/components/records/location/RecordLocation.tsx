@@ -251,7 +251,7 @@ export function RecordLocation({
       {savedMarker ? (
         <div
           aria-label="Saved pin map preview"
-          className="relative aspect-[2/1] max-h-[320px] w-full overflow-hidden rounded-md border border-line"
+          className="relative h-[200px] w-full sm:h-[300px] overflow-hidden rounded-md border border-line"
         >
           <MapView
             markers={previewMarkers}
