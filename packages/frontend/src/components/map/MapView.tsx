@@ -154,6 +154,34 @@ function GoogleMapCamera({
         if (!location) throw new Error("No matching address was found.");
         return location.toJSON();
       },
+      reverseGeocode: async (position) => {
+        if (!geocodingLibrary)
+          throw new Error("Address lookup is not ready yet.");
+        const { results } = await new geocodingLibrary.Geocoder().geocode({
+          location: position,
+        });
+        const address = results
+          .map(
+            (result: {
+              address_components: {
+                long_name: string;
+                types: string[];
+              }[];
+            }) => {
+              const number = result.address_components.find((component) =>
+                component.types.includes("street_number"),
+              )?.long_name;
+              const street = result.address_components.find((component) =>
+                component.types.includes("route"),
+              )?.long_name;
+              return number && street ? `${number} ${street}` : (street ?? "");
+            },
+          )
+          .find(Boolean);
+        if (!address)
+          throw new Error("No nearby street address was found for this spot.");
+        return address;
+      },
     }),
     [map, geocodingLibrary],
   );
@@ -175,6 +203,10 @@ const noopCamera: MapCamera = {
   panTo: () => {},
   geocodingStatus: "unavailable",
   geocodeAddress: () =>
+    Promise.reject(
+      new Error("Address lookup is unavailable because the map is offline."),
+    ),
+  reverseGeocode: () =>
     Promise.reject(
       new Error("Address lookup is unavailable because the map is offline."),
     ),

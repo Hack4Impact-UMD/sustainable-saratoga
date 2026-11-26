@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TreeStatus } from "@repo/common";
-import { ChevronLeft, LocateFixed } from "lucide-react";
+import { Check, ChevronLeft, LocateFixed, LoaderCircle } from "lucide-react";
 import { MapView } from "@frontend/components/map/MapView.tsx";
 import { StatusPin } from "@frontend/components/status/StatusPin.tsx";
 import { useMapCamera } from "@frontend/components/map/useMapCamera.ts";
@@ -13,17 +13,29 @@ const METERS_TO_FEET = 3.28084;
 
 export interface PinPlacementResult extends LatLng {
   accuracyMeters: number | null;
+  nearbyAddress?: string;
 }
+
+type SaveState =
+  | { status: "idle" }
+  | { status: "saving"; spot: PinPlacementResult }
+  | { status: "saved"; spot: PinPlacementResult };
 
 interface PinPlacementProps {
   address?: string;
   city?: string;
   state?: string;
   status?: Extract<TreeStatus, "requested" | "possible">;
+  mode?: "place" | "move" | "map";
+  nearbyAddresses?: NearbyAddress[];
   initialCenter?: LatLng;
   initialAccuracyMeters?: number | null;
   onBack: () => void;
   onUseSpot: (spot: PinPlacementResult) => void;
+}
+
+interface NearbyAddress extends LatLng {
+  address: string;
 }
 
 /** Full-screen map with a fixed center pin for choosing the planting spot. */
@@ -32,6 +44,8 @@ export function PinPlacement({
   city,
   state,
   status = "requested",
+  mode = "place",
+  nearbyAddresses = [],
   initialCenter,
   initialAccuracyMeters = null,
   onBack,
@@ -40,6 +54,10 @@ export function PinPlacement({
   const mapInitialCenter = initialCenter ?? SARATOGA_CENTER;
   const [center, setCenter] = useState(mapInitialCenter);
   const [geocodeError, setGeocodeError] = useState("");
+  const [nearbyAddress, setNearbyAddress] = useState(address ?? "");
+  const [nearbyAddressError, setNearbyAddressError] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const nearbyAddressRef = useRef(nearbyAddress);
   const {
     locate,
     status: locationStatus,
@@ -75,8 +93,36 @@ export function PinPlacement({
         : feetAccuracy <= 33
           ? { label: "Fair", tone: "fair" as const }
           : { label: "Poor", tone: "poor" as const };
-  const addressLabel = address ?? "Selected spot";
+  const addressLabel =
+    mode === "move" || mode === "map"
+      ? nearbyAddress
+        ? `Near to ${nearbyAddress}`
+        : "Finding nearby address..."
+      : (address ?? "Selected spot");
   const cityLine = [city, state].filter(Boolean).join(", ");
+
+  useEffect(() => {
+    nearbyAddressRef.current = nearbyAddress;
+  }, [nearbyAddress]);
+
+  useEffect(() => {
+    if (saveState.status === "idle") return;
+
+    const timer = window.setTimeout(() => {
+      if (saveState.status === "saving") {
+        setSaveState({ ...saveState, status: "saved" });
+      } else {
+        onUseSpot({
+          ...saveState.spot,
+          ...(mode !== "place" && nearbyAddressRef.current
+            ? { nearbyAddress: nearbyAddressRef.current }
+            : {}),
+        });
+      }
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [mode, onUseSpot, saveState]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-surface pt-[env(safe-area-inset-top)]">
@@ -103,13 +149,23 @@ export function PinPlacement({
         >
           <RecenterOnPosition status={locationStatus} position={position} />
           <MapAddressLookup
-            address={initialCenter ? undefined : address}
+            address={initialCenter || mode !== "place" ? undefined : address}
             onResolved={updateCenter}
             onError={setGeocodeError}
           />
+          <NearbyAddressLookup
+            enabled={mode !== "place"}
+            center={center}
+            candidates={nearbyAddresses}
+            fallbackAddress={address}
+            onResolved={setNearbyAddress}
+            onError={setNearbyAddressError}
+          />
           <div className="pointer-events-none absolute inset-0 flex flex-col">
             <p className="type-body-sm mx-auto mt-4 max-w-[calc(100%-32px)] rounded-pill bg-heading px-4 py-2 text-on-primary shadow-2">
-              Drag the map to the exact planting spot
+              {mode === "place"
+                ? "Drag the map to the exact planting spot"
+                : "Drag the map — the pin stays in the middle"}
             </p>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full">
               <StatusPin status={status} width={44} selected />
@@ -181,19 +237,43 @@ export function PinPlacement({
                     {geocodeError}
                   </p>
                 )}
+                {nearbyAddressError && (
+                  <p role="alert" className="type-body-sm mt-2 text-error">
+                    {nearbyAddressError}
+                  </p>
+                )}
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  onUseSpot({
-                    ...center,
-                    accuracyMeters,
-                  })
-                }
-                className="type-btn-primary mt-3 min-h-touch w-full rounded-pill bg-primary px-5 hover:bg-primary-hover active:bg-primary-pressed"
+                disabled={saveState.status !== "idle"}
+                onClick={() => {
+                  setSaveState({
+                    status: "saving",
+                    spot: {
+                      ...center,
+                      accuracyMeters,
+                    },
+                  });
+                }}
+                className={`type-btn-primary mt-3 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-pill px-5 ${saveState.status === "saving" ? "cursor-wait bg-divider text-body-muted" : saveState.status === "saved" ? "bg-primary-pressed text-on-primary" : "bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-pressed"}`}
               >
-                Use this spot
+                {saveState.status === "idle" ? (
+                  "Use this spot"
+                ) : saveState.status === "saving" ? (
+                  <>
+                    <LoaderCircle
+                      aria-hidden="true"
+                      className="size-5 animate-spin"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check aria-hidden="true" className="size-5" />
+                    Saved
+                  </>
+                )}
               </button>
             </section>
           </div>
@@ -263,6 +343,99 @@ function MapAddressLookup({
   }, [address, geocodeAddress, geocodingStatus, onError, onResolved, panTo]);
 
   return null;
+}
+
+function NearbyAddressLookup({
+  enabled,
+  center,
+  candidates,
+  fallbackAddress,
+  onResolved,
+  onError,
+}: {
+  enabled: boolean;
+  center: LatLng;
+  candidates: NearbyAddress[];
+  fallbackAddress?: string;
+  onResolved: (address: string) => void;
+  onError: (message: string) => void;
+}) {
+  const { geocodingStatus, reverseGeocode } = useMapCamera();
+
+  useEffect(() => {
+    if (!enabled || geocodingStatus === "loading") return;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          if (geocodingStatus === "unavailable") {
+            throw new Error("Address lookup is unavailable.");
+          }
+          const address = await reverseGeocode(center);
+          if (!active) return;
+          onResolved(address);
+          onError("");
+        } catch (error) {
+          if (!active) return;
+          const nearest = findNearestAddress(center, candidates);
+          if (nearest) onResolved(nearest);
+          else if (fallbackAddress) onResolved(fallbackAddress);
+          const reason =
+            error instanceof Error ? error.message : "Address lookup failed.";
+          onError(
+            `${reason} ${nearest || fallbackAddress ? "Showing the nearest known address." : "The nearby address could not be determined."}`,
+          );
+        }
+      })();
+    }, 350);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [
+    center,
+    candidates,
+    enabled,
+    fallbackAddress,
+    geocodingStatus,
+    onError,
+    onResolved,
+    reverseGeocode,
+  ]);
+
+  return null;
+}
+
+function findNearestAddress(
+  center: LatLng,
+  candidates: NearbyAddress[],
+): string | undefined {
+  let nearest: NearbyAddress | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const candidate of candidates) {
+    const distance = distanceBetween(center, candidate);
+    if (distance < nearestDistance) {
+      nearest = candidate;
+      nearestDistance = distance;
+    }
+  }
+
+  return nearest?.address;
+}
+
+function distanceBetween(first: LatLng, second: LatLng): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = radians(second.lat - first.lat);
+  const longitudeDelta = radians(second.lng - first.lng);
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(radians(first.lat)) *
+      Math.cos(radians(second.lat)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 }
 
 function accuracyToneClass(tone: "good" | "fair" | "poor"): string {

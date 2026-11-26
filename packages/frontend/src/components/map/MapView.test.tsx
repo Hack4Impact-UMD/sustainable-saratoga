@@ -1,4 +1,5 @@
 import type { MapMarker } from "@repo/common";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import {
   cleanup,
@@ -46,6 +47,10 @@ const mapsMock = vi.hoisted(() => {
         return await Promise.resolve({
           results: [
             {
+              address_components: [
+                { long_name: "65", types: ["street_number"] },
+                { long_name: "Phila St", types: ["route"] },
+              ],
               geometry: {
                 location: {
                   toJSON: () => ({ lat: 43.082886, lng: -73.784522 }),
@@ -109,6 +114,24 @@ function GeocodeButton() {
   );
 }
 
+function ReverseGeocodeButton() {
+  const { reverseGeocode } = useMapCamera();
+  const [address, setAddress] = useState("");
+  return (
+    <>
+      <button
+        type="button"
+        onClick={async () =>
+          setAddress(await reverseGeocode({ lat: 43.082886, lng: -73.784522 }))
+        }
+      >
+        Find nearby address
+      </button>
+      <output data-testid="reverse-address">{address}</output>
+    </>
+  );
+}
+
 function PanButton() {
   const { panTo } = useMapCamera();
   return (
@@ -165,6 +188,26 @@ describe("MapViewStub", () => {
       });
     });
     expect(mapsMock.state.center).toEqual({ lat: 43.082886, lng: -73.784522 });
+  });
+
+  it("reverse geocodes a map coordinate to its nearest street address", async () => {
+    vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "test-key");
+    vi.stubEnv("VITE_GOOGLE_MAPS_MAP_ID", "test-map-id");
+    render(
+      <MapView markers={[]} onMarkerSelect={() => {}} renderMarker={() => null}>
+        <ReverseGeocodeButton />
+      </MapView>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Find nearby address" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("reverse-address")).toHaveTextContent(
+        "65 Phila St",
+      );
+    });
   });
 
   it("calls onMarkerSelect with the clicked marker's id", () => {

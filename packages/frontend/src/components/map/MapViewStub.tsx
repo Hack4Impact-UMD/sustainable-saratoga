@@ -25,6 +25,10 @@ export function MapViewStub({
         Promise.reject(
           new Error("Address lookup is unavailable in the map preview."),
         ),
+      reverseGeocode: () =>
+        Promise.reject(
+          new Error("Address lookup is unavailable in the map preview."),
+        ),
     }),
     [onCenterChange],
   );

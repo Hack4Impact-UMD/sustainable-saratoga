@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PinPlacement } from "@frontend/components/records/location/PinPlacement.tsx";
 
@@ -11,6 +17,7 @@ const originalGeolocation = navigator.geolocation;
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   Object.defineProperty(navigator, "geolocation", {
     configurable: true,
     value: originalGeolocation,
@@ -49,7 +56,7 @@ describe("PinPlacement", () => {
     },
   );
 
-  it("shows the address, live coordinates, and confirms the selected spot", () => {
+  it("shows the address and live coordinates", () => {
     const { onUseSpot } = renderPinPlacement();
 
     expect(
@@ -57,7 +64,22 @@ describe("PinPlacement", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("62 Phila St")).toBeInTheDocument();
     expect(screen.getByText("43.082886, -73.784522")).toBeInTheDocument();
+    expect(onUseSpot).not.toHaveBeenCalled();
+  });
+
+  it("shows saving and saved states before confirming the selected spot", () => {
+    vi.useFakeTimers();
+    const { onUseSpot } = renderPinPlacement();
+
     fireEvent.click(screen.getByRole("button", { name: "Use this spot" }));
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+    expect(onUseSpot).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(450));
+    expect(screen.getByRole("button", { name: "Saved" })).toBeDisabled();
+    expect(onUseSpot).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(450));
 
     expect(onUseSpot).toHaveBeenCalledWith({
       lat: 43.082886,
@@ -67,6 +89,7 @@ describe("PinPlacement", () => {
   });
 
   it("centers on the current location and shows good GPS accuracy", () => {
+    vi.useFakeTimers();
     Object.defineProperty(navigator, "geolocation", {
       configurable: true,
       value: {
@@ -90,6 +113,8 @@ describe("PinPlacement", () => {
     expect(screen.getByText("43.090000, -73.790000")).toBeInTheDocument();
     expect(screen.getByText("12 ft · Good")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Use this spot" }));
+    act(() => vi.advanceTimersByTime(450));
+    act(() => vi.advanceTimersByTime(450));
     expect(onUseSpot).toHaveBeenCalledWith({
       lat: 43.09,
       lng: -73.79,
